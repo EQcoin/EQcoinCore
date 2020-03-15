@@ -1,0 +1,46 @@
+{"namespace": "com.eqchains.avro",
+ "protocol": "SyncblockNetwork",
+
+ "types": [
+     {"name": "O", "type": "record",
+      "fields": [
+          {"name": "o", "type": "bytes"}
+      ]
+     }
+ ],
+
+ "messages": {
+     "ping": {
+         // c means cookie
+         "request": [{"name": "c", "type": "O"}],
+         "response": "O"
+     },
+     "getMinerList": {
+         "request": [],
+         "response": "O"
+   	  },
+     "getFullNodeList": {
+         "request": [],
+         "response": "O"
+     },
+     "getBlockTail": {
+         "request": [],
+         "response": "O"
+   	  },
+   	 "getBlock": {
+   	 	 // h means height
+         "request": [{"name": "h", "type": "O"}],
+         "response": "O"
+   	},
+   	 "getEQCHeader": {
+   	 	 // h means height
+         "request": [{"name": "h", "type": "O"}],
+         "response": "O"
+   	},
+   	 "getEQCHeaderHash": {
+   	 	 // h means height
+         "request": [{"name": "h", "type": "O"}],
+         "response": "O"
+   	}
+ }
+}
