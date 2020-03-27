@@ -34,23 +34,24 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Vector;
 import org.apache.velocity.runtime.directive.Parse;
 
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.passport.Passport.PassportType;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.TxOut;
+import com.eqcoin.blockchain.transaction.ZionTransaction;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Util;
 
@@ -60,58 +61,37 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public abstract class EQCSeed implements EQCTypable, EQCInheritable {
-	protected EQCSeedHeader subchainHeader;
+	protected EQCSeedRoot eqcSeedRoot;
 	protected Vector<Transaction> newTransactionList;
-	protected long newTransactionListLength;
-	// The following is Transactions' Segregated Witness members it's hash will be
-	// recorded in the Root's accountsMerkelTreeRoot together with Transaction.
-	protected Vector<EQCSegWit> newEQCSegWitList;
-	protected boolean isSegwit;
-	
-	public enum SubchainType {
-		EQCOIN, INVALID;
-		public static SubchainType get(int ordinal) {
-			SubchainType subchainType = null;
-			switch (ordinal) {
-			case 0:
-				subchainType = SubchainType.EQCOIN;
-				break;
-			default:
-				subchainType = SubchainType.INVALID;
-				break;
-			}
-			return subchainType;
-		}
-		public boolean isSanity() {
-			if((this.ordinal() < EQCOIN.ordinal()) || (this.ordinal() >= INVALID.ordinal())) {
-				return false;
-			}
-			return true;
-		}
-		public byte[] getEQCBits() {
-			return EQCType.intToEQCBits(this.ordinal());
-		}
-	}
+	// This is the new Transaction list's total size which should less than MAX_EQCHIVE_SIZE.
+	protected int newTransactionListLength;
+	protected ChangeLog changeLog;
 	
 	public void init() {
 		newTransactionList = new Vector<>();
-		newEQCSegWitList = new Vector<>();
 	}
 	
 	public EQCSeed() {
 		init();
 	}
 	
-	public EQCSeed(byte[] bytes, boolean isSegwit) throws Exception {
+	public EQCSeed(byte[] bytes) throws Exception {
 		EQCType.assertNotNull(bytes);
 		init();
-		this.isSegwit = isSegwit;
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parseHeader(is);
-		parseBody(is);
+		parse(is);
 		EQCType.assertNoRedundantData(is);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
+		parseHeader(is);
+		parseBody(is);
+	}
+
 	/* (non-Javadoc)
 	 * @see com.eqchains.serialization.EQCTypable#getBytes()
 	 */
@@ -136,18 +116,16 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	 */
 	@Override
 	public boolean isSanity() throws Exception {
-		if(subchainHeader == null || newEQCSegWitList == null || newEQCSegWitList == null) {
+		if(eqcSeedRoot == null || newTransactionList == null) {
 			return false;
 		}
-		if(!(newEQCSegWitList.isEmpty() && newEQCSegWitList.isEmpty() && newTransactionListLength == 0)) {
-			return false;
-		}
-		if(newTransactionList.size() != newEQCSegWitList.size()) {
-			return false;
-		}
+		// Here need do more job to determine if current EQcoinSeed have transaction
+//		if(!(newEQCSegWitList.isEmpty() && newEQCSegWitList.isEmpty() && newTransactionListLength == 0)) {
+//			return false;
+//		}
 		long newTransactionListLength = 0;
 		for(Transaction transaction:newTransactionList) {
-			newTransactionListLength += transaction.getBin(TransactionShape.SEED).length;
+			newTransactionListLength += transaction.getBytes().length;
 		}
 		if(this.newTransactionListLength != newTransactionListLength) {
 			return false;
@@ -159,78 +137,47 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		subchainHeader = new EQCSeedHeader(is);
 	}
 
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse NewTransactionList
-		ARRAY transactions = null;
-		Transaction transaction = null;
-		transactions = EQCType.parseARRAY(is);
-		if (!transactions.isNULL()) {
-			newTransactionListLength = transactions.size;
-			ByteArrayInputStream is1 = new ByteArrayInputStream(transactions.elements);
-			while (!EQCType.isInputStreamEnd(is1)) {
-				transaction = Transaction.parseTransaction(EQCType.parseBIN(is1), TransactionShape.SEED);
-				newTransactionList.add(transaction);
-			}
-			EQCType.assertEqual(transactions.size, newTransactionList.size());
-		}
-		if (!isSegwit) {
-			// Parse NewEQCSegWitList
-			ARRAY segWitList = null;
-			segWitList = EQCType.parseARRAY(is);
-			if (!segWitList.isNULL()) {
-				ByteArrayInputStream is1 = new ByteArrayInputStream(segWitList.elements);
-				while (!EQCType.isInputStreamEnd(is1)) {
-					newEQCSegWitList.add(new EQCSegWit(is1));
-				}
-				EQCType.assertEqual(segWitList.size, newEQCSegWitList.size());
-			}
-		}
-		else {
-			// Just skip the data stream to keep data stream's format is valid
-			EQCType.parseARRAY(is);
-		}
+		newTransactionList = EQCType.parseArray(is, Transaction.class);
 	}
 
 	@Override
 	public byte[] getHeaderBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(subchainHeader.getBytes());
+		os.write(eqcSeedRoot.getBytes());
 		return os.toByteArray();
 	}
 
 	@Override
 	public byte[] getBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(getNewTransactionListARRAY());
-		if(!isSegwit) {
-			os.write(getNewEQCSegWitListARRAY());
-		}
+		os.write(EQCType.eqcSerializableListToArray(newTransactionList));
 		return os.toByteArray();
 	}
 
 	/**
-	 * @return the EQCSubchainHeader
+	 * @return the EQCSeedHeader
 	 */
-	public EQCSeedHeader getSubchainHeader() {
-		return subchainHeader;
+	public EQCSeedRoot getEQCSeedHeader() {
+		return eqcSeedRoot;
 	}
 
 	/**
-	 * @param EQCSeedHeader the EQCSubchainHeader to set
+	 * @param EQCSeedRoot the EQCSeedHeader to set
 	 */
-	public void setSubchainHeader(EQCSeedHeader subchainHeader) {
-		this.subchainHeader = subchainHeader;
+	public void setEQCSeedHeader(EQCSeedRoot eqcSeedHeader) {
+		this.eqcSeedRoot = eqcSeedHeader;
 	}
 
 	/**
@@ -246,131 +193,34 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	public Vector<Transaction> getNewTransactionList() {
 		return newTransactionList;
 	}
-
-	/**
-	 * @return the newEQCSegWitList
-	 */
-	public Vector<EQCSegWit> getNewEQCSegWitList() {
-		return newEQCSegWitList;
-	}
 	
-//	public ID getSN(PassportsMerkleTree changeLog)
-//			throws ClassNotFoundException, SQLException, Exception {
-//		ID sn = null;
-//		if (newTransactionList.size() == 0) {
-//			if (changeLog.getHeight().equals(ID.ZERO)) {
-//				initSN = ID.ONE;
-//			} else {
-//				EQcoinSubchainPassport eQcoinSubchainAccount = (EQcoinSubchainPassport) Util.DB()
-//						.getPassport(Asset.EQCOIN, changeLog.getHeight().getPreviousID());
-//				initSN = eQcoinSubchainAccount.getTotalTransactionNumbers()
-//						.add(changeLog.getTotalCoinbaseTransactionNumbers()).getNextID();
-//			}
-//			sn = initSN;
-//		} else {
-//			sn = initSN.add(ID.valueOf(newTransactionList.size()));
-//		}
-//		return sn;
-//	}
-	
-	public void addTransaction(Transaction transaction, ChangeLog changeLog) throws ClassNotFoundException, SQLException, Exception {
+	public void addTransaction(Transaction transaction) throws ClassNotFoundException, SQLException, Exception {
 			// Add Transaction
 			newTransactionList.add(transaction);
-			newTransactionListLength += transaction.getBin(TransactionShape.SEED).length;
-			// Add Signature
-			newEQCSegWitList.add(transaction.getEqcSegWit());
-//			// Add Transactions
-//			Util.DB().saveTransaction(transaction, changeLog.getHeight(), index, getSN(changeLog), changeLog.getFilter().getMode());
+			newTransactionListLength += transaction.getBytes().length;
 	}
 	
-	public boolean isTransactionExists(Transaction transaction) {
-		return newTransactionList.contains(transaction);
-	}
-	
-	public byte[] getRoot() throws Exception {
+	public byte[] getHash() throws Exception {
 		return null;
 	}
 	
-	public byte[] getNewEQCSegWitListMerkelTreeRoot() throws Exception {
-		Vector<byte[]> eqcSegWitList = new Vector<byte[]>();
-		for (EQCSegWit eqcSegWit : newEQCSegWitList) {
-			eqcSegWitList.add(eqcSegWit.getBytes());
-		}
-		return Util.getMerkleTreeRoot(eqcSegWitList, true);
-	}
-	
 	public byte[] getNewTransactionListMerkelTreeRoot() throws Exception {
-		Vector<byte[]> transactions = new Vector<byte[]>();
-		for (Transaction transaction : newTransactionList) {
-			transactions.add(transaction.getBytes(TransactionShape.SEED));
-		}
-		return Util.getMerkleTreeRoot(transactions, true);
-	}
-	
-	public static EQcoinSeed parse(byte[] bytes, boolean isSegwit) throws Exception {
-		EQcoinSeed eQcoinSeed = null;
-		eQcoinSeed = new EQcoinSeed(bytes, isSegwit);
-		return eQcoinSeed;
-	}
-	
-//	public void buildTransactionsForVerify() throws ClassNotFoundException, SQLException {
-//		// Only have CoinBase Transaction just return
-//		if (transactions.getNewTransactionList().size() == 1) {
-//			Transaction transaction = transactions.getNewTransactionList().get(0);
-//			// Set Address for every Transaction
-//			// Set TxOut Address
-//			for (TxOut txOut : transaction.getTxOutList()) {
-//				txOut.getPassport().setReadableAddress(Util.getAddress(txOut.getPassport().getId(), this));
-//			}
-//			return;
-//		}
-//
-//		// Set Signature for every Transaction
-//		// Bug fix change to verify if every Transaction's signature is equal to
-//		// Signatures
-//		for (int i = 1; i < signatures.getSignatureList().size(); ++i) {
-//			transactions.getNewTransactionList().get(i).setSignature(signatures.getSignatureList().get(i));
-//		}
-//
-//		for (int i = 1; i < transactions.getNewTransactionList().size(); ++i) {
-//			Transaction transaction = transactions.getNewTransactionList().get(i);
-//			// Set PublicKey for every Transaction
-//			// Bug fix before add in Transactions every transaction should have signature &
-//			// PublicKey.
-//			transaction.setCompressedPublickey(Util.getPublicKey(transaction.getTxIn().getPassport().getId(), this));
-//			// Set Address for every Transaction
-//			// Set TxIn Address
-//			transaction.getTxIn().getPassport()
-//					.setReadableAddress(Util.getAddress(transaction.getTxIn().getPassport().getId(), this));
-//			// Set TxOut Address
-//			for (TxOut txOut : transaction.getTxOutList()) {
-//				txOut.getPassport().setReadableAddress(Util.getAddress(txOut.getPassport().getId(), this));
-//			}
-//		}
-//	}
-	
-	private byte[] getNewTransactionListARRAY() throws Exception {
-		if (newTransactionList.isEmpty()) {
+		if(newTransactionList.isEmpty()) {
 			return EQCType.NULL_ARRAY;
-		} else {
+		}
+		else {
 			Vector<byte[]> transactions = new Vector<byte[]>();
 			for (Transaction transaction : newTransactionList) {
-				transactions.add(transaction.getBin(TransactionShape.SEED));
+				transactions.add(transaction.getBytes());
 			}
-			return EQCType.bytesArrayToARRAY(transactions);
+			return Util.getMerkleTreeRoot(transactions, true);
 		}
 	}
 	
-	private byte[] getNewEQCSegWitListARRAY() throws Exception {
-		if (newEQCSegWitList.isEmpty()) {
-			return EQCType.NULL_ARRAY;
-		} else {
-			Vector<byte[]> eqcSegWitList = new Vector<byte[]>();
-			for (EQCSegWit eqcSegWit : newEQCSegWitList) {
-				eqcSegWitList.add(eqcSegWit.getBin());
-			}
-			return EQCType.bytesArrayToARRAY(eqcSegWitList);
-		}
+	public static EQcoinSeed parse(byte[] bytes) throws Exception {
+		EQcoinSeed eQcoinSeed = null;
+		eQcoinSeed = new EQcoinSeed(bytes);
+		return eQcoinSeed;
 	}
 	
 	/*
@@ -388,18 +238,12 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	
 	public String toInnerJson() {
 		return
-				"\"EQCSubchain\":{\n" + subchainHeader.toInnerJson() + ",\n" +
+				"\"EQCSubchain\":{\n" + eqcSeedRoot.toInnerJson() + ",\n" +
 				"\"NewTransactionList\":" + 
 				"\n{\n" +
 				"\"Size\":\"" + newTransactionList.size() + "\",\n" +
 				"\"List\":" + 
-					_getNewTransactionList() + "\n},\n" +
-						"\"NewSignatureList\":" + 
-						"\n{\n" +
-						"\"Size\":\"" + newEQCSegWitList.size() + "\",\n" +
-						"\"List\":" + 
-							_getNewSignatureList() + "\n}\n" +
-				 "\n}\n}";
+					_getNewTransactionList() + "\n}\n}";
 	}
 	
 	protected String _getNewTransactionList() {
@@ -419,29 +263,19 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 		return tx;
 	}
 	
-	protected String _getNewSignatureList() {
-		String tx = null;
-		if (newEQCSegWitList != null && newEQCSegWitList.size() > 0) {
-			tx = "\n[\n";
-			if (newEQCSegWitList.size() > 1) {
-				for (int i = 0; i < newEQCSegWitList.size() - 1; ++i) {
-					tx += newEQCSegWitList.get(i).toInnerJson() + ",\n";
-				}
-			}
-			tx += newEQCSegWitList.get(newEQCSegWitList.size() - 1).toInnerJson();
-			tx += "\n]";
-		} else {
-			tx = "[]";
-		}
-		return tx;
-	}
-	
 	public void plantingTransaction(Vector<Transaction> transactionList, ChangeLog changeLog) throws NoSuchFieldException, IllegalStateException, IOException, Exception {
 		
 	}
 	
 	public boolean saveTransactions() throws Exception {
 		return false;
+	}
+	
+	/**
+	 * @param changeLog the changeLog to set
+	 */
+	public void setChangeLog(ChangeLog changeLog) {
+		this.changeLog = changeLog;
 	}
 	
 }

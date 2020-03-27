@@ -34,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -84,7 +83,7 @@ public class Info<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}

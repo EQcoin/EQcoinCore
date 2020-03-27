@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 
@@ -30,7 +29,7 @@ public class Nest<T> extends IO<T> {
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}

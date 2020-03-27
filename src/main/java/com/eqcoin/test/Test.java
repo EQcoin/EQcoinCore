@@ -65,19 +65,19 @@ import com.eqcoin.avro.SyncblockNetwork;
 import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
-import com.eqcoin.blockchain.hive.EQCHeader;
+import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.transaction.TransferOperationTransaction;
+import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.TxIn;
 import com.eqcoin.blockchain.transaction.TxOut;
 import com.eqcoin.blockchain.transaction.Transaction.TXFEE_RATE;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOperation;
+import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.EQCPublicKey;
 import com.eqcoin.keystore.Keystore;
@@ -88,6 +88,7 @@ import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.persistence.EQCBlockChainRPC;
 import com.eqcoin.rpc.Code;
 import com.eqcoin.rpc.Cookie;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.Info;
 import com.eqcoin.rpc.TailInfo;
@@ -129,24 +130,23 @@ public class Test {
 		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPublicKey(), "abc");
 		byte[] sign = Util.signTransaction(transaction.getTxIn().getLock().getAddressType(), privateKey, transaction,
 				new byte[4]);
-		transaction.getEqcSegWit().setSignature(sign);
-		com.eqcoin.blockchain.transaction.CompressedPublickey publicKey2 = new com.eqcoin.blockchain.transaction.CompressedPublickey();
-		publicKey2.setCompressedPublickey(publickey);
-		transaction.setCompressedPublickey(publicKey2);
-		boolean result = Util.verifySignature(transaction.getTxIn().getLock().getAddressType(), transaction, new byte[4]);
-		if (result) {
-			Log.info("verify passed");
-		} else {
-			Log.info("verify failed");
-		}
+		transaction.getEqcWitness().setSignature(sign);
+		com.eqcoin.blockchain.transaction.EQCPublickey publicKey2 = new com.eqcoin.blockchain.transaction.EQCPublickey();
+		publicKey2.setPublickey(publickey);
+//		boolean result = Util.verifySignature(transaction.getTxIn().getLock().getAddressType(), transaction, new byte[4]);
+//		if (result) {
+//			Log.info("verify passed");
+//		} else {
+//			Log.info("verify failed");
+//		}
 	}
 
 	public static void testHashTime() {
-		EQCHeader header = new EQCHeader();
+		EQCHiveRoot header = new EQCHiveRoot();
 		header.setNonce(ID.ONE);
 		header.setPreHash(Util.EQCCHA_MULTIPLE_DUAL_MIX(Util.getSecureRandomBytes(), Util.ONE, true, false));
 		header.setTarget(Util.getDefaultTargetBytes());
-		header.setRootHash(Util.EQCCHA_MULTIPLE_DUAL(Util.getSecureRandomBytes(), Util.ONE, true, false));
+		header.setEQCoinSeedHash(Util.EQCCHA_MULTIPLE_DUAL(Util.getSecureRandomBytes(), Util.ONE, true, false));
 		header.setHeight(ID.ZERO);
 		header.setTimestamp(new ID(System.currentTimeMillis()));
 		Log.info(header.toString());
@@ -270,12 +270,12 @@ public class Test {
 			ecdsa.initSign(privKey);
 //			String text = "In teaching others we teach ourselves";
 			System.out.println("Text len: " + text.length());
-			byte[] baText = text.getBytes("UTF-8");
+			byte[] baText = text.getBytes();
 			ecdsa.update(baText);
 			byte[] baSignature = ecdsa.sign();
 			Log.info("signature' len: " + baSignature.length);
 		} catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchProviderException
-				| InvalidKeyException | UnsupportedEncodingException | SignatureException e) {
+				| InvalidKeyException | SignatureException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			Log.Error(e.getMessage());
@@ -311,7 +311,7 @@ public class Test {
 			ecdsa.initSign(Util.getPrivateKey(ecPrivateKey.getS().toByteArray(), LockType.T1));// privKey);
 			String text = "In teaching others we teach ourselves";
 			System.out.println("Text: " + text);
-			byte[] baText = text.getBytes("UTF-8");
+			byte[] baText = text.getBytes();
 //			ecdsa.update(Util.EQCCHA_MULTIPLE(Util.getDefaultTargetBytes(), 1, true));
 			ecdsa.update(baText);
 			byte[] baSignature = ecdsa.sign();
@@ -340,7 +340,7 @@ public class Test {
 			System.out.println("Valid: " + result);
 
 		} catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchProviderException
-				| InvalidKeyException | SignatureException | UnsupportedEncodingException e) {
+				| InvalidKeyException | SignatureException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			Log.Error(e.getMessage());
@@ -838,9 +838,9 @@ public class Test {
 		Log.info(transaction.toString());
 		try {
 			EQCHive transactions = new EQCHive();
-			transactions.geteQcoinSeed().addTransaction(transaction);
-			transactions.geteQcoinSeed().addTransaction(transaction);
-			transactions.geteQcoinSeed().addTransaction(transaction);
+			transactions.getEQcoinSeed().addTransaction(transaction);
+			transactions.getEQcoinSeed().addTransaction(transaction);
+			transactions.getEQcoinSeed().addTransaction(transaction);
 			Log.info(transactions.toString());
 			EQCHive eqcBlock;
 			eqcBlock = Util.recoverySingularityStatus();
@@ -878,9 +878,8 @@ public class Test {
 			byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPrivateKey(), "abc");
 			byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPublicKey(), "abc");
 
-			com.eqcoin.blockchain.transaction.CompressedPublickey publicKey1 = new com.eqcoin.blockchain.transaction.CompressedPublickey();
-			publicKey1.setCompressedPublickey(publickey);
-			transaction.setCompressedPublickey(publicKey1);
+			com.eqcoin.blockchain.transaction.EQCPublickey publicKey1 = new com.eqcoin.blockchain.transaction.EQCPublickey();
+			publicKey1.setPublickey(publickey);
 			publicKey1.setId(ID.ZERO);
 //		EQCBlockChainH2.getInstance().appendPublicKey(publicKey1, SerialNumber.ZERO);
 
@@ -902,11 +901,11 @@ public class Test {
 
 			byte[] sign = Util.signTransaction(transaction.getTxIn().getLock().getAddressType(), privateKey, transaction,
 					new byte[4]);
-			transaction.getEqcSegWit().setSignature(sign);
+			transaction.getEqcWitness().setSignature(sign);
 
-			if (Util.verifySignature(transaction.getTxIn().getLock().getAddressType(), transaction, new byte[4])) {
-				Log.info("Passed");
-			}
+//			if (Util.verifySignature(transaction.getTxIn().getLock().getAddressType(), transaction, new byte[4])) {
+//				Log.info("Passed");
+//			}
 			Log.info(transaction.toString());
 			EQCBlockChainH2.getInstance().saveTransactionInPool(transaction);
 		} catch (Exception e) {
@@ -953,7 +952,7 @@ public class Test {
 			txOut.setValue(24 * Util.ABC);
 			transaction.setTxIn(txIn);
 			transaction.addTxOut(txOut);
-			transactions.geteQcoinSeed().addTransaction(transaction);
+			transactions.getEQcoinSeed().addTransaction(transaction);
 
 			transaction = new TransferTransaction();
 			txIn = new TxIn();
@@ -993,7 +992,7 @@ public class Test {
 			transaction.addTxOut(txOut);
 
 //			Log.info("txout number: " + transaction.getTxOutNumber());
-			transactions.geteQcoinSeed().addTransaction(transaction);
+			transactions.getEQcoinSeed().addTransaction(transaction);
 
 			Log.info(transactions.toString());
 		}
@@ -1370,8 +1369,8 @@ public class Test {
 //		TransferTransaction transaction = new TransferTransaction();
 //		transaction.getBytes();
 //		transaction.getMaxTxFeeLimit();
-		Log.info("" + TransactionType.COINBASE);
-		Log.info("" + TransactionType.COINBASE.ordinal());
+//		Log.info("" + TransactionType.COINBASE);
+//		Log.info("" + TransactionType.COINBASE.ordinal());
 	}
 
 	public static void testBigintegerLeadingzero() {
@@ -1419,7 +1418,7 @@ public class Test {
 		String key = LockTool.generateAddress(publickey, LockType.T2);
 		Log.info(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
 		Log.info(key);
-		if (LockTool.verifyAddressPublickey(Keystore.getInstance().getUserAccounts().get(0).getReadableLock(),
+		if (LockTool.verifyLockAndPublickey(Keystore.getInstance().getUserAccounts().get(0).getReadableLock(),
 				publickey)) {
 			Log.info("Publickey verify passed");
 		} else {
@@ -1791,7 +1790,7 @@ public class Test {
 		long c0 = System.currentTimeMillis();
 		int n = 10000;
 		for (int i = 0; i < n; ++i) {
-			Util.LockTool.verifyAddressPublickey(
+			Util.LockTool.verifyLockAndPublickey(
 					Keystore.getInstance().getUserAccounts().get(1).getReadableLock(), publickey);
 		}
 		long c1 = System.currentTimeMillis();
@@ -1821,13 +1820,13 @@ public class Test {
 	public static void testVerifyBlock() {
 		ID id;
 		try {
-			id = Util.DB().getEQCBlockTailHeight();
+			id = Util.DB().getEQCHiveTailHeight();
 			for (int i = 1; i < id.intValue(); ++i) {
 				ChangeLog changeLog = new ChangeLog(new ID(i),
 						new Filter(Mode.MINING));
 				EQCHive eqcBlock = Util.DB().getEQCHive(new ID(i), true);
 				try {
-					eqcBlock.isValid(changeLog);
+					eqcBlock.isValid();
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1866,7 +1865,7 @@ public class Test {
 		Log.info(sb.toString());
 	}
 
-	public static void ping(String localIP, String remoteIP) {
+	public static void ping(IP localIP, String remoteIP) {
 		long time = System.currentTimeMillis();
     	NettyTransceiver client = null;
     	try {
@@ -1911,7 +1910,7 @@ public class Test {
     	NettyTransceiver client = null;
     	try {
     		Cookie<O> cookie = new Cookie();
-    		cookie.setIp(Util.IP);
+    		cookie.setIp(Util.LOCAL_IP);
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		client = new NettyTransceiver(new InetSocketAddress(InetAddress.getByName(remoteIP), 7997), 3000l);
     		SyncblockNetwork proxy = SpecificRequestor.getClient(SyncblockNetwork.class, client);
@@ -1939,7 +1938,7 @@ public class Test {
     	NettyTransceiver client = null;
     	try {
     		Cookie cookie = new Cookie();
-    		cookie.setIp("10.0.0.1");
+    		cookie.setIp(new IP("10.0.0.1"));
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		client = new NettyTransceiver(new InetSocketAddress(InetAddress.getByName(remoteIP), 7997), 3000l);
     		 // client code - attach to the server and send a message
@@ -1968,12 +1967,12 @@ public class Test {
     	NettyTransceiver client = null;
     	try {
     		Cookie<O> cookie = new Cookie();
-    		cookie.setIp("10.0.0.1");
+    		cookie.setIp(new IP("10.0.0.1"));
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		client = new NettyTransceiver(new InetSocketAddress(InetAddress.getByName(remoteIP), 7997), 3000l);
     		 // client code - attach to the server and send a message
     		SyncblockNetwork proxy = SpecificRequestor.getClient(SyncblockNetwork.class, client);
-    		EQCHive eqcHive = new EQCHive(proxy.getBlock(Util.bytes2O(height.getEQCBits())).getO().array(), false);
+    		EQCHive eqcHive = new EQCHive(proxy.getBlock(Util.bytes2O(height.getEQCBits())).getO().array());
             System.out.println("Result: " + (System.currentTimeMillis() - time) + "\n" + eqcHive);
     	}
     	catch (Exception e) {
@@ -1993,9 +1992,9 @@ public class Test {
 		// Here need add function to test ping
 //		Test.ping(Util.getStatus().getCookie().getIp().toString(), Util.getStatus().getCookie().getIp().toString());
 		Cookie<O> cookie1 = new Cookie();
-		cookie1.setIp("14.221.177.201");
+		cookie1.setIp(Util.LOCAL_IP);
 		cookie1.setVersion(Util.PROTOCOL_VERSION);
-		if (cookie1.getIp().length() == 0) {
+		if (cookie1.getIp().getIp().isEmpty()) {
 			Log.Error("During get IP error occur please check your network");
 		} else {
 			Log.info(cookie1.toString());
@@ -2035,9 +2034,8 @@ public class Test {
 //			Log.info("Nonce: " + transaction.getNonce());
 			byte[] privateKey = Util.AESDecrypt(userAccount.getPrivateKey(), "abc");
 			byte[] publickey = Util.AESDecrypt(userAccount.getPublicKey(), "abc");
-			com.eqcoin.blockchain.transaction.CompressedPublickey publicKey2 = new com.eqcoin.blockchain.transaction.CompressedPublickey();
-			publicKey2.setCompressedPublickey(publickey);
-			transaction.setCompressedPublickey(publicKey2);
+			com.eqcoin.blockchain.transaction.EQCPublickey publicKey2 = new com.eqcoin.blockchain.transaction.EQCPublickey();
+			publicKey2.setPublickey(publickey);
 			transaction.cypherTxInValue(TXFEE_RATE.POSTPONE0);
 //			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
 //			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
@@ -2073,7 +2071,7 @@ public class Test {
 //				IPList ipList = new IPList();
 //				ipList.addIP(Util.IP);
 				Info info = null;
-				for(String ip:ipList.getIpList()) {
+				for(IP ip:ipList.getIpList()) {
 					try {
 						Log.info("Send transaction with nonce " + transaction.getNonce() + " to " + ip);
 						info = TransactionNetworkClient.sendTransaction(transaction, ip);

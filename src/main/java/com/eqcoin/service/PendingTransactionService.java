@@ -77,7 +77,7 @@ public class PendingTransactionService extends EQCService {
 		try {
 			Log.info("Received new Transaction");
 			pendingTransactionState = (PendingTransactionState) state;
-			transaction = Transaction.parseRPC(pendingTransactionState.getTransaction());
+			transaction = Transaction.parseTransaction(pendingTransactionState.getTransaction());
 			account = Util.DB().getPassport(transaction.getTxIn().getLock().getAddressAI(), Mode.GLOBAL);
 			if(account == null) {
 				Log.info("Transaction with readable address " + transaction.getTxIn().getLock().getReadableLock() + "'s relevant Account doesn't exists just discard it");

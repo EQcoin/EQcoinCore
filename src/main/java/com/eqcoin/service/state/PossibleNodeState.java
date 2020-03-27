@@ -30,6 +30,7 @@
 package com.eqcoin.service.state;
 
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
+import com.eqcoin.rpc.IP;
 
 /**
  * @author Xun Wang
@@ -37,7 +38,7 @@ import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
  * @email 10509759@qq.com
  */
 public class PossibleNodeState extends EQCServiceState {
-	private String ip;
+	private IP ip;
 	private NODETYPE nodeType;
 	
 	public PossibleNodeState() {
@@ -55,13 +56,13 @@ public class PossibleNodeState extends EQCServiceState {
 	/**
 	 * @return the ip
 	 */
-	public String getIp() {
+	public IP getIp() {
 		return ip;
 	}
 	/**
 	 * @param ip the ip to set
 	 */
-	public void setIp(String ip) {
+	public void setIp(IP ip) {
 		this.ip = ip;
 	}
 	/**

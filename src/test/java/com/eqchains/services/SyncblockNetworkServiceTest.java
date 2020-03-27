@@ -57,7 +57,7 @@ public class SyncblockNetworkServiceTest {
     	try {
 //    		Util.init();
     		Cookie<O> cookie = new Cookie();
-    		cookie.setIp("14.221.177.1918");
+    		cookie.setIp(Util.SINGULARITY_IP);
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		Info info = new Info();
     		info.setCode(Code.OK);

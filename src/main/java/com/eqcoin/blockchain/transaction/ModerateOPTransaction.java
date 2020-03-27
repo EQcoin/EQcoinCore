@@ -33,32 +33,33 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
+import com.eqcoin.blockchain.passport.AssetPassport;
+import com.eqcoin.blockchain.passport.Lock;
+import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
-import com.eqcoin.blockchain.transaction.operation.Operation.OP;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOperation;
-import com.eqcoin.serialization.EQCType;
+import com.eqcoin.blockchain.transaction.operation.UpdateCheckPointOP;
+import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
+import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
- * @date Mar 11, 2020
+ * @date Mar 21, 2020
  * @email 10509759@qq.com
  */
-public class ZionOperationTransaction extends ZionTransaction {
+public class ModerateOPTransaction extends Transaction {
 	private Operation operation;
 
-	public ZionOperationTransaction() {
+	public ModerateOPTransaction() {
 		super();
-		transactionType = TransactionType.ZIONOPERATION;
+		transactionType = TransactionType.ZIONOP;
 	}
 
-	public ZionOperationTransaction(byte[] bytes, TransactionShape transactionShape)
+	public ModerateOPTransaction(byte[] bytes)
 			throws Exception {
-		super(bytes, transactionShape);
+		super(bytes);
 	}
 
 	/**
@@ -88,7 +89,7 @@ public class ZionOperationTransaction extends ZionTransaction {
 		size += super.getMaxBillingLength();
 
 		// Operations size
-		size += operation.getBin(LockShape.AI).length;
+		size += operation.getBin().length;
 
 		return size;
 	}
@@ -105,18 +106,18 @@ public class ZionOperationTransaction extends ZionTransaction {
 		size += super.getBillingSize();
 
 		// Operations size
-		size += operation.getBin(LockShape.AI).length;
+		size += operation.getBin().length;
 		return super.getBillingSize();
 	}
 
 	@Override
 	public boolean isValid()
 			throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!operation.isMeetPreconditions(this)) {
+		if(!operation.isMeetPreconditions()) {
 			Log.Error("Operation " + operation + " doesn't meet preconditions.");
 			return false;
 		}
-		if(!operation.isValid(changeLog)) {
+		if(!operation.isValid()) {
 			Log.Error("Operation " + operation + " isn't valid.");
 			return false;
 		}
@@ -125,16 +126,6 @@ public class ZionOperationTransaction extends ZionTransaction {
 		}
 		return true;
 	}
-
-//	/*
-//	 * (non-Javadoc)
-//	 * 
-//	 * @see com.eqzip.eqcoin.blockchain.Transaction#isTxOutNumberValid()
-//	 */
-//	@Override
-//	public boolean isTxOutNumberValid() {
-//		return (txOutList.size() >= MIN_TXOUT) && (txOutList.size() <= MAX_TXOUT);
-//	}
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
@@ -158,7 +149,7 @@ public class ZionOperationTransaction extends ZionTransaction {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ZionOperationTransaction other = (ZionOperationTransaction) obj;
+		ModerateOPTransaction other = (ModerateOPTransaction) obj;
 		if (operation == null) {
 			if (other.operation != null)
 				return false;
@@ -169,13 +160,11 @@ public class ZionOperationTransaction extends ZionTransaction {
 	
 	public String toInnerJson() {
 		return
-		"\"ZionOperationTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n"
+		"\"ModerateOPTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n"
 				+ operation.toInnerJson() + ",\n"
-				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
-				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
-				+ "\"EQCSegWit\":" + eqcSegWit.toInnerJson() + ",\n" + "\"Publickey\":" 
-				+ ((compressedPublickey.getCompressedPublickey() == null) ? null : "\"" + Util.getHexString(compressedPublickey.getCompressedPublickey()) + "\"")+ "\n" + "}";
+				+ "\"EQCWitness\":" + eqcWitness.toInnerJson() 
+				+ "\n" + "}";
 	}
 	
 	/* (non-Javadoc)
@@ -184,65 +173,43 @@ public class ZionOperationTransaction extends ZionTransaction {
 	@Override
 	protected boolean isTransactionTypeSanity() {
 		// TODO Auto-generated method stub
-		return transactionType == TransactionType.TRANSFEROPERATION;
+		return transactionType == TransactionType.MODERATEOP;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isDerivedSanity(com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
 	@Override
-	public boolean isDerivedSanity(TransactionShape transactionShape) {
+	public boolean isDerivedSanity() {
 		if(operation == null) {
 			return false;
 		}
-		if(transactionShape == TransactionShape.RPC) {
-			if(!operation.isSanity(LockShape.READABLE)) {
-				return false;
-			}
-		}
-		else {
-			if(!operation.isSanity(LockShape.ID)) {
-				return false;
-			}
-		}
-		
-		if(operation.getOP() != OP.LOCK && operation.getOP() != OP.CHECKPOINT && operation.getOP() != OP.TXFEERATE) {
+		if(!(operation instanceof UpdateCheckPointOP)) {
 			return false;
 		}
-
-		if(operation.getOP() == OP.LOCK) {
-			if(!super.isDerivedSanity(transactionShape)) {
-				return false;
-			}
-		}
-		else {
-			if(txOutList.size() !=0) {
-				return false;
-			}
+		if (!operation.isSanity()) {
+			return false;
 		}
 		
 		return true;
 	}
 	
-	public void planting() throws Exception {
-		super.planting();
-		if(!operation.execute(this)) {
-			throw new IllegalStateException("During execute operation error occur: " + operation);
-		}
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#derivedPlanting()
+	 */
+	@Override
+	protected void derivedPlanting() throws Exception {
+		super.derivedPlanting();
+		operation.execute();
 	}
-	
-	public byte[] getBodyBytes(TransactionShape transactionShape) throws Exception {
+
+	public byte[] getBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			// Serialization Operation
-			if(transactionShape == TransactionShape.RPC) {
-				os.write(operation.getBytes(LockShape.READABLE));
-			}
-			else {
-				os.write(operation.getBytes(LockShape.ID));
-			}
 			// Serialization Super body
-			os.write(super.getBodyBytes(transactionShape));
+			os.write(super.getBodyBytes());
+			// Serialization Operation
+			os.write(operation.getBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -251,16 +218,11 @@ public class ZionOperationTransaction extends ZionTransaction {
 		return os.toByteArray();
 	}
 	
-	public void parseBody(ByteArrayInputStream is, TransactionShape transactionShape) throws Exception {
-		// Parse Operation
-		if(transactionShape == TransactionShape.RPC) {
-			operation = Operation.parseOperation(is, LockShape.READABLE);
-		}
-		else {
-			operation = Operation.parseOperation(is, LockShape.ID);
-		}
+	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse Super body
-		super.parseBody(is, transactionShape);
+		super.parseBody(is);
+		// Parse Operation
+		operation = Operation.parseOperation(is);
 	}
-	
+
 }

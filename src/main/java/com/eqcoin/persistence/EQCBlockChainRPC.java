@@ -29,10 +29,12 @@
  */
 package com.eqcoin.persistence;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
+import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.Lock;
@@ -41,6 +43,7 @@ import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
 import com.eqcoin.rpc.Balance;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.MaxNonce;
 import com.eqcoin.rpc.Nest;
@@ -59,10 +62,10 @@ import com.eqcoin.util.Util;
  * @date Jul 29, 2019
  * @email 10509759@qq.com
  */
-public class EQCBlockChainRPC implements EQCBlockChain<O> {
+public class EQCBlockChainRPC implements EQCBlockChain {
 	private static EQCBlockChainRPC instance;
 	// Current fastest Miner Server
-	private String ip;
+	private IP ip;
 	
 	private EQCBlockChainRPC() {
 		try {
@@ -258,7 +261,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#getEQCBlockTailHeight()
 	 */
 	@Override
-	public ID getEQCBlockTailHeight() throws Exception {
+	public ID getEQCHiveTailHeight() throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -267,7 +270,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#saveEQCBlockTailHeight(com.eqchains.util.ID)
 	 */
 	@Override
-	public boolean saveEQCBlockTailHeight(ID height) throws Exception {
+	public boolean saveEQCHiveTailHeight(ID height) throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -285,7 +288,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#isIPExists(java.lang.String, com.eqchains.persistence.EQCBlockChainH2.NODETYPE)
 	 */
 	@Override
-	public boolean isIPExists(String ip, NODETYPE nodeType) throws SQLException {
+	public boolean isIPExists(IP ip, NODETYPE nodeType) throws SQLException {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -294,7 +297,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#isMinerExists(java.lang.String)
 	 */
 	@Override
-	public boolean isMinerExists(String ip) throws SQLException, Exception {
+	public boolean isMinerExists(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -303,7 +306,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#saveMiner(java.lang.String)
 	 */
 	@Override
-	public boolean saveMiner(String ip) throws SQLException, Exception {
+	public boolean saveMiner(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -312,7 +315,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#deleteMiner(java.lang.String)
 	 */
 	@Override
-	public boolean deleteMiner(String ip) throws SQLException, Exception {
+	public boolean deleteMiner(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -321,7 +324,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#saveMinerSyncTime(java.lang.String, long)
 	 */
 	@Override
-	public boolean saveMinerSyncTime(String ip, long syncTime) throws SQLException, Exception {
+	public boolean saveMinerSyncTime(IP ip, long syncTime) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -330,7 +333,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#getMinerSyncTime(java.lang.String)
 	 */
 	@Override
-	public long getMinerSyncTime(String ip) throws SQLException, Exception {
+	public long getMinerSyncTime(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
@@ -348,7 +351,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#isFullNodeExists(java.lang.String)
 	 */
 	@Override
-	public boolean isFullNodeExists(String ip) throws SQLException, Exception {
+	public boolean isFullNodeExists(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -357,7 +360,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#saveFullNode(java.lang.String)
 	 */
 	@Override
-	public boolean saveFullNode(String ip) throws SQLException, Exception {
+	public boolean saveFullNode(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -366,7 +369,7 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	 * @see com.eqchains.blockchain.EQCBlockChain#deleteFullNode(java.lang.String)
 	 */
 	@Override
-	public boolean deleteFullNode(String ip) throws SQLException, Exception {
+	public boolean deleteFullNode(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -406,12 +409,12 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	}
 
 	@Override
-	public boolean saveIPCounter(String ip, int counter) throws SQLException, Exception {
+	public boolean saveIPCounter(IP ip, int counter) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public int getIPCounter(String ip) throws SQLException, Exception {
+	public int getIPCounter(IP ip) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
@@ -580,6 +583,36 @@ public class EQCBlockChainRPC implements EQCBlockChain<O> {
 	public boolean takeLockSnapshot(Mode mode, ID height) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public Connection getConnection() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ID getTotalLockNumbers(ID height) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ID getTotalNewLockNumbers(ChangeLog changeLog) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ID getTotalPassportNumbers(ID height) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ID getTotalNewPassportNumbers(ChangeLog changeLog) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

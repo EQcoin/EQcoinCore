@@ -53,14 +53,14 @@ import com.eqcoin.util.Util;
  * @date 9-12-2018
  * @email 10509759@qq.com
  */
-public class EQCHeader implements EQCTypable {
+public class EQCHiveRoot implements EQCTypable {
 	/*
-	 * previous Hive hash |  target  | Root hash | 	 Height 	 |     timestamp 	 |       nonce  
+	 * previous Hive hash |  target  | EQcoinSeed hash | 	 Height 	 |     timestamp 	 |       nonce  
    			 64 bytes	     4 bytes     64 bytes  lengthen(>=1bytes) lengthen(>=6bytes)  lengthen(<=4bytes)   
 	 */
 	private byte[]	preHash;
 	private byte[]	target;
-	private byte[]	rootHash;
+	private byte[]	eqCoinSeedHash;
 	private ID height;
 	private ID timestamp;
 	private ID nonce;
@@ -70,15 +70,11 @@ public class EQCHeader implements EQCTypable {
 	private final static int MAX_NONCE_LEN = 4;
 	private final static int TARGET_LEN = 4;
 	
-//	public EQCHeader(O o) throws NoSuchFieldException {
-//		parseEQCHeader(o.getProtocol().array());
-//	}
-	
 	/**
 	 * @param header
 	 * @throws NoSuchFieldException 
 	 */
-	public EQCHeader(byte[] bytes) throws NoSuchFieldException {
+	public EQCHiveRoot(byte[] bytes) throws NoSuchFieldException {
 		parseEQCHeader(bytes);
 	}
 
@@ -86,15 +82,15 @@ public class EQCHeader implements EQCTypable {
 		EQCType.assertNotNull(bytes);
 		preHash = new byte[Util.HASH_LEN];
 		target = new byte[TARGET_LEN];
-		rootHash = new byte[Util.HASH_LEN];
+		eqCoinSeedHash = new byte[Util.HASH_LEN];
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		try {
 			// Parse PreHash
 			is.read(preHash);
 			// Parse Target
 			is.read(target);
-			// Parse RootHash
-			is.read(rootHash);
+			// Parse EQCoinSeedHash
+			is.read(eqCoinSeedHash);
 			// Parse Height
 			height = new ID(EQCType.parseEQCBits(is));
 			// Parse Timestamp
@@ -113,7 +109,7 @@ public class EQCHeader implements EQCTypable {
 //		byte validCount = 0;
 //		byte[] preHash = new byte[Util.HASH_LEN];
 //		byte[] target = new byte[TARGET_LEN];
-//		byte[] rootHash = new byte[Util.HASH_LEN];
+//		byte[] eqCoinSeedHash = new byte[Util.HASH_LEN];
 //		int result = 0;
 //		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 //		byte[] data = null;
@@ -128,8 +124,8 @@ public class EQCHeader implements EQCTypable {
 //			if(result != -1) {
 //				++validCount;
 //			}
-//			// Parse RootHash
-//			result = is.read(rootHash);
+//			// Parse eqCoinSeedHash
+//			result = is.read(eqCoinSeedHash);
 //			if(result != -1) {
 //				++validCount;
 //			}
@@ -156,11 +152,7 @@ public class EQCHeader implements EQCTypable {
 //		return (validCount == VERIFICATION_COUNT) && EQCType.isInputStreamEnd(is);
 //	}
 	
-	/**
-	 * 
-	 */
-	public EQCHeader() {
-		super();
+	public EQCHiveRoot() {
 	}
 
 	public byte[] getBytes() {
@@ -168,7 +160,7 @@ public class EQCHeader implements EQCTypable {
 		try {
 			os.write(preHash);
 			os.write(target);
-			os.write(rootHash);
+			os.write(eqCoinSeedHash);
 			os.write(height.getEQCBits());
 			os.write(timestamp.getEQCBits());
 			os.write(nonce.getEQCBits());
@@ -209,16 +201,16 @@ public class EQCHeader implements EQCTypable {
 		this.target = target;
 	}
 	/**
-	 * @return the rootHash
+	 * @return the EQCoinSeedHash
 	 */
-	public byte[] getRootHash() {
-		return rootHash;
+	public byte[] getEQCoinSeedHash() {
+		return eqCoinSeedHash;
 	}
 	/**
-	 * @param rootHash the rootHash to set
+	 * @param EQCoinSeedHash the EQCoinSeedHash to set
 	 */
-	public void setRootHash(byte[] rootHash) {
-		this.rootHash = rootHash;
+	public void setEQCoinSeedHash(byte[] eqCoinSeedHash) {
+		this.eqCoinSeedHash = eqCoinSeedHash;
 	}
 	/**
 	 * @return the timestamp
@@ -262,7 +254,7 @@ public class EQCHeader implements EQCTypable {
 					"\"PreHash\":" + "\"" + Util.getHexString(preHash) + "\"" + ",\n" +
 					"\"Target\":" + "\"" + Util.getHexString(Util.targetBytesToBigInteger(target).toByteArray()) + "\"" + ",\n" +
 					"\"TargetBytes\":" + "\"" + Integer.toHexString(Util.bytesToInt(target)).toUpperCase() + "\"" + ",\n" +
-					"\"RootHash\":" + "\"" + Util.dumpBytes(rootHash, 16) + "\"" + ",\n" +
+					"\"EQCoinSeedHash\":" + "\"" + Util.dumpBytes(eqCoinSeedHash, 16) + "\"" + ",\n" +
 					"\"Height\":" + "\"" + height + "\"" + ",\n" +
 					"\"Timestamp\":" + "\"" + Util.getGMTTime(timestamp.longValue()) + "\"" + ",\n" +
 					"\"Nonce\":" + "\"" + Integer.toHexString(nonce.intValue()).toUpperCase() + "\"" + "\n" +
@@ -288,7 +280,7 @@ public class EQCHeader implements EQCTypable {
 
 	@Override
 	public boolean isSanity() {
-		if(preHash == null || target == null || rootHash == null || height == null || timestamp == null || nonce == null) {
+		if(preHash == null || target == null || eqCoinSeedHash == null || height == null || timestamp == null || nonce == null) {
 			return false;
 		}
 		if(preHash.length != Util.HASH_LEN) {
@@ -297,7 +289,7 @@ public class EQCHeader implements EQCTypable {
 		if(target.length != TARGET_LEN) {
 			return false;
 		}
-		if(rootHash.length != Util.HASH_LEN) {
+		if(eqCoinSeedHash.length != Util.HASH_LEN) {
 			return false;
 		}
 		if(timestamp.getEQCBits().length < MIN_TIMESTAMP_LEN) {
@@ -326,7 +318,7 @@ public class EQCHeader implements EQCTypable {
 		return (new BigInteger(1, getHash()).compareTo(Util.targetBytesToBigInteger(target)) <= 0);
 	}
 	
-	public boolean isValid(ChangeLog changeLog, byte[] rootHash) throws Exception {
+	public boolean isValid(ChangeLog changeLog, byte[] eqCoinSeedHash) throws Exception {
 		if(!isSanity()) {
 			Log.info("Sanity test failed.");
 			return false;
@@ -335,8 +327,8 @@ public class EQCHeader implements EQCTypable {
 			Log.Error("PreHash is invalid.");
 			return false;
 		}
-		if(!Arrays.equals(this.rootHash, rootHash)) {
-			Log.Error("RootHash is invalid.");
+		if(!Arrays.equals(this.eqCoinSeedHash, eqCoinSeedHash)) {
+			Log.Error("eqCoinSeedHash is invalid.");
 			return false;
 		}
 		if(height.getPreviousID().compareTo(Util.DB().getEQCHive(changeLog.getHeight().getPreviousID(), true).getEqcHeader().getHeight()) != 0) {
@@ -369,7 +361,7 @@ public class EQCHeader implements EQCTypable {
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) {
+	public boolean isValid() {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -378,8 +370,8 @@ public class EQCHeader implements EQCTypable {
 		byte[] bytes = new byte[5];
 		bytes[0] = preHash[33];
 		bytes[1] = preHash[51];
-		bytes[2] = rootHash[33];
-		bytes[3] = rootHash[51];
+		bytes[2] = eqCoinSeedHash[33];
+		bytes[3] = eqCoinSeedHash[51];
 		if(timestamp.equals(ID.ZERO)) {
 			bytes[4] = 0;
 		}

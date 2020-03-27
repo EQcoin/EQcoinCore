@@ -44,6 +44,7 @@ import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.rpc.Balance;
 import com.eqcoin.rpc.Cookie;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.Info;
 import com.eqcoin.rpc.MaxNonce;
@@ -113,17 +114,17 @@ public class TransactionNetworkClient extends EQCRPCClient {
 		return ipList;
 	}
 
-	public static Info sendTransaction(Transaction transaction, String ip) throws Exception {
+	public static Info sendTransaction(Transaction transaction, IP ip) throws Exception {
 		Info info = null;
 		NettyTransceiver nettyTransceiver = null;
 		TransactionNetwork client = null;
 		try {
 			nettyTransceiver = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(ip), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(ip.getIp()), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(TransactionNetwork.class, nettyTransceiver);
-			info = new Info(client.sendTransaction(Util.bytes2O(transaction.getRPCBytes())));
+			info = new Info(client.sendTransaction(Util.bytes2O(transaction.getBytes())));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -188,13 +189,13 @@ public class TransactionNetworkClient extends EQCRPCClient {
 		return account;
 	}
 
-	public static MaxNonce getMaxNonce(Nest<O> nest, String ip) throws Exception {
+	public static MaxNonce getMaxNonce(Nest<O> nest, IP ip) throws Exception {
 		MaxNonce maxNonce = null;
 		NettyTransceiver nettyTransceiver = null;
 		TransactionNetwork client = null;
 		try {
 			nettyTransceiver = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(ip), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(ip.getIp()), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(TransactionNetwork.class, nettyTransceiver);
@@ -238,13 +239,13 @@ public class TransactionNetworkClient extends EQCRPCClient {
 		return balance;
 	}
 
-	public static SignHash getSignHash(ID id, String ip) throws Exception {
+	public static SignHash getSignHash(ID id, IP ip) throws Exception {
 		SignHash signHash = null;
 		NettyTransceiver nettyTransceiver = null;
 		TransactionNetwork client = null;
 		try {
 			nettyTransceiver = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(ip), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(ip.getIp()), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(TransactionNetwork.class, nettyTransceiver);

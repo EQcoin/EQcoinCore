@@ -33,7 +33,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -78,7 +77,7 @@ public class NewHive<T> extends IO<T> implements Comparable<NewHive> {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -98,7 +97,7 @@ public class NewHive<T> extends IO<T> implements Comparable<NewHive> {
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		cookie = new Cookie(is);
-		eqcHive = new EQCHive(EQCType.parseBIN(is), false);
+		eqcHive = new EQCHive(EQCType.parseBIN(is));
 		checkPointHeight = EQCType.parseID(is);
 	}
 

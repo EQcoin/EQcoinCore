@@ -44,29 +44,24 @@ import com.eqcoin.util.Log;
  * @date Jun 22, 2019
  * @email 10509759@qq.com
  */
-public class EQcoinSeedPassport extends Passport {
-	private ID totalSupply;
-	private ID totalLockNumbers;
-	private ID totalPassportNumbers;
+public class EQcoinRootPassport extends Passport {
 	/**
-	 * Record all transaction's numbers include EQcoin transaction,
-	 * SharedSmartContractTransaction and MixedSmartContractTion.
+	 * Body field include MaxBlockSize, BlockInterval, TxFeeRate, CheckPoint
 	 */
-	private ID totalTransactionNumbers;
-	/**
-	 * Body field include TxFeeRate
-	 */
+	// Here maybe need more design only record the height and hash isn't enough If need record the history ?
+	private byte maxBlockSize;
+	private byte blockInterval;
 	// Here maybe need more design only record the txFeeRate isn't enough? If need record the history ?
 	private byte txFeeRate;
-	// Here maybe need more design only record the height and hash isn't enough If need record the history ?
 	private ID checkPointHeight;
 	private byte[] checkPointHash;
 
-	public EQcoinSeedPassport() {
-		super(PassportType.EQCOINSEED);
+
+	public EQcoinRootPassport() {
+		super(PassportType.EQCOINROOT);
 	}
 	
-	public EQcoinSeedPassport(byte[] bytes) throws NoSuchFieldException, IOException {
+	public EQcoinRootPassport(byte[] bytes) throws Exception {
 		super(bytes);
 	}
 	
@@ -75,8 +70,11 @@ public class EQcoinSeedPassport extends Passport {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
-		// TODO Auto-generated method stub
 		super.parseBody(is);
+		// Parse MaxBlockSize
+		maxBlockSize = EQCType.parseBIN(is)[0];
+		// Parse BlockInterval
+		blockInterval = EQCType.parseBIN(is)[0];
 		// Parse TxFeeRate
 		txFeeRate = EQCType.parseBIN(is)[0];
 		// Parse CheckPoint Height
@@ -93,6 +91,8 @@ public class EQcoinSeedPassport extends Passport {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			os.write(super.getBodyBytes());
+			os.write(EQCType.bytesToBIN(new byte[] {maxBlockSize}));
+			os.write(EQCType.bytesToBIN(new byte[] {blockInterval}));
 			os.write(EQCType.bytesToBIN(new byte[]{txFeeRate}));
 			os.write(checkPointHeight.getEQCBits());
 			os.write(EQCType.bytesToBIN(checkPointHash));
@@ -133,6 +133,9 @@ public class EQcoinSeedPassport extends Passport {
 	@Override
 	public boolean isSanity() {
 		if(!super.isSanity()) {
+			return false;
+		}
+		if(maxBlockSize != 1 || blockInterval != 198) {
 			return false;
 		}
 		if(checkPointHeight == null || checkPointHash == null) {
@@ -190,59 +193,31 @@ public class EQcoinSeedPassport extends Passport {
 	}
 
 	/**
-	 * @return the totalSupply
+	 * @return the maxBlockSize
 	 */
-	public ID getTotalSupply() {
-		return totalSupply;
+	public byte getMaxBlockSize() {
+		return maxBlockSize;
 	}
 
 	/**
-	 * @param totalSupply the totalSupply to set
+	 * @param maxBlockSize the maxBlockSize to set
 	 */
-	public void setTotalSupply(ID totalSupply) {
-		this.totalSupply = totalSupply;
+	public void setMaxBlockSize(byte maxBlockSize) {
+		this.maxBlockSize = maxBlockSize;
 	}
 
 	/**
-	 * @return the totalLockNumbers
+	 * @return the blockInterval
 	 */
-	public ID getTotalLockNumbers() {
-		return totalLockNumbers;
+	public byte getBlockInterval() {
+		return blockInterval;
 	}
 
 	/**
-	 * @param totalLockNumbers the totalLockNumbers to set
+	 * @param blockInterval the blockInterval to set
 	 */
-	public void setTotalLockNumbers(ID totalLockNumbers) {
-		this.totalLockNumbers = totalLockNumbers;
-	}
-
-	/**
-	 * @return the totalPassportNumbers
-	 */
-	public ID getTotalPassportNumbers() {
-		return totalPassportNumbers;
-	}
-
-	/**
-	 * @param totalPassportNumbers the totalPassportNumbers to set
-	 */
-	public void setTotalPassportNumbers(ID totalPassportNumbers) {
-		this.totalPassportNumbers = totalPassportNumbers;
-	}
-
-	/**
-	 * @return the totalTransactionNumbers
-	 */
-	public ID getTotalTransactionNumbers() {
-		return totalTransactionNumbers;
-	}
-
-	/**
-	 * @param totalTransactionNumbers the totalTransactionNumbers to set
-	 */
-	public void setTotalTransactionNumbers(ID totalTransactionNumbers) {
-		this.totalTransactionNumbers = totalTransactionNumbers;
+	public void setBlockInterval(byte blockInterval) {
+		this.blockInterval = blockInterval;
 	}
 	
 }

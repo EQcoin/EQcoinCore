@@ -86,23 +86,23 @@ import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
-import com.eqcoin.blockchain.hive.EQCHeader;
+import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.hive.EQCHive;
-import com.eqcoin.blockchain.hive.EQCRoot;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.passport.SmartContractPassport.LanguageType;
 import com.eqcoin.blockchain.passport.SmartContractPassport.State;
-import com.eqcoin.blockchain.seed.EQcoinSeedHeader;
-import com.eqcoin.blockchain.transaction.CoinbaseTransaction;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
+import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.TxOut;
+import com.eqcoin.blockchain.transaction.ZionCoinbaseTransaction;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.EQCPublicKey;
 import com.eqcoin.crypto.MerkleTree;
@@ -113,6 +113,7 @@ import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
 import com.eqcoin.rpc.Code;
 import com.eqcoin.rpc.Cookie;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.Info;
 import com.eqcoin.rpc.client.MinerNetworkClient;
@@ -190,11 +191,13 @@ public final class Util {
 
 	public final static int MILLIAN = 1000000;
 
-	public final static int ONE_MB = 1048576;
+	public final static int KILOBYTE = 1024;
 	
-	public final static int MAX_BLOCK_SIZE = ONE_MB;
+	public final static int ONE_MB = KILOBYTE * KILOBYTE;
 	
-	public final static int MAX_NONCE = 268435455;
+	public final static int MAX_EQCHIVE_SIZE = ONE_MB;
+	
+	public final static int MAX_NONCE = (int) Math.pow(2, 28);//268435455;
 	
 	public final static int HASH_LEN = 64;
 
@@ -298,17 +301,18 @@ public final class Util {
 	
 	public static final BigInteger EUROPA = BigInteger.valueOf(1008);
 	
+	// Here exists one bug need change null hash to SHA3-512(EQCType.NULL_ARRAY)
 	public static final byte[] NULL_HASH = Arrays.copyOfRange(new BigInteger("C333A8150751C675CDE1312860731E54818F95EDC1563839501CE5F486DE1C79EA6675EECA26833E41341B5B5D1E72800CBBB13AE6AA289D11ACB4D4413B1B2D", 16).toByteArray(), 1, 65);
 	
-	public static final byte[] SINGULARITY = ".".getBytes();
+	public static final byte[] SINGULARITY = EQCType.NULL_ARRAY;
 	
 	public static final String REGEX_IP = "";
 	
 	public static final String REGEX_VERSION = "";
 	
-	public static final String SINGULARITY_IP = "129.28.206.27";//"14.221.176.195";
+	public static final IP SINGULARITY_IP = new IP("129.28.206.27");//"14.221.176.195";
 	
-	public static String IP = null;//"14.221.176.18";//"14.221.177.212";//"192.168.0.101";//"14.221.177.223";//"129.28.206.27";
+	public static final IP LOCAL_IP = null;//"14.221.176.18";//"14.221.177.212";//"192.168.0.101";//"14.221.177.223";//"129.28.206.27";
 	
 	public static final int MINER_NETWORK_PORT = 7799;
 	
@@ -444,7 +448,7 @@ public final class Util {
 //			EQCBlockChainH2.getInstance().saveEQCBlock(eqcBlock);
 //			Log.info("1");
 			DB().saveEQCHive(eqcBlock);
-			DB().saveEQCBlockTailHeight(ID.ZERO);
+			DB().saveEQCHiveTailHeight(ID.ZERO);
 //			Address address = eqcBlock.getTransactions().getAddressList().get(0);
 //			if(!EQCBlockChainH2.getInstance().isAddressExists(address)) {
 //				EQCBlockChainH2.getInstance().appendAddress(address, SerialNumber.ZERO);
@@ -460,7 +464,7 @@ public final class Util {
 		}
 		cookie = new Cookie();
 //		Util.IP = getIP();
-		cookie.setIp(IP);//cookie.setIp(getIP());
+		cookie.setIp(LOCAL_IP);
 		cookie.setVersion(PROTOCOL_VERSION);
 //		info = new Info();
 //		info.setCode(Code.OK);
@@ -486,7 +490,7 @@ public final class Util {
 	public static byte[] dualSHA3_512(final byte[] data) {
 		byte[] bytes = null;
 		try {
-			bytes = MessageDigest.getInstance("SHA3-512").digest(MessageDigest.getInstance("SHA3-512").digest(data));
+			bytes = MessageDigest.getInstance(SHA3_512).digest(MessageDigest.getInstance(SHA3_512).digest(data));
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -845,9 +849,8 @@ public final class Util {
 			foo = (bytes[3] & 0xFF | (bytes[2] & 0xFF) << 8 | (bytes[1] & 0xFF) << 16 | (bytes[0] & 0xFF) << 24);
 		}
 		return foo;
-//		return ByteBuffer.allocate(4).put(bytes, 0, bytes.length).flip().getInt();
 	}
-
+	
 	public static byte[] longToBytes(final long foo) {
 		return ByteBuffer.allocate(8).putLong(foo).array();
 	}
@@ -1142,9 +1145,9 @@ public final class Util {
 		return privateKey;
 	}
 
-	public static boolean verifySignature(LockType lockType, Transaction transaction, byte[] TXIN_HEADER_HASH, int ...SN) {
-		return verifySignature(transaction.getCompressedPublickey().getCompressedPublickey(), transaction.getEqcSegWit().getSignature(), lockType, transaction, TXIN_HEADER_HASH, SN);
-	}
+//	public static boolean verifySignature(LockType lockType, Transaction transaction, byte[] TXIN_HEADER_HASH, int ...SN) {
+//		return verifySignature(transaction.getPublickey().getPublickey(), transaction.getEqcSegWit().getSignature(), lockType, transaction, TXIN_HEADER_HASH, SN);
+//	}
 
 	public static boolean verifySignature(byte[] compressedPublickey, byte[] userSignature, LockType lockType, Transaction transaction, byte[] TXIN_HEADER_HASH, int ...SN) {
 		boolean isTransactionValid = false;
@@ -1177,7 +1180,7 @@ public final class Util {
 			if(SN.length == 1) {
 				signature.update(intToBytes(SN[0]));
 			}
-			signature.update(transaction.getBytes(TransactionShape.RPC));
+			signature.update(transaction.getBytes());
 			isTransactionValid = signature.verify(userSignature);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -1209,7 +1212,7 @@ public final class Util {
 			if(SN.length == 1) {
 				ecdsa.update(intToBytes(SN[0]));
 			}
-			ecdsa.update(transaction.getBytes(TransactionShape.RPC));
+			ecdsa.update(transaction.getBytes());
 			sign = ecdsa.sign();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -1325,7 +1328,7 @@ public final class Util {
 			return Base58.encode(new byte[] { (byte) type.ordinal() }) + Base58.encode(os.toByteArray());
 		}
 		
-		public static boolean verifyAddressPublickey(String address, byte[] compressedPublickey) {
+		public static boolean verifyLockAndPublickey(String address, byte[] compressedPublickey) {
 			byte[] hidden_address = null;
 			byte[] publickey_hash = null;
 			LockType lockType = getAddressType(address);
@@ -1648,15 +1651,39 @@ public final class Util {
 		
 	}
 
-	public static CoinbaseTransaction generateCoinBaseTransaction(Lock lock,
+	public static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(Lock minerLock,
 			ChangeLog changeLog) {
-		CoinbaseTransaction transaction = new CoinbaseTransaction();
+		TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
 		TxOut eqcFederalTxOut = new TxOut();
 		TxOut minerTxOut = new TxOut();
 		try {
-			Passport passport = changeLog.getFilter().getPassport(ID.ONE, true);
-			eqcFederalTxOut.setLock(changeLog.getFilter().getLock(passport.getLockID(), true));
-			minerTxOut.setLock(lock);
+			Lock eqcFederalLock = new Lock();
+			eqcFederalLock.setId(ID.ZERO);
+			eqcFederalTxOut.setLock(eqcFederalLock);
+			minerTxOut.setLock(minerLock);
+			
+			eqcFederalTxOut.setValue(Util.EQC_FEDERATION_COINBASE_REWARD);
+			minerTxOut.setValue(Util.MINER_COINBASE_REWARD);
+
+			transaction.addTxOut(eqcFederalTxOut);
+			transaction.addTxOut(minerTxOut);
+			transaction.setNonce(changeLog.getHeight().getNextID());
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
+		}
+		return transaction;
+	}
+	
+	public static ZionCoinbaseTransaction generateZionCoinbaseTransaction(Lock minerLock,
+			ChangeLog changeLog) {
+		ZionCoinbaseTransaction transaction = new ZionCoinbaseTransaction();
+		TxOut eqcFederalTxOut = new TxOut();
+		TxOut minerTxOut = new TxOut();
+		try {
+			Lock eqcFederalLock = new Lock();
+			eqcFederalLock.setId(ID.ZERO);
+			eqcFederalTxOut.setLock(eqcFederalLock);
+			minerTxOut.setLock(minerLock);
 			
 			eqcFederalTxOut.setValue(Util.EQC_FEDERATION_COINBASE_REWARD);
 			minerTxOut.setValue(Util.MINER_COINBASE_REWARD);
@@ -1698,7 +1725,7 @@ public final class Util {
 //		eqcBlock.getTransactions().setTransactionsHeader(transactionsHeader);
 
 		// Create Transaction
-		CoinbaseTransaction transaction = new CoinbaseTransaction();
+		TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
 
 		TxOut txOut = new TxOut();
 		txOut.getLock().setReadableLock(SINGULARITY_A);
@@ -1710,12 +1737,11 @@ public final class Util {
 		txOut.setValue(MINER_COINBASE_REWARD);
 		transaction.addTxOut(txOut);
 		
-		transaction.preparePlanting(changeLog);
-		eqcHive.geteQcoinSeed().addCoinbaseTransaction(transaction, changeLog);
+		eqcHive.getEQcoinSeed().addCoinbaseTransaction(transaction, changeLog);
 		
 		// Set EQcoinSubchainHeader
-		eqcHive.geteQcoinSeed().getEQcoinSubchainHeader().setTotalPassportNumbers(ID.valueOf(eqcHive.geteQcoinSeed().getNewHelixList().size()));
-		eqcHive.geteQcoinSeed().getEQcoinSubchainHeader().setTotalTransactionNumbers(ID.valueOf(eqcHive.geteQcoinSeed().getNewTransactionList().size()));
+		eqcHive.getEQcoinSeed().getEQcoinSeedRoot().setTotalPassportNumbers(changeLog.getTotalPassportNumbers());
+		eqcHive.getEQcoinSeed().getEQcoinSeedRoot().setTotalTransactionNumbers(ID.valueOf(eqcHive.getEQcoinSeed().getNewTransactionList().size()));
 		
 		// Add new address in address list
 //		if (!eqcBlock.getTransactions().isAddressExists(address.getAddress())) {
@@ -1734,18 +1760,18 @@ public final class Util {
 //		index.setTransactionsHash(eqcBlock.getTransactions().getHash());
 
 		// Create Root
-		EQCRoot root = new EQCRoot();
-		root.setAccountsMerkelTreeRoot(changeLog.getPassportMerkleTreeRoot());
-		root.setSubchainsMerkelTreeRoot(eqcHive.geteQcoinSeed().getRoot());
+//		EQCRoot root = new EQCRoot();
+//		root.setAccountsMerkelTreeRoot(changeLog.getPassportMerkleTreeRoot());
+//		root.setSubchainsMerkelTreeRoot(eqcHive.geteQcoinSeed().getRoot());
 
 		// Create EQC block header
-		EQCHeader header = new EQCHeader();
+		EQCHiveRoot header = new EQCHiveRoot();
 		header.setPreHash(MAGIC_HASH);
 		header.setTarget(Util.getDefaultTargetBytes());
 		header.setHeight(ID.ZERO);
 		header.setTimestamp(new ID(0));
 		header.setNonce(ID.ZERO);
-		header.setRootHash(root.getHash());
+		header.setEQCoinSeedHash(eqcHive.getEQcoinSeed().getHash());
 		eqcHive.setEqcHeader(header);
 		
 		while(!header.isDifficultyValid()) {
@@ -1753,7 +1779,6 @@ public final class Util {
 		}
 		
 //		eqcBlock.setIndex(index);
-		eqcHive.setRoot(root);
 		
 		changeLog.merge();
 		changeLog.takeSnapshot();
@@ -1762,11 +1787,11 @@ public final class Util {
 		return eqcHive;
 	}
 
-	public static long cypherTotalSupply(ID height) {
+	public static ID cypherTotalSupply(ID height) {
 		if (height.compareTo(getMaxCoinbaseHeight(height)) < 0) {
-			return (COINBASE_REWARD) * (height.getNextID().longValue());
+			return new ID((COINBASE_REWARD) * (height.getNextID().longValue()));
 		} else {
-			return MAX_EQC;
+			return new ID(MAX_EQC);
 		}
 	}
 
@@ -1818,20 +1843,20 @@ public final class Util {
 
 	
 
-	public static CompressedPublickey getPublicKey(ID serialNumber, EQCHive eqcBlock) throws ClassNotFoundException, SQLException {
-		CompressedPublickey publicKey = null;
-		publicKey = EQCBlockChainH2.getInstance().getPublicKey(serialNumber);
-		if (publicKey == null) {
-			Vector<CompressedPublickey> publicKeyList = eqcBlock.geteQcoinSeed().getNewCompressedPublickeyList();
-			for (CompressedPublickey publicKey2 : publicKeyList) {
-				if (publicKey2.equals(serialNumber)) {
-					publicKey = publicKey2;
-					break;
-				}
-			}
-		}
-		return publicKey;
-	}
+//	public static EQCPublickey getPublicKey(ID serialNumber, EQCHive eqcBlock) throws ClassNotFoundException, SQLException {
+//		EQCPublickey publicKey = null;
+//		publicKey = EQCBlockChainH2.getInstance().getPublicKey(serialNumber);
+//		if (publicKey == null) {
+//			Vector<EQCPublickey> publicKeyList = eqcBlock.getEQcoinSeed().getNewCompressedPublickeyList();
+//			for (EQCPublickey publicKey2 : publicKeyList) {
+//				if (publicKey2.equals(serialNumber)) {
+//					publicKey = publicKey2;
+//					break;
+//				}
+//			}
+//		}
+//		return publicKey;
+//	}
 
 	public static String getAddress(ID id, EQCHive eqcBlock) throws ClassNotFoundException, SQLException, NoSuchFieldException, IllegalStateException, IOException {
 		Lock lock = null;
@@ -1930,7 +1955,7 @@ public final class Util {
 	}
 
 	@Deprecated
-	public static long getBalance(String address) throws ClassNotFoundException, SQLException, NoSuchFieldException, IllegalStateException, IOException {
+	public static long getBalance(String address) throws Exception {
 		Lock strAddress = new Lock();
 		strAddress.setReadableLock(address);
 		strAddress.setId(EQCBlockChainH2.getInstance().getPassport(strAddress.getAddressAI()).getId());
@@ -2127,7 +2152,7 @@ public final class Util {
 	
 	@Deprecated
 	public static void saveEQCBlockTailHeight(ID height) throws ClassNotFoundException, SQLException {
-		EQCBlockChainH2.getInstance().saveEQCBlockTailHeight(height);
+		EQCBlockChainH2.getInstance().saveEQCHiveTailHeight(height);
 //		EQCBlockChainRocksDB.getInstance().saveEQCBlockTailHeight(height);
 	}
 	
@@ -2152,35 +2177,35 @@ public final class Util {
 		IPList<O> ipList = EQCBlockChainH2.getInstance().getMinerList();
 		IPList<O> ipList2 = null;
 		if (ipList.isEmpty()) {
-			if (IP.equals(SINGULARITY_IP)) {
+			if (LOCAL_IP.equals(SINGULARITY_IP)) {
 				return;
 			}
 			ipList = MinerNetworkClient.getMinerList(SINGULARITY_IP);
 			if (ipList == null || ipList.isEmpty()) {
 				return;
 			} else {
-				for (String ip : ipList.getIpList()) {
+				for (IP ip : ipList.getIpList()) {
 					EQCBlockChainH2.getInstance().saveMiner(ip);
 				}
 			}
 		}
-		for (String ip : ipList.getIpList()) {
-			if(!Util.IP.equals(ip)) {
+		for (IP ip : ipList.getIpList()) {
+			if(!LOCAL_IP.equals(ip)) {
 				try {
 					ipList2 = MinerNetworkClient.getMinerList(ip);
 				} catch (Exception e) {
 					Log.Error(e.getMessage());
 				}
 				if (ipList2 != null) {
-					for (String ip1 : ipList2.getIpList()) {
+					for (IP ip1 : ipList2.getIpList()) {
 						EQCBlockChainH2.getInstance().saveMiner(ip1);
 					}
 				}
 			}
 		}
 		ipList2 = EQCBlockChainH2.getInstance().getMinerList();
-		for (String ip : ipList2.getIpList()) {
-			if (!Util.IP.equals(ip)) {
+		for (IP ip : ipList2.getIpList()) {
+			if (!LOCAL_IP.equals(ip)) {
 				if (MinerNetworkClient.ping(ip) == -1) {
 					updateDisconnectIPStatus(ip);
 				}
@@ -2189,78 +2214,80 @@ public final class Util {
 	}
 	
 	public static void recoveryAccounts(ID height) throws ClassNotFoundException, SQLException, Exception {
-		// From height to checkpoint verify if Block is valid
-		EQcoinSeedPassport eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
-		if(height.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) < 0) {
-			throw new IllegalStateException("Can't recovery to the height: " + height + " which below the check point: " + eQcoinSubchainAccount.getCheckPointHeight());
-		}
-		if(height.compareTo(Util.DB().getEQCBlockTailHeight()) > 0) {
-			throw new IllegalStateException("Can't recovery to the height: " + height + " which above current block's tail: " + Util.DB().getEQCBlockTailHeight());
-		}
-		long checkPointHeight = eQcoinSubchainAccount.getCheckPointHeight().longValue();
-		if(checkPointHeight == 0) {
-			checkPointHeight = 1;
-		}
-		long base = height.longValue();
-		boolean isSanity = false;
-		ChangeLog changeLog = null;
-		Log.info("Begin Recovery Account's status from height: " + height);
-		for (; base >= checkPointHeight; --base) {
-			Log.info("Try to recovery No. " + base + "'s Account status");
-			changeLog = new ChangeLog(ID.valueOf(base), new Filter(Mode.VALID));
-			if (Util.DB().getEQCHive(ID.valueOf(base), true).isValid(changeLog)) {
-				Log.info("No. " + base + " verify passed");
-				// Through merge recovery all relevant Account
-				changeLog.merge();
-				Log.info("Successful recovery No. " + base + " 's Account Status");
-				changeLog.clear();
-				isSanity = true;
-				break;
-			}
-			else {
-				Log.info("Try to recovery No. " + base + "'s Account status failed");
-			}
-		}
-
-		if (!isSanity) {
-			throw new IllegalStateException("Sanity test failed please check your computer");
-		}
-
-		// Due to base height's Account status saved in the Account table so here just deleteAccountSnapshotFrom base
-		EQCBlockChainH2.getInstance().deletePassportSnapshotFrom(ID.valueOf(base), true);
-		
-		// Delete extra Account
-		EQcoinSeedPassport eQcoinSubchainAccount2 = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
-		for (long i=eQcoinSubchainAccount2.getTotalPassportNumbers().getNextID().longValue(); i<=eQcoinSubchainAccount.getTotalPassportNumbers().longValue(); ++i) {
-			Util.DB().deletePassport(ID.valueOf(i), Mode.GLOBAL);
-		}
-		
-		// Delete extra EQCHive
-		for(long i=base; i<=Util.DB().getEQCBlockTailHeight().longValue(); ++i) {
-			Util.DB().deleteEQCHive(ID.valueOf(i));
-		}
-		
-		Util.DB().saveEQCBlockTailHeight(ID.valueOf(base));
-		Log.info("Recovery to new tail: " + base);
-//		long i = base;
-//		for (; i <= height.longValue(); ++i) {
-//			changeLog = new AccountsMerkleTree(ID.valueOf(i), new Filter(Mode.VALID));
-//			if (Util.DB().getEQCBlock(ID.valueOf(i), false).isValid(changeLog)) {
+		// Here exists one bug
+//		// From height to checkpoint verify if Block is valid
+//		EQcoinSeedPassport eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+//		if(height.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) < 0) {
+//			throw new IllegalStateException("Can't recovery to the height: " + height + " which below the check point: " + eQcoinSubchainAccount.getCheckPointHeight());
+//		}
+//		if(height.compareTo(Util.DB().getEQCBlockTailHeight()) > 0) {
+//			throw new IllegalStateException("Can't recovery to the height: " + height + " which above current block's tail: " + Util.DB().getEQCBlockTailHeight());
+//		}
+//		long checkPointHeight = eQcoinSubchainAccount.getCheckPointHeight().longValue();
+//		if(checkPointHeight == 0) {
+//			checkPointHeight = 1;
+//		}
+//		long base = height.longValue();
+//		boolean isSanity = false;
+//		ChangeLog changeLog = null;
+//		Log.info("Begin Recovery Account's status from height: " + height);
+//		for (; base >= checkPointHeight; --base) {
+//			Log.info("Try to recovery No. " + base + "'s Account status");
+//			changeLog = new ChangeLog(ID.valueOf(base), new Filter(Mode.VALID));
+//			if (Util.DB().getEQCHive(ID.valueOf(base), true).isValid(changeLog)) {
 //				Log.info("No. " + base + " verify passed");
-//				changeLog.takeSnapshot();
+//				// Through merge recovery all relevant Account
 //				changeLog.merge();
+//				Log.info("Successful recovery No. " + base + " 's Account Status");
 //				changeLog.clear();
-//				Util.DB().saveEQCBlockTailHeight(ID.valueOf(i));
-//			} else {
+//				isSanity = true;
 //				break;
 //			}
-//		}
-//		if (i < height.longValue()) {
-//			for (i += 1; i <= height.longValue(); ++i) {
-//				Log.info("Begin delete No. " + i + " Hive");
-//				Util.DB().deleteEQCBlock(ID.valueOf(i));
+//			else {
+//				Log.info("Try to recovery No. " + base + "'s Account status failed");
 //			}
 //		}
+//
+//		if (!isSanity) {
+//			throw new IllegalStateException("Sanity test failed please check your computer");
+//		}
+//
+//		// Due to base height's Account status saved in the Account table so here just deleteAccountSnapshotFrom base
+//		EQCBlockChainH2.getInstance().deletePassportSnapshotFrom(ID.valueOf(base), true);
+//		
+//		// Delete extra Account
+//		EQcoinSeedPassport eQcoinSubchainAccount2 = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+//		EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQCHive(Util.DB().getEQCBlockTailHeight(), true).getEQcoinSeed().getEQcoinSeedRoot();
+//		for (long i=eQcoinSubchainAccount2.getTotalPassportNumbers().getNextID().longValue(); i<=eQcoinSubchainAccount.getTotalPassportNumbers().longValue(); ++i) {
+//			Util.DB().deletePassport(ID.valueOf(i), Mode.GLOBAL);
+//		}
+//		
+//		// Delete extra EQCHive
+//		for(long i=base; i<=Util.DB().getEQCBlockTailHeight().longValue(); ++i) {
+//			Util.DB().deleteEQCHive(ID.valueOf(i));
+//		}
+//		
+//		Util.DB().saveEQCBlockTailHeight(ID.valueOf(base));
+//		Log.info("Recovery to new tail: " + base);
+////		long i = base;
+////		for (; i <= height.longValue(); ++i) {
+////			changeLog = new AccountsMerkleTree(ID.valueOf(i), new Filter(Mode.VALID));
+////			if (Util.DB().getEQCBlock(ID.valueOf(i), false).isValid(changeLog)) {
+////				Log.info("No. " + base + " verify passed");
+////				changeLog.takeSnapshot();
+////				changeLog.merge();
+////				changeLog.clear();
+////				Util.DB().saveEQCBlockTailHeight(ID.valueOf(i));
+////			} else {
+////				break;
+////			}
+////		}
+////		if (i < height.longValue()) {
+////			for (i += 1; i <= height.longValue(); ++i) {
+////				Log.info("Begin delete No. " + i + " Hive");
+////				Util.DB().deleteEQCBlock(ID.valueOf(i));
+////			}
+////		}
 	}
 	
 	public static void regenerateAccountStatus() throws ClassNotFoundException, SQLException, Exception {
@@ -2271,7 +2298,7 @@ public final class Util {
 		Log.info("Delete all AccountSnapshot");
 		EQCBlockChainH2.getInstance().deletePassportSnapshotFrom(ID.ZERO, true);
 		recoverySingularityStatus();
-		ID tail = Util.DB().getEQCBlockTailHeight();
+		ID tail = Util.DB().getEQCHiveTailHeight();
 		Log.info("Current have " + tail + " EQCHive");
 		long base = 1;
 		ChangeLog changeLog = null;
@@ -2280,7 +2307,7 @@ public final class Util {
 			eqcHive = Util.DB().getEQCHive(ID.valueOf(base), false);
 			if(eqcHive != null) {
 				changeLog = new ChangeLog(ID.valueOf(base), new Filter(Mode.VALID));
-				if(eqcHive.isValid(changeLog)) {
+				if(eqcHive.isValid()) {
 					changeLog.takeSnapshot();
 					changeLog.merge();
 					changeLog.clear();
@@ -2324,7 +2351,7 @@ public final class Util {
 //		}
 	}
 	
-	public static void updateDisconnectIPStatus(String ip) {
+	public static void updateDisconnectIPStatus(IP ip) {
 		try {
 			int counter = 0;
 			if (Util.DB().isIPExists(ip, NODETYPE.NONE)) {

@@ -33,12 +33,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction;
-import com.eqcoin.blockchain.transaction.TransferOperationTransaction;
-import com.eqcoin.blockchain.transaction.ZionOperationTransaction;
+import com.eqcoin.blockchain.transaction.TransferOPTransaction;
+import com.eqcoin.blockchain.transaction.ZionOPTransaction;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -50,86 +49,45 @@ import com.eqcoin.util.Util;
  * @date Aug 19, 2019
  * @email 10509759@qq.com
  */
-public class UpdateCheckPointOperation extends Operation {
+public class UpdateCheckPointOP extends Operation {
 	private byte[] checkPointHash;
 	private ID checkPointHeight;
 	
-	public UpdateCheckPointOperation(OP op) {
-		super(OP.CHECKPOINT);
+	public UpdateCheckPointOP() {
+		op = OP.CHECKPOINT;
 	}
 
-	public UpdateCheckPointOperation(ByteArrayInputStream is, LockShape lockShape) throws NoSuchFieldException, IllegalArgumentException, IOException {
-		super(OP.CHECKPOINT);
-		parseHeader(is, lockShape);
-		parseBody(is, lockShape);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#getBytes(com.eqzip
-	 * .eqcoin.blockchain.Address.AddressShape)
-	 */
-	@Override
-	public byte[] getBytes(LockShape lockShape) {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Header
-			os.write(getHeaderBytes(lockShape));
-			// Serialization Body
-			os.write(getBodyBytes(lockShape));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#getBin(com.eqzip.
-	 * eqcoin.blockchain.Address.AddressShape)
-	 */
-	@Override
-	public byte[] getBin(LockShape lockShape) {
-		return EQCType.bytesToBIN(getBytes(lockShape));
+	public UpdateCheckPointOP(ByteArrayInputStream is, LockShape lockShape) throws Exception {
+		super(is);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#execute()
 	 */
 	@Override
-	public boolean execute(Transaction transaction) throws Exception {
-		EQcoinSeedPassport eQcoinSeedPassport = (EQcoinSeedPassport) transaction.getChangeLog().getFilter().getPassport(ID.ONE, true);
+	public void execute() throws Exception {
+		EQcoinRootPassport eQcoinSeedPassport = (EQcoinRootPassport) transaction.getChangeLog().getFilter().getPassport(ID.ONE, true);
 		eQcoinSeedPassport.setCheckPointHash(checkPointHash);
 		eQcoinSeedPassport.setCheckPointHeight(checkPointHeight);
 		transaction.getChangeLog().getFilter().savePassport(eQcoinSeedPassport);
-		return true;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isMeetPreconditions()
 	 */
 	@Override
-	public boolean isMeetPreconditions(Transaction transaction) throws Exception {
-		if(!transaction.getTxIn().getPassportId().equals(ID.TWO)) {
+	public boolean isMeetPreconditions() throws Exception {
+		if(!transaction.getTxIn().getLock().getId().equals(ID.TWO)) {
 			return false;
 		}
-		if(!(transaction instanceof ZionOperationTransaction)) {
+		if(!(transaction instanceof ZionOPTransaction)) {
 			return false;
 		}
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isSanity(com.eqzip.eqcoin.blockchain.transaction.Address.AddressShape[])
-	 */
 	@Override
-	public boolean isSanity(LockShape lockShape) {
+	public boolean isSanity() {
 		if(op != OP.CHECKPOINT) {
 			return false;
 		}
@@ -145,7 +103,7 @@ public class UpdateCheckPointOperation extends Operation {
 	@Override
 	public String toInnerJson() {
 		return 
-		"\"UpdateCheckPointOperation\":" + 
+		"\"UpdateCheckPointOP\":" + 
 		"\n{" +
 		"\"CheckPointHash\":" + "\"" + Util.dumpBytes(checkPointHash, 16) + "\","  + 
 		"\"CheckPointHeight\":" + "\"" + checkPointHeight + "\""  + 
@@ -156,7 +114,7 @@ public class UpdateCheckPointOperation extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#parseBody(java.io.ByteArrayInputStream, com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public void parseBody(ByteArrayInputStream is, LockShape lockShape)
+	public void parseBody(ByteArrayInputStream is)
 			throws NoSuchFieldException, IOException, IllegalArgumentException {
 		checkPointHash = EQCType.parseBIN(is);
 		checkPointHeight = EQCType.parseID(is);
@@ -166,7 +124,7 @@ public class UpdateCheckPointOperation extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#getBodyBytes(com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public byte[] getBodyBytes(LockShape lockShape) {
+	public byte[] getBodyBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			os.write(EQCType.bytesToBIN(checkPointHash));
@@ -211,11 +169,51 @@ public class UpdateCheckPointOperation extends Operation {
 	 * @see com.eqcoin.blockchain.transaction.operation.Operation#isValid(com.eqcoin.blockchain.changelog.ChangeLog)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
-		if(checkPointHeight.compareTo(changeLog.getHeight()) >=0) {
+	public boolean isValid() throws Exception {
+		if(checkPointHeight.compareTo(transaction.getChangeLog().getHeight()) >=0) {
 			return false;
 		}
-		if (!Arrays.equals(checkPointHash, changeLog.getEQCHeaderHash(checkPointHeight))) {
+		if (!Arrays.equals(checkPointHash, transaction.getChangeLog().getEQCHeaderHash(checkPointHeight))) {
+			return false;
+		}
+		return true;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + Arrays.hashCode(checkPointHash);
+		result = prime * result + ((checkPointHeight == null) ? 0 : checkPointHeight.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		UpdateCheckPointOP other = (UpdateCheckPointOP) obj;
+		if (!Arrays.equals(checkPointHash, other.checkPointHash)) {
+			return false;
+		}
+		if (checkPointHeight == null) {
+			if (other.checkPointHeight != null) {
+				return false;
+			}
+		} else if (!checkPointHeight.equals(other.checkPointHeight)) {
 			return false;
 		}
 		return true;

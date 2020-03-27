@@ -30,15 +30,18 @@
 package com.eqcoin.blockchain.transaction;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 
+import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
+import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.serialization.EQCType;
+import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 
 /**
@@ -48,8 +51,8 @@ import com.eqcoin.util.Log;
  */
 public class ZionTransaction extends TransferTransaction {
 	
-	public ZionTransaction(byte[] bytes, TransactionShape transactionShape) throws Exception {
-		super(bytes, transactionShape);
+	public ZionTransaction(byte[] bytes) throws Exception {
+		super(bytes);
 	}
 	
 	public ZionTransaction() {
@@ -71,12 +74,9 @@ public class ZionTransaction extends TransferTransaction {
 	 */
 	@Override
 	public boolean isDerivedValid() throws Exception {
-		if(!super.isDerivedValid()) {
-			return false;
-		}
 		for(TxOut txOut:txOutList) {
-			Passport passport = changeLog.getFilter().getPassport(txOut.getLock(), true);
-			if(passport != null) {
+			Lock lock = changeLog.getFilter().getLock(txOut.getLock().getReadableLock(), true);
+			if(lock != null) {
 				Log.Error("The Lock already exists this is invalid.");
 				return false;
 			}
@@ -92,7 +92,7 @@ public class ZionTransaction extends TransferTransaction {
 	}
 
 	@Override
-	public boolean isDerivedSanity(TransactionShape transactionShape) {
+	public boolean isDerivedSanity() {
 		// Check if the TxOutList is sanity
 		if(txOutList == null) {
 			return false;
@@ -101,45 +101,77 @@ public class ZionTransaction extends TransferTransaction {
 			return false;
 		}
 		for (TxOut txOut : txOutList) {
-			if(transactionShape == TransactionShape.SEED) {
-				if (!txOut.isSanity(LockShape.ID)) {
-					return false;
-				}
-			}
-			else {
 				if (!txOut.isSanity(LockShape.READABLE)) {
 					return false;
 				}
-			}
 		}
 		// Check if the TxOut's Passport is unique
-		if (!isTxOutPassportUnique(transactionShape)) {
+		if (!isTxOutPassportUnique()) {
 			Log.Error("TxOut Passport isn't unique");
 			return false;
 		}
 		return true;
 	}
 
-	public boolean isTxOutPassportUnique(TransactionShape transactionShape) {
-		if(transactionShape == TransactionShape.RPC) {
-			for (int i = 0; i < txOutList.size(); ++i) {
-				for (int j = i + 1; j < txOutList.size(); ++j) {
-					if (txOutList.get(i).getLock().getReadableLock().equals(txOutList.get(j).getLock().getReadableLock())) {
-						return false;
-					}
-				}
-			}
-		}
-		else {
-			for (int i = 0; i < txOutList.size(); ++i) {
-				for (int j = i + 1; j < txOutList.size(); ++j) {
-					if (txOutList.get(i).getPassportId().equals(txOutList.get(j).getPassportId())) {
-						return false;
-					}
+	public boolean isTxOutPassportUnique() {
+		for (int i = 0; i < txOutList.size(); ++i) {
+			for (int j = i + 1; j < txOutList.size(); ++j) {
+				if (txOutList.get(i).getLock().getReadableLock().equals(txOutList.get(j).getLock().getReadableLock())) {
+					return false;
 				}
 			}
 		}
 		return true;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#derivedTxOutPlanting()
+	 */
+	@Override
+	protected void derivedTxOutPlanting() throws Exception {
+		Lock lock = null;
+		Passport passport = null;
+		// Update current Transaction's TxOut Passport
+		for (TxOut txOut : txOutList) {
+			lock = txOut.getLock();
+			lock.setId(changeLog.getNextLockId());
+			passport = new AssetPassport();
+			passport.setId(changeLog.getNextPassportId());
+			passport.setLockID(lock.getId());
+			passport.deposit(new ID(txOut.getValue()));
+			passport.setUpdateHeight(changeLog.getHeight());
+			lock.setPassportId(passport.getId());
+			changeLog.getFilter().saveLock(lock);
+			changeLog.getFilter().savePassport(passport);
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseHeader(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parseHeader(ByteArrayInputStream is) throws Exception {
+		parseSoloAndTransactionType(is);
+		parseNonce(is);
+		parseTxIn(is);
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#getHeaderBytes()
+	 */
+	@Override
+	public byte[] getHeaderBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			serializeSoloAndTransactionTypeBytes(os);
+			serializeNonce(os);
+			serializeTxInBytes(os);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		return os.toByteArray();
 	}
 	
 }

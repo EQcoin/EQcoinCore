@@ -43,12 +43,13 @@ import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.seed.EQcoinSeedHeader;
+import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.TailInfo;
 import com.eqcoin.rpc.client.MinerNetworkClient;
@@ -155,7 +156,7 @@ public class SyncBlockService extends EQCService {
 
 	private void onFind(EQCServiceState state) {
 		IPList<O> minerList = null;
-		String maxTail = null;
+		IP maxTail = null;
 		TailInfo minerTailInfo = null;
 		TailInfo maxTailInfo = null;
 		boolean isMaxTail = true;
@@ -164,7 +165,7 @@ public class SyncBlockService extends EQCService {
 			// Before here already do syncMinerList in Util.init during every time EQchains core startup
 			minerList = Util.DB().getMinerList();
 			if (minerList.isEmpty()) {
-				if (Util.IP.equals(Util.SINGULARITY_IP)) {
+				if (Util.LOCAL_IP.equals(Util.SINGULARITY_IP)) {
 					// This is Singularity node and miner list is empty just start Minering
 					Log.info("This is Singularity node and miner list is empty just start Minering");
 					// Here just remove extra message because when have new miner join will register in miner list
@@ -174,20 +175,20 @@ public class SyncBlockService extends EQCService {
 				}
 			}
 
-			if (!Util.IP.equals(Util.SINGULARITY_IP)) {
+			if (!Util.LOCAL_IP.equals(Util.SINGULARITY_IP)) {
 				minerList.addIP(Util.SINGULARITY_IP);
 			}
 			
 			Log.info("MinerList's size: " + minerList.getIpList().size());
 			Vector<TailInfo<O>> minerTailList = new Vector<>();
-			for (String ip : minerList.getIpList()) {
+			for (IP ip : minerList.getIpList()) {
 				try {
 					// Doesn't need include current Node's ip
-					if (!ip.equals(Util.IP)) {
+					if (!ip.equals(Util.LOCAL_IP)) {
 						Log.info("Try to get miner tail: " + ip);
 						minerTailInfo = SyncblockNetworkClient.getBlockTail(ip);
 					} else {
-						Log.info("Current ip " + ip + " is the same as local ip " + Util.IP + " just ignore it");
+						Log.info("Current ip " + ip + " is the same as local ip " + Util.LOCAL_IP + " just ignore it");
 						continue;
 					}
 				} catch (Exception e) {
@@ -209,7 +210,7 @@ public class SyncBlockService extends EQCService {
 			// Miner tail list doesn't need include current Node's ip
 			if (minerTailList.isEmpty()) {
 				// Miner list isn't empty but can retrieve any miner tail from the miner network
-				if (Util.IP.equals(Util.SINGULARITY_IP)) {
+				if (Util.LOCAL_IP.equals(Util.SINGULARITY_IP)) {
 					// This is Singularity node and miner list is empty just start Minering
 					// Here just remove extra message because when have new miner join will register in miner list
 					pendingMessage.clear();
@@ -231,10 +232,10 @@ public class SyncBlockService extends EQCService {
 			Log.info("MinerTailList: " + minerTailList.toString());
 			maxTailInfo = minerTailList.get(0);
 			Log.info("MaxTail: " + maxTailInfo.getHeight());
-			Log.info("LocalTail: " + Util.DB().getEQCBlockTailHeight());
-			EQcoinSeedPassport eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+			Log.info("LocalTail: " + Util.DB().getEQCHiveTailHeight());
+			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 			if (maxTailInfo.getCheckPointHeight().compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
-					&& maxTailInfo.getHeight().compareTo(Util.DB().getEQCBlockTailHeight()) > 0) {
+					&& maxTailInfo.getHeight().compareTo(Util.DB().getEQCHiveTailHeight()) > 0) {
 				isMaxTail = false;
 				IPList minerIpList = new IPList();
 				for (TailInfo tailInfo2 : minerTailList) {
@@ -287,24 +288,24 @@ public class SyncBlockService extends EQCService {
 					Log.info("Begin synchronized (EQCService.class)");
 					Log.info("Received new hive tail from " + syncHiveState.getIp());
 					// Check if new block's height is bigger than local tail
-					if (syncHiveState.getEqcHive().getHeight().compareTo(Util.DB().getEQCBlockTailHeight()) <= 0) {
+					if (syncHiveState.getEqcHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight()) <= 0) {
 						Log.info("New block's height: " + syncHiveState.getEqcHive().getHeight()
-								+ " not bigger than local tail: " + Util.DB().getEQCBlockTailHeight()
+								+ " not bigger than local tail: " + Util.DB().getEQCHiveTailHeight()
 								+ " just discard it");
 						return;
 					} else {
-						EQCHive localTailHive = Util.DB().getEQCHive(Util.DB().getEQCBlockTailHeight(), true);
+						EQCHive localTailHive = Util.DB().getEQCHive(Util.DB().getEQCHiveTailHeight(), true);
 						if (syncHiveState.getEqcHive().getHeight().isNextID(localTailHive.getHeight())) {
 							if (Arrays.equals(syncHiveState.getEqcHive().getEqcHeader().getPreHash(),
 									localTailHive.getHash())) {
 								Log.info("New block is current tail's next block just begin verify it");
 								changeLog = new ChangeLog(syncHiveState.getEqcHive().getHeight(),
 										new Filter(Mode.VALID));
-								if (syncHiveState.getEqcHive().isValid(changeLog)) {
+								if (syncHiveState.getEqcHive().isValid()) {
 									// Maybe here need do more job
 									Util.DB().saveEQCHive(syncHiveState.getEqcHive());
 									changeLog.updateGlobalState();
-									Util.DB().saveEQCBlockTailHeight(changeLog.getHeight());
+									Util.DB().saveEQCHiveTailHeight(changeLog.getHeight());
 									Log.info("New block valid passed and saved, changed to new tail");
 									// Have changed tail so offer miner
 									Log.info("Have changed tail so offer miner");
@@ -317,7 +318,7 @@ public class SyncBlockService extends EQCService {
 							return;
 						} else {
 							Log.info("MaxTail's height: " + syncHiveState.getEqcHive().getHeight()
-									+ " bigger than local tail: " + Util.DB().getEQCBlockTailHeight()
+									+ " bigger than local tail: " + Util.DB().getEQCHiveTailHeight()
 									+ " begin sync to it");
 						}
 					}
@@ -338,9 +339,10 @@ public class SyncBlockService extends EQCService {
 				} else {
 					Log.info("MinerService isn't running now has nothing to do");
 				}
-				localTail = Util.DB().getEQCBlockTailHeight();
+				localTail = Util.DB().getEQCHiveTailHeight();
 				Log.info("LocalTail: " + localTail);
-				EQcoinSeedPassport eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+				EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+				EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQCHive(localTail, true).getEQcoinSeed().getEQcoinSeedRoot();
 				long base = localTail.longValue();
 				// Check if it is valid chain
 				if (maxTailInfo.getHeight().compareTo(localTail) > 0 && maxTailInfo.getCheckPointHeight()
@@ -389,7 +391,7 @@ public class SyncBlockService extends EQCService {
 							Log.info("Base " + base + " equal to local tail " + localTail.longValue() + " do nothing");
 						}
 
-						if (ID.valueOf(base).compareTo(Util.DB().getEQCBlockTailHeight()) < 0) {
+						if (ID.valueOf(base).compareTo(Util.DB().getEQCHiveTailHeight()) < 0) {
 							Log.info("Base " + base + " equal to local tail " + localTail.longValue() + " beginning recovery and remove Account snapshot");
 							// Recovery base height Accounts table's status
 							Util.recoveryAccountsStatusTo(ID.valueOf(base));
@@ -398,9 +400,9 @@ public class SyncBlockService extends EQCService {
 						}
 					
 						// Remove extra Account here need remove accounts after base
-						ID originalAccountNumbers = eQcoinSubchainAccount.getTotalPassportNumbers();
-						EQcoinSeedHeader eQcoinSubchainHeader = Util.DB().getEQCHive(ID.valueOf(base), true)
-								.geteQcoinSeed().getEQcoinSubchainHeader();
+						ID originalAccountNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
+						EQcoinSeedRoot eQcoinSubchainHeader = Util.DB().getEQCHive(ID.valueOf(base), true)
+								.getEQcoinSeed().getEQcoinSeedRoot();
 						if (eQcoinSubchainHeader.getTotalPassportNumbers().compareTo(originalAccountNumbers) < 0) {
 							Log.info("Begin delete extra Account from "
 									+ eQcoinSubchainHeader.getTotalPassportNumbers().getNextID() + " to "
@@ -413,7 +415,7 @@ public class SyncBlockService extends EQCService {
 									"Base height's TotalAccountNumbers " + eQcoinSubchainHeader.getTotalPassportNumbers()
 											+ " equal to local tail " + originalAccountNumbers + " do nothing");
 						}
-						Util.DB().saveEQCBlockTailHeight(ID.valueOf(base));
+						Util.DB().saveEQCHiveTailHeight(ID.valueOf(base));
 
 						// Begin sync to tail
 						EQCHive maxTailHive = null;
@@ -425,12 +427,12 @@ public class SyncBlockService extends EQCService {
 								break;
 							}
 							changeLog = new ChangeLog(ID.valueOf(i), new Filter(Mode.VALID));
-							if (maxTailHive.isValid(changeLog)) {
+							if (maxTailHive.isValid()) {
 								Log.info("Verify No. " + i + " hive passed");
 								Util.DB().saveEQCHive(maxTailHive);
 								changeLog.updateGlobalState();
-								Util.DB().saveEQCBlockTailHeight(changeLog.getHeight());
-								Log.info("Current new tail: " + Util.DB().getEQCBlockTailHeight());
+								Util.DB().saveEQCHiveTailHeight(changeLog.getHeight());
+								Log.info("Current new tail: " + Util.DB().getEQCHiveTailHeight());
 							} else {
 								Log.Error("Valid blockchain failed just goto sleep");
 								changeLog.clear();
@@ -476,7 +478,7 @@ public class SyncBlockService extends EQCService {
 				// Here need add synchronized lock to double avoid conflict with MinerService
 				synchronized (EQCService.class) {
 					Log.info("Begin synchronized (EQCService.class)");
-					if (!MinerService.getInstance().getNewBlockHeight().isNextID(Util.DB().getEQCBlockTailHeight())) {
+					if (!MinerService.getInstance().getNewBlockHeight().isNextID(Util.DB().getEQCHiveTailHeight())) {
 						Log.info("Changed to new mining base begin stop current mining progress");
 						MinerService.getInstance().stopMining();
 						isNeedRestart = true;
@@ -549,10 +551,10 @@ public class SyncBlockService extends EQCService {
 	
 		try {
 			if (mode == MODE.MINER) {
-				if (!Util.IP.equals(Util.SINGULARITY_IP)) {
+				if (!Util.LOCAL_IP.equals(Util.SINGULARITY_IP)) {
 					long time = 0;
 					for (int i = 0; i < 3; ++i) {
-						Log.info(Util.IP + " begin send ping to register to " + Util.SINGULARITY_IP);
+						Log.info(Util.LOCAL_IP + " begin send ping to register to " + Util.SINGULARITY_IP);
 						time = MinerNetworkClient.ping(Util.SINGULARITY_IP);
 						if (time != -1) {
 							break;

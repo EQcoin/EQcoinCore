@@ -35,6 +35,7 @@ import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.TransactionIndex;
 import com.eqcoin.rpc.TransactionIndexList;
@@ -89,8 +90,7 @@ public class SyncService extends EQCService {
 			TransactionIndexList<O> transactionIndexList = null;
 			TransactionIndexList<O> needSyncList = null;
 			TransactionList<O> transactionList = null;
-			Transaction transaction = null;
-			for(String ip:ipList.getIpList()) {
+			for(IP ip:ipList.getIpList()) {
 				Log.info("Begin get Transaction list");
 				transactionIndexList = MinerNetworkClient.getTransactionIndexList(ip);
 				needSyncList = new TransactionIndexList();
@@ -104,8 +104,7 @@ public class SyncService extends EQCService {
 				}
 				transactionList = MinerNetworkClient.getTransactionList(needSyncList, ip);
 				if(transactionList != null) {
-					for(byte[] bytes:transactionList.getTransactionList()) {
-						transaction = Transaction.parseRPC(bytes);
+					for(Transaction transaction:transactionList.getTransactionList()) {
 						EQCBlockChainH2.getInstance().saveTransactionInPool(transaction);
 					}
 				}

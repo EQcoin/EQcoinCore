@@ -34,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -48,7 +47,7 @@ public class TailInfo<T> extends IO<T> implements Comparable<TailInfo> {
 	private ID height;
 	private ID checkPointHeight;
 	private byte[] blockTailProof;
-	private String ip;
+	private IP ip;
 
 	public TailInfo() {
 	}
@@ -72,7 +71,7 @@ public class TailInfo<T> extends IO<T> implements Comparable<TailInfo> {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -169,14 +168,14 @@ public class TailInfo<T> extends IO<T> implements Comparable<TailInfo> {
 	/**
 	 * @return the ip
 	 */
-	public String getIp() {
+	public IP getIp() {
 		return ip;
 	}
 
 	/**
 	 * @param ip the ip to set
 	 */
-	public void setIp(String ip) {
+	public void setIp(IP ip) {
 		this.ip = ip;
 	}
 

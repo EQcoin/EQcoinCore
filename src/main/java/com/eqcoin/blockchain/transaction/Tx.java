@@ -37,9 +37,6 @@ import java.util.Comparator;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
-import com.eqcoin.serialization.EQCTransactionShapeInheritable;
-import com.eqcoin.serialization.EQCTransactionShapeTypable;
 import com.eqcoin.serialization.EQCLockShapeInheritable;
 import com.eqcoin.serialization.EQCLockShapeTypable;
 import com.eqcoin.serialization.EQCTypable;
@@ -59,7 +56,7 @@ public class Tx implements Comparator<Tx>, Comparable<Tx>, EQCLockShapeTypable, 
 	 * Due to also need use Tx deploy smartcontract so here need use lock to keep the code field.
 	 */
 	protected Lock lock;
-	protected ID passportId;
+//	protected ID passportId;
 	protected long value;
 	
 	public Tx() {
@@ -91,19 +88,19 @@ public class Tx implements Comparator<Tx>, Comparable<Tx>, EQCLockShapeTypable, 
 		this.lock = lock;
 	}
 
-	/**
-	 * @return the passportId
-	 */
-	public ID getPassportId() {
-		return passportId;
-	}
-
-	/**
-	 * @param passportId the passportId to set
-	 */
-	public void setPassportId(ID passportId) {
-		this.passportId = passportId;
-	}
+//	/**
+//	 * @return the passportId
+//	 */
+//	public ID getPassportId() {
+//		return passportId;
+//	}
+//
+//	/**
+//	 * @param passportId the passportId to set
+//	 */
+//	public void setPassportId(ID passportId) {
+//		this.passportId = passportId;
+//	}
 
 	/**
 	 * @return the value
@@ -201,7 +198,7 @@ public class Tx implements Comparator<Tx>, Comparable<Tx>, EQCLockShapeTypable, 
 	@Override
 	public boolean isSanity(LockShape lockShape) {
 		if(lockShape == LockShape.ID) {
-			if(passportId == null || !passportId.isSanity()) {
+			if(lock == null || !lock.getId().isSanity()) {
 				return false;
 			}
 		}
@@ -270,7 +267,7 @@ public class Tx implements Comparator<Tx>, Comparable<Tx>, EQCLockShapeTypable, 
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) {
+	public boolean isValid() {
 		// TODO Auto-generated method stub
 		return false;
 	}

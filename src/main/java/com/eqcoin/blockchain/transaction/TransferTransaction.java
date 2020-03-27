@@ -52,7 +52,6 @@ import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TXFEE_RATE;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -86,8 +85,8 @@ public class TransferTransaction extends Transaction {
 		txOutList = new Vector<>();
 	}
 
-	public TransferTransaction(byte[] bytes, TransactionShape transactionShape) throws Exception {
-		super(bytes, transactionShape);
+	public TransferTransaction(byte[] bytes) throws Exception {
+		super(bytes);
 	}
 
 	public TransferTransaction() {
@@ -103,21 +102,19 @@ public class TransferTransaction extends Transaction {
 		return transactionType == TransactionType.TRANSFER;
 	}
 	
-	public void parseHeader(ByteArrayInputStream is, TransactionShape transactionShape)
+	public void parseHeader(ByteArrayInputStream is)
 			throws Exception {
-		// Parse nonce
-		nonce = new ID(EQCType.parseEQCBits(is));
-		// Parse TxIn
-		txIn = new TxIn(is, LockShape.ID);
+		parseNonce(is);
+		parseTxIn(is);
 	}
 
-	public byte[] getHeaderBytes(TransactionShape transactionShape) throws Exception {
+	public byte[] getHeaderBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization nonce
-			os.write(EQCType.bigIntegerToEQCBits(nonce));
+			serializeNonce(os);
 			// Serialization TxIn
-			os.write(txIn.getBytes(LockShape.ID));
+			serializeTxInBytes(os);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -126,82 +123,13 @@ public class TransferTransaction extends Transaction {
 		return os.toByteArray();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((eqcSegWit == null) ? 0 : eqcSegWit.hashCode());
-		result = prime * result + ((txIn == null) ? 0 : txIn.hashCode());
-		result = prime * result + ((txOutList == null) ? 0 : txOutList.hashCode());
-		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		TransferTransaction other = (TransferTransaction) obj;
-		if (eqcSegWit == null) {
-			if (other.eqcSegWit != null)
-				return false;
-		} else if (!eqcSegWit.equals(other.eqcSegWit))
-			return false;
-		if (txIn == null) {
-			if (other.txIn != null)
-				return false;
-		} else if (!txIn.equals(other.txIn))
-			return false;
-		if (txOutList == null) {
-			if (other.txOutList != null)
-				return false;
-		} else {
-			// Temporarily save a copy of TxOut in order not to change the order in which
-			// the user enters TxOut.
-			Vector<TxOut> originalTxOutList = new Vector<TxOut>();
-			for (TxOut txOut : txOutList) {
-				originalTxOutList.add(txOut);
-			}
-			// Sort the temporarily saved TxOut in alphabetical dictionary order.
-			Collections.sort(originalTxOutList);
-			// Temporarily save a copy of TxOut in order not to change the order in which
-			// the user enters TxOut.
-			Vector<TxOut> targetTxOutList = new Vector<TxOut>();
-			for (TxOut txOut : other.txOutList) {
-				targetTxOutList.add(txOut);
-			}
-			// Sort the temporarily saved TxOut in alphabetical dictionary order.
-			Collections.sort(targetTxOutList);
-			// Compare temporarily saved TxOut collections sorted alphabetically in
-			// alphabetical order.
-			if (!originalTxOutList.equals(targetTxOutList))
-				return false;
-		}
-		return true;
-	}
-
 	public String toInnerJson() {
 		return
 
 		"\"TransferTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n" + "\"TxOutList\":" + "\n{\n" + "\"Size\":"
 				+ "\"" + txOutList.size() + "\"" + ",\n" + "\"List\":" + "\n" + getTxOutString() + "\n},\n"
-				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n" + "\"EQCSegWit\":"
-				+ eqcSegWit.toInnerJson() + ",\n" + "\"Publickey\":"
-				+ ((compressedPublickey == null || compressedPublickey.getCompressedPublickey() == null) ? null
-						: "\"" + Util.getHexString(compressedPublickey.getCompressedPublickey()) + "\"")
+				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n" + "\"EQCWitness\":"
+				+ eqcWitness.toInnerJson() 
 				+ "\n" + "}";
 	}
 
@@ -232,11 +160,6 @@ public class TransferTransaction extends Transaction {
 		for (TxOut txOut : txOutList) {
 			length += txOut.getLock().getBillingSize();
 		}
-
-		/**
-		 * Transaction's compressed Publickey length
-		 */
-		length += compressedPublickey.getBillingSize();
 
 		/**
 		 * Transaction's Signature length
@@ -288,11 +211,11 @@ public class TransferTransaction extends Transaction {
 	 * AddressShape)
 	 */
 	@Override
-	public byte[] getBytes(TransactionShape transactionShape) throws Exception {
+	public byte[] getBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization body
-			os.write(getBodyBytes(transactionShape));
+			os.write(getBodyBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -300,105 +223,72 @@ public class TransferTransaction extends Transaction {
 		}
 		return os.toByteArray();
 	}
-
 	
-	public void preparePlanting(ChangeLog changeLog) throws Exception {
-		Passport txInPassport = changeLog.getFilter().getPassport(txIn.getPassportId(), true);
-		Lock lock = changeLog.getFilter().getLock(txInPassport.getLockID(), true);
-
-		// Update Publickey's isNew status if need
-		if (lock.getPublickey() == null) {
-			compressedPublickey.setNew(true);
-		}
-		
-	}
-
-	public void heal(ChangeLog changeLog, EQCSeed eqcSubchain) throws Exception {
-		EQcoinSeed eQcoinSubchain = (EQcoinSeed) eqcSubchain;
-		Passport txInPassport = changeLog.getFilter().getPassport(txIn.getPassportId(), true);
-		Lock txInLock = changeLog.getFilter().getLock(txInPassport.getId(), true);
-		// Update Publickey's isNew status if need
-		if (txInLock.getPublickey() == null) {
-			compressedPublickey.setNew(true);
-//			compressedPublickey.setId(changeLog.getNextLockId());
-			compressedPublickey.setCompressedPublickey(
-					eQcoinSubchain.getCompressedPublickey(txIn.getPassportId()).getCompressedPublickey());
-		}
-
-		// Update TxOut's Address' isNew status if need
-//		Passport account = null;
-//		for (TxOut txOut : txOutList) {
-//			account = changeLog.getFilter().getPassport(txOut.getPassportId(), true);
-//			if (account == null) {
-//				txOut.getKey().setReadableLock(
-//						eQcoinSubchain.getPassport(txOut.getKey().getId()).getReadableLock());
-//				txOut.setNew(true);
-//			} else {
-//				// For security issue need retrieve and fill in every Address' AddressAI
-//				// according to it's ID
-//				txOut.getKey().setReadableLock(account.getKey().getReadableLock());
-//			}
-//		}
-	}
-
-	public void planting(TransactionShape transactionShape) throws Exception {
-		// Update current Transaction's relevant Account's AccountsMerkleTree's data
-		// Update current Transaction's TxIn Account's relevant Asset's Nonce&Balance
-		Passport passport = changeLog.getFilter().getPassport(txIn.getPassportId(), true);
-		// Update current Transaction's TxIn Account's relevant Asset's Nonce
-		passport.increaseNonce();
-		// Update current Transaction's TxIn Account's relevant Asset's Balance
-		passport.withdraw(new ID(getBillingValue()));
-		changeLog.getFilter().savePassport(passport);
-		// Update current Transaction's TxIn Publickey if need
-		if (compressedPublickey.isNew()) {
-			Lock lock = changeLog.getFilter().getLock(passport.getId(), true);
-			lock.setPublickey(compressedPublickey.getCompressedPublickey());
-			changeLog.getFilter().saveLock(lock);
-		}
-
+	protected void derivedTxOutPlanting() throws Exception {
+		Passport passport = null;
 		// Update current Transaction's TxOut Account
 		for (TxOut txOut : txOutList) {
-			if (txOut.isNew()) {
-				Lock lock = new Lock();
-				lock.setId(changeLog.getNextLockId());
-				lock.setReadableLock(txOut.getLock().getReadableLock());
-				passport = new AssetPassport();
-				passport.setId(changeLog.getNextPassportId());
-				lock.setPassportId(passport.getId());
-				changeLog.getFilter().saveLock(lock);
-			} else {
-				passport = changeLog.getFilter().getPassport(txOut.getPassportId(), true);
-			}
+			passport = changeLog.getFilter().getPassport(txOut.getLock().getId(), true);
 			passport.deposit(new ID(txOut.getValue()));
 			changeLog.getFilter().savePassport(passport);
-		}
-		
-		free();
-	}
-
-	public void parseBody(ByteArrayInputStream is, TransactionShape transactionShape)
-			throws Exception {
-		// Parse TxOut
-		while (!EQCType.isInputStreamEnd(is)) {
-			TxOut txOut = new TxOut(is, LockShape.ID);
-			// Add TxOut
-			txOutList.add(txOut);
 		}
 	}
 
 	@Override
-	public byte[] getBodyBytes(TransactionShape transactionShape) throws Exception {
+	protected void derivedPlanting() throws Exception {
+		super.derivedPlanting();
+		derivedTxOutPlanting();
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#parseSoloAndTransactionType(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	protected void parseSoloAndTransactionType(ByteArrayInputStream is) throws Exception {
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#getSoloAndTransactionTypeBytes(java.io.ByteArrayOutputStream)
+	 */
+	@Override
+	protected void serializeSoloAndTransactionTypeBytes(ByteArrayOutputStream os) throws Exception {
+	}
+
+	protected void parseDerivedBody(ByteArrayInputStream is)
+			throws Exception {
+		// Parse TxOut
+		byte[] txOuts = EQCType.parseBIN(is);
+		ByteArrayInputStream iStream = new ByteArrayInputStream(txOuts);
+		while (!EQCType.isInputStreamEnd(iStream)) {
+			TxOut txOut = new TxOut(iStream, LockShape.ID);
+			// Add TxOut
+			txOutList.add(txOut);
+		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#getDerivedBodyBytes()
+	 */
+	@Override
+	protected byte[] getDerivedBodyBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			// Serialization TxOut
+			os.write(EQCType.bytesToBIN(getTxOutListBytes()));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		return os.toByteArray();
+	}
+	
+	private byte[] getTxOutListBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization TxOut
 			for (TxOut txOut : txOutList) {
-				if(transactionShape == TransactionShape.RPC) {
-					os.write(txOut.getBytes(LockShape.READABLE));
-				}
-				else {
-					os.write(txOut.getBytes(LockShape.ID));
-				}
+				os.write(txOut.getBytes(LockShape.ID));
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -416,19 +306,22 @@ public class TransferTransaction extends Transaction {
 	 * @throws Exception
 	 */
 	public boolean isDerivedValid() throws Exception {
-		// Check if TxOut is valid
-		for(TxOut txOut:txOutList) {
-			if(txOut.getPassportId().compareTo(changeLog.getPreviousTotalPassportNumbers()) > 0) {
-				Log.Error("isTxOutValid failed");
-				return false;
-			}
+		if(txInLock.getPublickey() == null) {
+			Log.Error("TxIn's Lock relevant publikey is null.");
+			return false;
+		}
+		
+		// Check if All LockID is valid
+		if(!isAllTxOutLockIDValid()) {
+			Log.Error("isAllTxOutLockIDValid failed.");
+			return false;
 		}
 
 		// Check if TxFeeLimit is valid
 		// Here maybe exists one bug pay attention to the total txout values need less than txin value
 		// Here need avoid the result of txin value - total txout values is negative
 		if (!isTxFeeLimitValid()) {
-			Log.Error("isTxFeeLimitValid failed");
+			Log.Error("isTxFeeLimitValid failed.");
 			return false;
 		}
 
@@ -487,7 +380,7 @@ public class TransferTransaction extends Transaction {
 	}
 
 	private boolean isTxOutPassportEqualsTxInPassport(TxOut txOut) {
-		return txOut.getLock().getPassportId().equals(txIn.getLock().getPassportId());
+		return txOut.getLock().getId().equals(txIn.getLock().getId());
 	}
 
 	public long getTxFeeLimit() {
@@ -510,7 +403,7 @@ public class TransferTransaction extends Transaction {
 	public boolean isTxOutPassportExists(TxOut txOut) {
 		boolean boolIsExists = false;
 		for (TxOut txOut2 : txOutList) {
-			if (txOut2.getLock().getPassportId().equals(txOut.getLock().getPassportId())) {
+			if (txOut2.getLock().getId().equals(txOut.getLock().getId())) {
 				boolIsExists = true;
 //				Log.info("TxOutAddressExists" + " a: " + txOut2.getAddress().getAddress() + " b: " + txOut.getAddress().getAddress());
 				break;
@@ -533,7 +426,7 @@ public class TransferTransaction extends Transaction {
 	public boolean isTxOutPassportUnique() {
 		for (int i = 0; i < txOutList.size(); ++i) {
 			for (int j = i + 1; j < txOutList.size(); ++j) {
-				if (txOutList.get(i).getPassportId().equals(txOutList.get(j).getPassportId())) {
+				if (txOutList.get(i).getLock().getId().equals(txOutList.get(j).getLock().getId())) {
 					return false;
 				}
 			}
@@ -545,7 +438,7 @@ public class TransferTransaction extends Transaction {
 		int size = 0;
 
 		// Transaction's ID format's size which storage in the EQC Blockchain
-		size += getBin(TransactionShape.SEED).length;
+		size += getBin().length;
 //		Log.info("ID size: " + size);
 
 		// Transaction's AddressList size which storage the new Address
@@ -556,14 +449,8 @@ public class TransferTransaction extends Transaction {
 			}
 		}
 
-		// Transaction's PublickeyList size
-		if (compressedPublickey.isNew()) {
-			size += compressedPublickey.getBin().length;
-//			Log.info("New Publickey: " + publickey.getBin().length);
-		}
-
 		// Transaction's Signature size
-		size += eqcSegWit.getBin().length;
+		size += eqcWitness.getBin().length;
 //		Log.info("Signature size: " + EQCType.bytesToBIN(signature).length);
 //		Log.info("Total size: " + size);
 		return size;
@@ -583,19 +470,16 @@ public class TransferTransaction extends Transaction {
 		return tx;
 	}
 
-	public boolean isAllAddressIDValid(ChangeLog changeLog) {
-		if (txIn.getLock().getId().compareTo(changeLog.getTotalPassportNumbers()) > 0) {
-			return false;
-		}
+	public boolean isAllTxOutLockIDValid() {
 		for (TxOut txOut : txOutList) {
-			if (txOut.getLock().getId().compareTo(changeLog.getTotalPassportNumbers()) > 0) {
+			if (txOut.getLock().getId().compareTo(changeLog.getPreviousTotalPassportNumbers().getPreviousID()) > 0) {
 				return false;
 			}
 		}
 		return true;
 	}
 	
-	public boolean isDerivedSanity(TransactionShape transactionShape) {
+	public boolean isDerivedSanity() {
 		// Check if the TxOutList is sanity
 		if(txOutList == null) {
 			return false;

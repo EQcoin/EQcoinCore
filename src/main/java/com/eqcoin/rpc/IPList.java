@@ -34,9 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 
 /**
  * @author Xun Wang
@@ -44,8 +42,7 @@ import com.eqcoin.serialization.EQCType.ARRAY;
  * @email 10509759@qq.com
  */
 public class IPList<T> extends IO<T> {
-	private Vector<String> ipList;
-	private long ipListSize;
+	private Vector<IP> ipList;
 	
 	public IPList() {
 		ipList = new Vector<>();
@@ -64,9 +61,6 @@ public class IPList<T> extends IO<T> {
 		if(ipList == null) {
 			return false;
 		}
-		if(ipListSize != ipList.size()) {
-			return false;
-		}
 		return true;
 	}
 
@@ -74,7 +68,7 @@ public class IPList<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -93,14 +87,7 @@ public class IPList<T> extends IO<T> {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		ARRAY array = EQCType.parseARRAY(is);
-		if (!array.isNULL()) {
-			ipListSize = array.size;
-			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(array.elements);
-			for (int i = 0; i < ipListSize; ++i) {
-				ipList.add(EQCType.bytesToASCIISting(EQCType.parseBIN(byteArrayInputStream)));
-			}
-		}
+		ipList = EQCType.parseArray(is, IP.class);
 	}
 
 	/* (non-Javadoc)
@@ -117,16 +104,12 @@ public class IPList<T> extends IO<T> {
 	 */
 	@Override
 	public byte[] getBodyBytes() throws Exception {
-		Vector<byte[]> ips = new Vector<>();
-		for(String ip:ipList) {
-			ips.add(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(ip)));
-		}
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(EQCType.bytesArrayToARRAY(ips));
+		os.write(EQCType.eqcSerializableListToArray(ipList));
 		return os.toByteArray();
 	}
 
-	public void addIP(String ip) {
+	public void addIP(IP ip) {
 		if(!ipList.contains(ip)) {
 			ipList.add(ip);
 		}
@@ -135,18 +118,18 @@ public class IPList<T> extends IO<T> {
 	/**
 	 * @return the ipList
 	 */
-	public Vector<String> getIpList() {
+	public Vector<IP> getIpList() {
 		return ipList;
 	}
 
 	/**
 	 * @param ipList the ipList to set
 	 */
-	public void setIpList(Vector<String> ipList) {
+	public void setIpList(Vector<IP> ipList) {
 		this.ipList = ipList;
 	}
 	
-	public boolean contains(String ip) {
+	public boolean contains(IP ip) {
 		return ipList.contains(ip);
 	}
 	

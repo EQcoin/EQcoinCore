@@ -39,9 +39,10 @@ import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 
 import com.eqcoin.avro.O;
 import com.eqcoin.avro.SyncblockNetwork;
-import com.eqcoin.blockchain.hive.EQCHeader;
+import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.rpc.Cookie;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.Info;
 import com.eqcoin.rpc.TailInfo;
@@ -132,13 +133,13 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return ipList;
 	}
 
-	public static TailInfo getBlockTail(String ip) throws Exception {
+	public static TailInfo getBlockTail(IP ip) throws Exception {
 		TailInfo tailInfo = null;
 		NettyTransceiver nettyTransceiver = null;
 		SyncblockNetwork client = null;
 		try {
 			nettyTransceiver = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(ip), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(ip.getIp()), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(SyncblockNetwork.class, nettyTransceiver);
@@ -157,17 +158,17 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return tailInfo;
 	}
 
-	public static EQCHive getBlock(ID height, String ip) throws Exception {
+	public static EQCHive getBlock(ID height, IP ip) throws Exception {
 		EQCHive eqcHive = null;
 		NettyTransceiver nettyTransceiver = null;
 		SyncblockNetwork client = null;
 		try {
 			nettyTransceiver = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(ip), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(ip.getIp()), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(SyncblockNetwork.class, nettyTransceiver);
-			eqcHive = new EQCHive(client.getBlock(Util.bytes2O(height.getEQCBits())).getO().array(), false);
+			eqcHive = new EQCHive(client.getBlock(Util.bytes2O(height.getEQCBits())).getO().array());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -182,13 +183,13 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return eqcHive;
 	}
 
-	public static byte[] getEQCHeaderHash(ID height, String ip) throws Exception {
+	public static byte[] getEQCHeaderHash(ID height, IP ip) throws Exception {
 		byte[] eqcHeaderHash = null;
 		NettyTransceiver nettyTransceiver = null;
 		SyncblockNetwork client = null;
 		try {
 			nettyTransceiver = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(ip), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(ip.getIp()), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(SyncblockNetwork.class, nettyTransceiver);
@@ -207,8 +208,8 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return eqcHeaderHash;
 	}
 
-	public static EQCHeader getEQCHeader(ID height, String ip) throws Exception {
-		EQCHeader eqcHeader = null;
+	public static EQCHiveRoot getEQCHeader(ID height, String ip) throws Exception {
+		EQCHiveRoot eqcHeader = null;
 		NettyTransceiver nettyTransceiver = null;
 		SyncblockNetwork client = null;
 		try {
@@ -217,7 +218,7 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(SyncblockNetwork.class, nettyTransceiver);
-			eqcHeader = new EQCHeader(client.getEQCHeader(Util.bytes2O(height.getEQCBits())).getO().array());
+			eqcHeader = new EQCHiveRoot(client.getEQCHeader(Util.bytes2O(height.getEQCBits())).getO().array());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -232,13 +233,13 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return eqcHeader;
 	}
 
-	public static long ping(String remoteIP) {
+	public static long ping(IP remoteIP) {
 		NettyTransceiver client = null;
 		SyncblockNetwork proxy = null;
 		long time = System.currentTimeMillis();
 		try {
 			client = new NettyTransceiver(
-					new InetSocketAddress(InetAddress.getByName(remoteIP), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
+					new InetSocketAddress(InetAddress.getByName(remoteIP.getIp()), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()), Util.DEFAULT_TIMEOUT);
 			proxy = SpecificRequestor.getClient(SyncblockNetwork.class, client);
 			proxy.ping(Util.getCookie().getProtocol());
@@ -254,11 +255,11 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return time;
 	}
 
-	public static String getFastestServer(IPList<O> ipList) {
-		String fastestServer = null;
+	public static IP getFastestServer(IPList<O> ipList) {
+		IP fastestServer = null;
 		long time = 0;
 		long maxTime = 0;
-		for (String ip : ipList.getIpList()) {
+		for (IP ip : ipList.getIpList()) {
 			time = ping(ip);
 			if (time > maxTime) {
 				fastestServer = ip;

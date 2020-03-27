@@ -37,9 +37,8 @@ import java.util.Arrays;
 
 import javax.print.attribute.standard.RequestingUserName;
 
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.serialization.EQCLockShapeTypable;
 import com.eqcoin.serialization.EQCTypable;
@@ -68,6 +67,10 @@ public class Lock implements EQCLockShapeTypable {
 		READABLE, AI, ID, FULL
 	}
 
+	/**
+	 * The id represent Passport's ID in Lock which retrieve from Transaction's TxOut.
+	 * The id represent Lock's ID in Lock which retrieve from Lock table.
+	 */
 	private ID id;
 	private String readableLock;
 	private ID passportId;
@@ -172,6 +175,8 @@ public class Lock implements EQCLockShapeTypable {
 	}
 	
 	/**
+	 * The id represent Passport's ID in Lock when retrieve from TransferTransaction's TxIn or TxOut.
+	 * The id represent Lock's ID in Lock when retrieve from ZionTransaction or Lock table.
 	 * @return the ID
 	 */
 	public ID getId() {
@@ -179,6 +184,8 @@ public class Lock implements EQCLockShapeTypable {
 	}
 
 	/**
+	 * The id represent Passport's ID in Lock when retrieve from Transaction's TxIn or TxOut.
+	 * The id represent Lock's ID in Lock when retrieve from Lock table.
 	 * @param ID the ID to set
 	 * @throws NoSuchFieldException 
 	 */
@@ -269,7 +276,7 @@ public class Lock implements EQCLockShapeTypable {
 		return isGood(null);
 	}
 
-	public boolean isGood(CompressedPublickey compressedPublickey) {
+	public boolean isGood(EQCPublickey eqcPublickey) {
 		if (readableLock == null) {
 			return false;
 		}
@@ -286,8 +293,8 @@ public class Lock implements EQCLockShapeTypable {
 			if (!LockTool.verifyAddressCRC32C(readableLock)) {
 				return false;
 			}
-			if (compressedPublickey != null) {
-				if (!LockTool.verifyAddressPublickey(readableLock, compressedPublickey.getCompressedPublickey())) {
+			if (eqcPublickey != null) {
+				if (!LockTool.verifyLockAndPublickey(readableLock, eqcPublickey.getPublickey())) {
 					return false;
 				}
 			}
@@ -407,7 +414,7 @@ public class Lock implements EQCLockShapeTypable {
 	}
 	
 	@Override
-	public boolean isValid(ChangeLog changeLog) {
+	public boolean isValid() {
 		// TODO Auto-generated method stub
 		return false;
 	}

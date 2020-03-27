@@ -1,8 +1,8 @@
 /**
- * EQcoin core - EQcoin Federation's EQcoin core library
- * @copyright 2018-present EQcoin Federation All rights reserved...
- * Copyright of all works released by EQcoin Federation or jointly released by
- * EQcoin Federation with cooperative partners are owned by EQcoin Federation
+ * EQchains core - EQchains Foundation's EQchains core library
+ * @copyright 2018-present EQchains Foundation All rights reserved...
+ * Copyright of all works released by EQchains Foundation or jointly released by
+ * EQchains Foundation with cooperative partners are owned by EQchains Foundation
  * and entitled to protection available from copyright law by country as well as
  * international conventions.
  * Attribution — You must give appropriate credit, provide a link to the license.
@@ -10,10 +10,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Federation reserves all rights to
+ * or without prior written permission, EQchains Foundation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
+ * https://www.eqchains.com
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -32,51 +32,47 @@ package com.eqcoin.blockchain.seed;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.Passport;
+
+import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.util.ID;
-import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
 
 /**
+ * EQCWitness contains the transaction relevant witness parts for example signature.
+ * 
  * @author Xun Wang
- * @date July 30, 2019
+ * @date Mar 5, 2020
  * @email 10509759@qq.com
  */
-public class EQCSeedHeader implements EQCTypable, EQCInheritable {
-	protected ID totalTxFee;
-	/**
-	 * Calculate this according to newTransactionList ARRAY's length
-	 */
-	protected ID totalTransactionNumbers;
+public class EQCWitness implements EQCTypable, EQCInheritable {
 	
-	public EQCSeedHeader() {
-		totalTxFee = ID.ZERO;
+	private byte[] signature;
+
+	public EQCWitness() {
 	}
 	
-	public EQCSeedHeader(byte[] bytes) throws Exception {
+	public EQCWitness(byte[] bytes) throws Exception {
 		EQCType.assertNotNull(bytes);
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parseBody(is);
+		parse(is);
+		EQCType.assertNoRedundantData(is);
 	}
 	
-	public EQCSeedHeader(ByteArrayInputStream is) throws Exception {
-		parseBody(is);
+	public EQCWitness(ByteArrayInputStream is) throws Exception {
+		parse(is);
 	}
 	
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		totalTxFee = EQCType.parseID(is);
-		totalTransactionNumbers = EQCType.parseID(is);
+		signature = EQCType.parseBIN(is);
 	}
 
 	@Override
@@ -86,91 +82,78 @@ public class EQCSeedHeader implements EQCTypable, EQCInheritable {
 	}
 
 	@Override
-	public byte[] getBodyBytes() throws Exception {
+	public byte[] getBodyBytes() throws IOException  {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(totalTxFee.getEQCBits());
-		os.write(totalTransactionNumbers.getEQCBits());
+		os.write(signature);
 		return os.toByteArray();
 	}
 
 	@Override
-	public byte[] getBytes() throws Exception {
+	public byte[] getBytes() throws IOException {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		os.write(getBodyBytes());
 		return os.toByteArray();
 	}
 
 	@Override
-	public byte[] getBin() throws Exception {
+	public byte[] getBin() throws IOException {
 		return EQCType.bytesToBIN(getBytes());
 	}
 
 	@Override
 	public boolean isSanity() {
-		if(totalTxFee == null || totalTransactionNumbers == null) {
-			return false;
-		}
-		if(!totalTxFee.isSanity() || !totalTransactionNumbers.isSanity()) {
+		if(signature == null) {
 			return false;
 		}
 		return true;
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	/**
-	 * @return the totalTxFee
+	 * @return the signature
 	 */
-	public ID getTotalTxFee() {
-		return totalTxFee;
-	}
-
-//	/**
-//	 * @param totalTxFee the totalTxFee to set
-//	 */
-//	public void setTotalTxFee(ID totalTxFee) {
-//		this.totalTxFee = totalTxFee;
-//	}
-
-	/**
-	 * @return the totalTransactionNumbers
-	 */
-	public ID getTotalTransactionNumbers() {
-		return totalTransactionNumbers;
+	public byte[] getSignature() {
+		return signature;
 	}
 
 	/**
-	 * @param totalTransactionNumbers the totalTransactionNumbers to set
+	 * @param signature the signature to set
 	 */
-	public void setTotalTransactionNumbers(ID totalTransactionNumbers) {
-		this.totalTransactionNumbers = totalTransactionNumbers;
+	public void setSignature(byte[] signature) {
+		this.signature = signature;
 	}
 	
-	public void depositTxFee(long txFee) {
-		totalTxFee = totalTxFee.add(ID.valueOf(txFee));
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		return
-
-		"{\n" + toInnerJson() + "\n}";
-
+		return 
+		
+				"{\n" +
+				toInnerJson() +
+				"\n}";
+		
 	}
 	
-	protected String toInnerJson() {
-		return "\"EQCSubchainHeader\":" + "{\n"
-				+ "\"TotalTxFee\":" + "\"" + totalTxFee + "\"" + ",\n" + "\"TotalTransactionNumbers\":" + "\"" + totalTransactionNumbers + "\""
-				+ "\n" + "}";
+	public String toInnerJson() {
+		return 
+		
+				"\"EQCSegWit\":" + 
+				"\n{\n" +
+					"\"Signature\":\"" + Util.getHexString(signature) + "\"\n" +
+				"}";
+		
 	}
-	
+
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
+		parseBody(is);
+	}
+
 }

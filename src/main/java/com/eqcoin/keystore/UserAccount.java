@@ -41,7 +41,6 @@ import java.security.SignatureException;
 import java.util.Arrays;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
@@ -279,7 +278,7 @@ public class UserAccount implements EQCTypable {
 			ecdsa = Signature.getInstance("SHA1withECDSA", "SunEC");
 			PrivateKey privateKey = Util.getPrivateKey(Util.AESDecrypt(this.privateKey, password), transaction.getTxIn().getLock().getAddressType());
 			ecdsa.initSign(privateKey);
-			ecdsa.update(transaction.getBytes(TransactionShape.RPC));
+			ecdsa.update(transaction.getBytes());
 			signature = ecdsa.sign();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -303,8 +302,8 @@ public class UserAccount implements EQCTypable {
 		try {
 			sign = Signature.getInstance("SHA1withECDSA", "SunEC");
 			sign.initVerify(eqcPublicKey);
-			sign.update(transaction.getBytes(TransactionShape.RPC));
-			boolVerifyResult = sign.verify(transaction.getEqcSegWit().getSignature());
+			sign.update(transaction.getBytes());
+			boolVerifyResult = sign.verify(transaction.getEqcWitness().getSignature());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -356,7 +355,7 @@ public class UserAccount implements EQCTypable {
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) {
+	public boolean isValid() {
 		// TODO Auto-generated method stub
 		return false;
 	}

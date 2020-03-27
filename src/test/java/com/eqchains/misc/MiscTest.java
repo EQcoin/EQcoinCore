@@ -129,13 +129,13 @@ public class MiscTest {
 	   void verifyBlock() {
 		   ID id;
 		try {
-			id = Util.DB().getEQCBlockTailHeight();
+			id = Util.DB().getEQCHiveTailHeight();
 			Log.info("" + id);
 			 for(int i=1; i<=id.intValue(); ++i) {
 			   ChangeLog changeLog = new ChangeLog(new ID(i), new Filter(Mode.MINING));
 			   EQCHive eqcBlock = Util.DB().getEQCHive(new ID(i), false);
 //			   Log.info(eqcBlock.toString());
-				assertTrue(eqcBlock.isValid(changeLog));
+				assertTrue(eqcBlock.isValid());
 				changeLog.clear();
 				 Log.info("i: " + i + " passed");
 			   }

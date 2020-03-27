@@ -34,7 +34,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
 import com.eqcoin.avro.O;
+import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.serialization.EQCInheritable;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 
@@ -43,13 +45,21 @@ import com.eqcoin.serialization.EQCType;
  * @date Jun 25, 2019
  * @email 10509759@qq.com
  */
-public abstract class IO<T> implements EQCTypable, EQCInheritable {
+public abstract class IO<T> extends EQCSerializable {
 	public IO() {}
 	
 	public IO(ByteArrayInputStream is) throws Exception {
-		parseBody(is);
+		parse(is);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
+		parseBody(is);
+	}
+
 	protected void parse(T type) throws Exception {
 		byte[] bytes = null;
 		if(type instanceof O) {

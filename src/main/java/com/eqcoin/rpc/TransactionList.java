@@ -4,13 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 
 public class TransactionList<T> extends IO<T> {
-	private Vector<byte[]> transactionList;
+	private Vector<Transaction> transactionList;
 	
 	public TransactionList() {
 		transactionList = new Vector<>();
@@ -30,7 +28,7 @@ public class TransactionList<T> extends IO<T> {
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -43,11 +41,7 @@ public class TransactionList<T> extends IO<T> {
 
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		ARRAY array = EQCType.parseARRAY(is);
-		ByteArrayInputStream iStream = new ByteArrayInputStream(array.elements);
-		for(int i=0; i<array.size; ++i) {
-			transactionList.add(EQCType.parseBIN(iStream));
-		}
+		transactionList = EQCType.parseArray(is, Transaction.class);
 	}
 
 	@Override
@@ -58,28 +52,23 @@ public class TransactionList<T> extends IO<T> {
 
 	@Override
 	public byte[] getBodyBytes() throws Exception {
-		if(transactionList.size() == 0) {
-			return EQCType.bytesArrayToARRAY(null);
-		}
-		else {
-			return EQCType.bytesArrayToARRAY(transactionList);
-		}
+		return EQCType.eqcSerializableListToArray(transactionList);
 	}
 	
-	public void addTransaction(Transaction transaction) {
+	public void addTransaction(Transaction transaction) throws Exception {
 		if(transaction != null) {
-			transactionList.add(EQCType.bytesToBIN(transaction.getRPCBytes()));
+			transactionList.add(transaction);
 		}
 	}
 
-	public void addAll(Vector<byte[]> transactionList) {
+	public void addAll(Vector<Transaction> transactionList) {
 		this.transactionList.addAll(transactionList);
 	}
 
 	/**
 	 * @return the transactionList
 	 */
-	public Vector<byte[]> getTransactionList() {
+	public Vector<Transaction> getTransactionList() {
 		return transactionList;
 	}
 	

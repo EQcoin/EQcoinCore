@@ -45,7 +45,7 @@ public class AssetPassport extends Passport {
 		super(PassportType.ASSET);
 	}
 
-	public AssetPassport(byte[] bytes) throws NoSuchFieldException, IOException {
+	public AssetPassport(byte[] bytes) throws Exception {
 		super(bytes);
 	}
 	

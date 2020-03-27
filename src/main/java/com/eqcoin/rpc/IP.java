@@ -27,20 +27,65 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.eqcoin.serialization;
+package com.eqcoin.rpc;
 
-import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+
+import com.eqcoin.serialization.EQCSerializable;
+import com.eqcoin.serialization.EQCType;
 
 /**
  * @author Xun Wang
- * @date Mar 9, 2020
+ * @date Mar 26, 2020
  * @email 10509759@qq.com
  */
-public interface EQCTransactionShapeTypable {
-	public byte[] getBytes(TransactionShape transactionShape) throws Exception;
-	public byte[] getBin(TransactionShape transactionShape) throws Exception;
-	public boolean isSanity(TransactionShape transactionShape);
-	public boolean isValid() throws Exception;
+public class IP extends EQCSerializable {
+	private String ip;
+
+	public IP(String ip) {
+		this.ip = ip;
+	}
+	
+	public IP(byte[] bytes) throws Exception {
+		super(bytes);
+	}
+	
+	public IP(ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parseBody(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parseBody(ByteArrayInputStream is) throws Exception {
+		ip = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBodyBytes()
+	 */
+	@Override
+	public byte[] getBodyBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		os.write(EQCType.stringToASCIIBytes(ip));
+		return os.toByteArray();
+	}
+
+	/**
+	 * @return the ip
+	 */
+	public String getIp() {
+		return ip;
+	}
+
+	/**
+	 * @param ip the ip to set
+	 */
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+	
 }

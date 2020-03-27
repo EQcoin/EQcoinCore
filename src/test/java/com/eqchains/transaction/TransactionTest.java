@@ -41,7 +41,7 @@ import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.passport.Lock;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.TxIn;
 import com.eqcoin.blockchain.transaction.TxOut;
@@ -49,6 +49,7 @@ import com.eqcoin.blockchain.transaction.Transaction.TXFEE_RATE;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.keystore.UserAccount;
 import com.eqcoin.persistence.EQCBlockChainH2;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.client.TransactionNetworkClient;
 import com.eqcoin.util.Log;
@@ -76,9 +77,8 @@ public class TransactionTest {
 			transaction.setNonce(Util.DB().getPassport(txIn.getLock().getAddressAI(), Mode.GLOBAL).getNonce().getNextID());
 			byte[] privateKey = Util.AESDecrypt(userAccount.getPrivateKey(), "abc");
 			byte[] publickey = Util.AESDecrypt(userAccount.getPublicKey(), "abc");
-			CompressedPublickey compressedPublickey = new CompressedPublickey();
-			compressedPublickey.setCompressedPublickey(publickey);
-			transaction.setCompressedPublickey(compressedPublickey);
+			EQCPublickey compressedPublickey = new EQCPublickey();
+			compressedPublickey.setPublickey(publickey);
 			transaction.cypherTxInValue(TXFEE_RATE.POSTPONE0);
 			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
 			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
@@ -94,7 +94,7 @@ public class TransactionTest {
 				e.printStackTrace();
 			}
 			ChangeLog changeLog = new ChangeLog(
-					Util.DB().getEQCBlockTailHeight(),
+					Util.DB().getEQCHiveTailHeight(),
 					new Filter(Mode.MINING));
 			compressedPublickey.setId(changeLog.getFilter().getPassport(transaction.getTxIn().getLock(), true).getId());
 			transaction.getTxIn().getLock()
@@ -107,7 +107,7 @@ public class TransactionTest {
 //				Log.info(Util.dumpBytes(transaction.getSignature(), 16));
 //				EQCBlockChainH2.getInstance().saveTransactionInPool(transaction);
 				IPList<O> ipList = Util.DB().getMinerList();
-				for(String ip:ipList.getIpList()) {
+				for(IP ip:ipList.getIpList()) {
 					TransactionNetworkClient.sendTransaction(transaction, ip);
 				}
 			} else {

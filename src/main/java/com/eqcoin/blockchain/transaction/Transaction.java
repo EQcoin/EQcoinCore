@@ -41,7 +41,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.acl.Owner;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -57,10 +56,9 @@ import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.seed.EQCSeed;
-import com.eqcoin.blockchain.seed.EQCSegWit;
+import com.eqcoin.blockchain.seed.EQCWitness;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TXFEE_RATE;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
 import com.eqcoin.crypto.EQCPublicKey;
@@ -70,9 +68,8 @@ import com.eqcoin.persistence.EQCBlockChainH2.TRANSACTION_OP;
 import com.eqcoin.rpc.MaxNonce;
 import com.eqcoin.rpc.Nest;
 import com.eqcoin.serialization.EQCInheritable;
-import com.eqcoin.serialization.EQCTransactionShapeInheritable;
-import com.eqcoin.serialization.EQCTransactionShapeTypable;
 import com.eqcoin.serialization.EQCLockShapeTypable;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -86,8 +83,7 @@ import com.eqcoin.util.Util.LockTool.LockType;
  * @date Mar 21, 2019
  * @email 10509759@qq.com
  */
-public abstract class Transaction implements Comparator<Transaction>, Comparable<Transaction>, EQCTransactionShapeTypable,
-		EQCTransactionShapeInheritable {
+public abstract class Transaction extends EQCSerializable implements Comparator<Transaction>, Comparable<Transaction> {
 	/**
 	 * Header
 	 */
@@ -98,35 +94,39 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 	 */
 	protected ID nonce;
 	protected TxIn txIn;
-	/**
-	 * Only the first time open one Lock need provide compressed publickey.
-	 */
-	protected CompressedPublickey compressedPublickey;
-	protected EQCSegWit eqcSegWit;
+	protected EQCWitness eqcWitness;
 	public final static ID SOLO = ID.ZERO;
+	protected EQcoinSeed eQcoinSeed;
 	protected ChangeLog changeLog;
 	protected Passport txInPassport;
 	protected Lock txInLock;
+	protected TransactionShape transactionShape;
 	
 	public enum TransactionType {
-		COINBASE, ZION,TRANSFER, ZIONOPERATION, TRANSFEROPERATION;
+		ZION, ZIONCOINBASE, TRANSFER, TRANSFERCOINBASE, ZIONOP, TRANSFEROP, MODERATEOP;
 		public static TransactionType get(int ordinal) {
 			TransactionType transactionType = null;
 			switch (ordinal) {
 			case 0:
-				transactionType = TransactionType.COINBASE;
+				transactionType = TransactionType.ZION;
 				break;
 			case 1:
-				transactionType = TransactionType.ZION;
+				transactionType = TransactionType.ZIONCOINBASE;
 				break;
 			case 2:
 				transactionType = TransactionType.TRANSFER;
 				break;
 			case 3:
-				transactionType = TransactionType.ZIONOPERATION;
+				transactionType = TransactionType.TRANSFERCOINBASE;
 				break;
 			case 4:
-				transactionType = TransactionType.TRANSFEROPERATION;
+				transactionType = TransactionType.ZIONOP;
+				break;
+			case 5:
+				transactionType = TransactionType.TRANSFEROP;
+				break;
+			case 6:
+				transactionType = TransactionType.MODERATEOP;
 				break;
 			}
 			return transactionType;
@@ -138,15 +138,15 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 	}
 	
 	public enum TransactionShape {
-		SEED, RPC;
+		SIGN, SEED;
 		public static TransactionShape get(int ordinal) {
 			TransactionShape transactionShape = null;
 			switch (ordinal) {
 			case 0:
-				transactionShape = TransactionShape.SEED;
+				transactionShape = TransactionShape.SIGN;
 				break;
 			case 1:
-				transactionShape = TransactionShape.RPC;
+				transactionShape = TransactionShape.SEED;
 				break;
 			}
 			return transactionShape;
@@ -195,28 +195,29 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 
 	public void init(ChangeLog changeLog) throws Exception {
 		this.changeLog = changeLog;
-		txInPassport = changeLog.getFilter().getPassport(txIn.getPassportId(), true);
+		txInPassport = changeLog.getFilter().getPassport(txIn.getLock().getId(), false);
 		txInLock = changeLog.getFilter().getLock(txInPassport.getLockID(), true);
+		if(txInPassport == null || txInLock == null) {
+			throw new IllegalStateException("TxIn's relevant Lock and Passport shouldn't null.");
+		}
 	}
 	
 	protected void init() {
 		solo = SOLO;
-		compressedPublickey = new CompressedPublickey();
-		eqcSegWit = new EQCSegWit();
+		eqcWitness = new EQCWitness();
+		transactionShape = TransactionShape.SEED;
 	}
 	
 	public Transaction() {
-		init();
+		super();
 	}
 
-	public Transaction(byte[] bytes, TransactionShape transactionShape)
-			throws Exception {
-		init();
-		EQCType.assertNotNull(bytes);
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parseHeader(is, transactionShape);
-		parseBody(is, transactionShape);
-		EQCType.assertNoRedundantData(is);
+	public Transaction(byte[] bytes) throws Exception {
+		super(bytes);
+	}
+	
+	public Transaction(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
 
 	/**
@@ -234,31 +235,17 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 	}
 
 	/**
-	 * @return the eqcSegWit
+	 * @return the eqcWitness
 	 */
-	public EQCSegWit getEqcSegWit() {
-		return eqcSegWit;
+	public EQCWitness getEqcWitness() {
+		return eqcWitness;
 	}
 
 	/**
-	 * @param eqcSegWit the eqcSegWit to set
+	 * @param eqcWitness the eqcWitness to set
 	 */
-	public void setEqcSegWit(EQCSegWit eqcSegWit) {
-		this.eqcSegWit = eqcSegWit;
-	}
-
-	/**
-	 * @return the CompressedPublickey
-	 */
-	public CompressedPublickey getCompressedPublickey() {
-		return compressedPublickey;
-	}
-
-	/**
-	 * @param CompressedPublickey the CompressedPublickey to set
-	 */
-	public void setCompressedPublickey(CompressedPublickey compressedPublickey) {
-		this.compressedPublickey = compressedPublickey;
+	public void setEqcWitness(EQCWitness eqcWitness) {
+		this.eqcWitness = eqcWitness;
 	}
 
 	/**
@@ -318,25 +305,6 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 		return nResult;
 	}
 
-	public byte[] getRPCBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(getBin(TransactionShape.RPC));
-			os.write(eqcSegWit.getBin());
-			if(!compressedPublickey.isNULL()) {
-				os.write(compressedPublickey.getBin());
-			}
-			else {
-				os.write(EQCType.NULL);
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
 	public long getMaxTxFeeLimit() {
 		return (getMaxBillingLength() * TXFEE_RATE.POSTPONE0.getRate() * Util.TXFEE_RATE);
 	}
@@ -391,15 +359,16 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 		}
 
 		if (txInLock.getPublickey() == null) {
-			if (compressedPublickey.isNULL()) {
-				return false;
-			}
-			// Verify Publickey
-			if (!LockTool.verifyAddressPublickey(txInLock.getReadableLock(),
-					compressedPublickey.getCompressedPublickey())) {
-				Log.Error("Verify Publickey failed");
-				return false;
-			}
+			// Here need do more job
+//			if (compressedPublickey.isNULL()) {
+//				return false;
+//			}
+//			// Verify Publickey
+//			if (!LockTool.verifyLockAndPublickey(txInLock.getReadableLock(),
+//					compressedPublickey.getPublickey())) {
+//				Log.Error("Verify Publickey failed");
+//				return false;
+//			}
 		}
 		
 		// Check balance from current Passport
@@ -418,7 +387,7 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean isDerivedValid() throws Exception {
+	protected boolean isDerivedValid() throws Exception {
 		return false;
 	}
 	
@@ -441,9 +410,11 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 	 */
 	public boolean isValid() throws Exception {
 		if (!isBaseValid()) {
+			Log.Error("Transaction's isBaseValid verify failed");
 			return false;
 		}
 		if (!isDerivedValid()) {
+			Log.Error("Transaction's isDerivedValid verify failed");
 			return false;
 		}
 		// Verify if Transaction's signature can pass
@@ -493,7 +464,7 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 		return false;
 	}
 
-	public static Transaction parseTransaction(byte[] bytes, TransactionShape transactionShape) {
+	public static Transaction parseTransaction(byte[] bytes) {
 		if(bytes == null) {
 			return null;
 		}
@@ -501,16 +472,16 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 		TransactionType transactionType = parseTransactionType(bytes);
 
 		try {
-			if (transactionType == TransactionType.COINBASE) {
-				transaction = new CoinbaseTransaction(bytes, TransactionShape.SEED);
+			if (transactionType == TransactionType.TRANSFERCOINBASE) {
+				transaction = new TransferCoinbaseTransaction(bytes);
 			} else if (transactionType == TransactionType.ZION) {
-				transaction = new ZionTransaction(bytes, transactionShape);
-			} else if (transactionType == TransactionType.ZIONOPERATION) {
+				transaction = new ZionTransaction(bytes);
+			} else if (transactionType == TransactionType.ZIONOP) {
 				transaction = null;
 			} else if (transactionType == TransactionType.TRANSFER) {
-				transaction = new TransferTransaction(bytes, transactionShape);
-			} else if (transactionType == TransactionType.TRANSFEROPERATION) {
-				transaction = new TransferOperationTransaction(bytes, transactionShape);
+				transaction = new TransferTransaction(bytes);
+			} else if (transactionType == TransactionType.TRANSFEROP) {
+				transaction = new TransferOPTransaction(bytes);
 			} 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -534,10 +505,10 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 			}
 			EQCPublicKey eqcPublicKey = new EQCPublicKey(eccType);
 			// Create EQPublicKey according to compressed Publickey
-			eqcPublicKey.setECPoint(compressedPublickey.getCompressedPublickey());
+			eqcPublicKey.setECPoint(txInLock.getPublickey());
 			signature.initVerify(eqcPublicKey);
-			signature.update(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes(TransactionShape.RPC)));
-			isTransactionValid = signature.verify(eqcSegWit.getSignature());
+			signature.update(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes()));
+			isTransactionValid = signature.verify(eqcWitness.getSignature());
 		} catch (NoSuchAlgorithmException | NoSuchProviderException | SignatureException | IOException | InvalidKeyException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -548,17 +519,13 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 
 	public byte[] sign(Signature ecdsa) throws ClassNotFoundException, SQLException, Exception {
 		try {
-			ecdsa.update(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes(TransactionShape.RPC)));
-			eqcSegWit.setSignature(ecdsa.sign());
+			ecdsa.update(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes()));
+			eqcWitness.setSignature(ecdsa.sign());
 		} catch (SignatureException | IOException e) {
 			e.printStackTrace();
 			Log.Error(e.getMessage());
 		}
-		return eqcSegWit.getSignature();
-	}
-
-	public void heal(EQCSeed eqcSubchain) throws Exception {
-		
+		return eqcWitness.getSignature();
 	}
 
 //	/* (non-Javadoc)
@@ -616,40 +583,60 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 //		return true;
 //	}
 
+//	public void preparePlanting() throws Exception {
+//		eqcWitness = eQcoinSeed.getNextEQCSegWit();
+//		if (eqcWitness == null) {
+//			throw new IllegalStateException("Transaction relevant EQCSegWit shouldn't null.");
+//		}
+//		if (txInLock.getPublickey() == null) {
+//			compressedPublickey = eQcoinSeed.getNextCompressedPublickey();
+//			compressedPublickey.setNew(true);
+//			if (compressedPublickey == null) {
+//				throw new IllegalStateException("Transaction relevant CompressedPublickey shouldn't null.");
+//			}
+//		}
+//	}
+	
 	public void planting() throws Exception {
-		// Update current Transaction's relevant Account's AccountsMerkleTree's data
-		// Update current Transaction's TxIn Publickey if need
-		Passport passport = changeLog.getFilter().getPassport(txIn.getPassportId(), true);
-		if (compressedPublickey.isNew()) {
-			Lock lock = changeLog.getFilter().getLock(passport.getId(), true);
-			if(lock.getPublickey() == null) {
-				lock.setPublickey(compressedPublickey.getCompressedPublickey());
-			}
-			else {
-				throw new IllegalStateException("Current transaction's publickey is new: "
-						+ Util.getHexString(compressedPublickey.getCompressedPublickey())
-						+ " the relevant lock already have publickey: " + Util.getHexString(lock.getPublickey()));
-			}
-			changeLog.getFilter().saveLock(lock);
+		try {
+			changeLog.getFilter().getConnection().setAutoCommit(false);
+			derivedPlanting();
+			changeLog.getFilter().getConnection().commit();
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
+			changeLog.getFilter().getConnection().rollback();
+			throw e;
+		} finally {
+			free();
+			changeLog.getFilter().getConnection().setAutoCommit(true);
 		}
-
+	}
+	
+	protected void derivedPlanting() throws Exception {
+		// Update current Transaction's relevant Account's AccountsMerkleTree's data
 		// Update current Transaction's TxIn Account's relevant Asset's Nonce&Balance
 		// Update current Transaction's TxIn Account's relevant Asset's Nonce
-		passport.increaseNonce();
+		txInPassport.increaseNonce();
 		// Update current Transaction's TxIn Account's relevant Asset's Balance
-		passport.withdraw(ID.valueOf(getBillingValue()));
-		changeLog.getFilter().savePassport(passport);
+		txInPassport.withdraw(new ID(getBillingValue()));
+		txInPassport.setUpdateHeight(changeLog.getHeight());
+		changeLog.getFilter().savePassport(txInPassport);
+		// Deposit TxFee
+		Passport eqCoinFederal = changeLog.getFilter().getPassport(ID.ONE, true);
+		eqCoinFederal.deposit(new ID(getTxFee()));
+		eqCoinFederal.setUpdateHeight(changeLog.getHeight());
+		changeLog.getFilter().savePassport(eqCoinFederal);
 	}
-
-	public void parseBody(ByteArrayInputStream is, TransactionShape lockShape)
+	
+	public void parseBody(ByteArrayInputStream is)
 			throws Exception {
+		parseDerivedBody(is);
+		eqcWitness = new EQCWitness(is);
 	}
-
-	public void preparePlanting() throws Exception {
-		// TODO Auto-generated method stub
-
+	
+	protected void parseDerivedBody(ByteArrayInputStream is) throws Exception {
+		
 	}
-
 	
 	public long getTxFeeLimit() {
 		return 0;
@@ -683,95 +670,55 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 		return 0;
 	}
 	
-	public byte[] getBytes(TransactionShape transactionShape) throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Header
-			os.write(getHeaderBytes(transactionShape));
-			// Serialization Body
-			os.write(getBodyBytes(transactionShape));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
-	public byte[] getBin(TransactionShape transactionShape) throws Exception {
-		return EQCType.bytesToBIN(getBytes(transactionShape));
-	}
-
 	protected boolean isTxInSanity() {
 		return txIn != null && txIn.isSanity(LockShape.ID);
 	}
 	
-	public boolean isBaseSanity(TransactionShape transactionShape) {
-		if (solo == null || solo.equals(SOLO) || transactionType == null || !isTransactionTypeSanity() || isTxInSanity() || nonce == null
-				|| !nonce.isSanity() || compressedPublickey == null || eqcSegWit == null || !eqcSegWit.isSanity()) {
+	public boolean isBaseSanity() {
+		if (solo == null || !solo.equals(SOLO) || transactionType == null || !isTransactionTypeSanity() || isTxInSanity() || nonce == null
+				|| !nonce.isSanity() || eqcWitness == null || !eqcWitness.isSanity()) {
 			return false;
 		}
 		return true;
 	}
 	
-	public boolean isDerivedSanity(TransactionShape transactionShape) {
+	protected boolean isDerivedSanity() {
 		return false;
 	}
 	
-	public boolean isSanity(TransactionShape transactionShape) {
-		return isBaseSanity(transactionShape) && isDerivedSanity(transactionShape);
+	public boolean isSanity() {
+		return isBaseSanity() && isDerivedSanity();
 	}
 	
-	public void parseHeader(ByteArrayInputStream is, TransactionShape lockShape)
-			throws Exception {
-		// Parse Solo
-		solo = EQCType.parseID(is);
-		// Parse Transaction type
-		transactionType = TransactionType.get(EQCType.eqcBitsToInt(EQCType.parseEQCBits(is)));
+	public void parseHeader(ByteArrayInputStream is) throws Exception {
+		parseSoloAndTransactionType(is);
+		parseNonce(is);
+		parseTxIn(is);
+	}
+	
+	protected void parseNonce(ByteArrayInputStream is) throws Exception {
 		// Parse nonce
 		nonce = new ID(EQCType.parseEQCBits(is));
 	}
 	
-	public byte[] getHeaderBytes(TransactionShape lockShape) throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Solo
-			os.write(solo.getEQCBits());
-			// Serialization Transaction type
-			os.write(transactionType.getEQCBits());
-			// Serialization nonce
-			os.write(EQCType.bigIntegerToEQCBits(nonce));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-	
-	public void parseFullHeader(ByteArrayInputStream is, TransactionShape transactionShape)
-			throws Exception {
+	protected void parseSoloAndTransactionType(ByteArrayInputStream is) throws Exception {
 		// Parse Solo
 		solo = EQCType.parseID(is);
 		// Parse Transaction type
 		transactionType = TransactionType.get(EQCType.eqcBitsToInt(EQCType.parseEQCBits(is)));
-		// Parse nonce
-		nonce = new ID(EQCType.parseEQCBits(is));
+	}
+	
+	protected void parseTxIn(ByteArrayInputStream is) throws Exception {
 		// Parse TxIn
 		txIn = new TxIn(is, LockShape.ID);
 	}
-
-	public byte[] getFullHeaderBytes(TransactionShape transactionShape) throws Exception {
+	
+	public byte[] getHeaderBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			// Serialization Solo
-			os.write(solo.getEQCBits());
-			// Serialization Transaction type
-			os.write(transactionType.getEQCBits());
-			// Serialization nonce
-			os.write(EQCType.bigIntegerToEQCBits(nonce));
-			// Serialization TxIn
-			os.write(txIn.getBytes(LockShape.ID));
+			serializeSoloAndTransactionTypeBytes(os);
+			serializeNonce(os);
+			serializeTxInBytes(os);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -779,35 +726,69 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 		}
 		return os.toByteArray();
 	}
-
-	public byte[] getBodyBytes(TransactionShape transactionShape) throws Exception {
+	
+	protected void serializeNonce(ByteArrayOutputStream os) throws Exception {
+		// Serialization nonce
+		os.write(EQCType.bigIntegerToEQCBits(nonce));
+	}
+	
+	protected void serializeSoloAndTransactionTypeBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization Solo
+		os.write(solo.getEQCBits());
+		// Serialization Transaction type
+		os.write(transactionType.getEQCBits());
+	}
+	
+	protected void serializeTxInBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization TxIn
+		os.write(txIn.getBytes(LockShape.ID));
+	}
+	
+	public byte[] getBodyBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			// Serialization derived body bytes
+			os.write(getDerivedBodyBytes());
+			if (transactionShape == TransactionShape.SEED) {
+				// Serialization Witness
+				os.write(eqcWitness.getBytes());
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		return os.toByteArray();
+	}
+	
+	protected byte[] getDerivedBodyBytes() throws Exception {
 		return null;
 	}
 
-	public static Transaction parseRPC(byte[] bytes) throws NoSuchFieldException, IllegalStateException, IOException {
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		return parseRPC(is);
-	}
-	
-	public static Transaction parseRPC(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
-		// Parse Transaction
-		Transaction transaction = Transaction.parseTransaction(EQCType.parseBIN(is), TransactionShape.RPC);
-		// Parse EQCSegWit
-		transaction.getEqcSegWit().setSignature(EQCType.parseBIN(is));
-		// Parse Compressed PublicKey
-		transaction.getCompressedPublickey().setCompressedPublickey(EQCType.parseBIN(is));
-	
-		return transaction;
-	}
+//	public static Transaction parseRPC(byte[] bytes) throws NoSuchFieldException, IllegalStateException, IOException {
+//		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+//		return parseRPC(is);
+//	}
+//	
+//	public static Transaction parseRPC(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
+//		// Parse Transaction
+//		Transaction transaction = Transaction.parseTransaction(EQCType.parseBIN(is));
+//		// Parse EQCWitness
+//		transaction.getEqcSegWit().setSignature(EQCType.parseBIN(is));
+//		// Parse Compressed PublicKey
+//		transaction.getPublickey().setPublickey(EQCType.parseBIN(is));
+//	
+//		return transaction;
+//	}
 
 	public Nest getNest() {
 		Nest nest = new Nest();
-		nest.setId(txIn.getPassportId());
+		nest.setId(txIn.getLock().getId());
 		return nest;
 	}
 	
-	public O getO() {
-		return new O(ByteBuffer.wrap(getRPCBytes()));
+	public O getO() throws Exception {
+		return new O(ByteBuffer.wrap(getBytes()));
 	}
 	
 	/*
@@ -842,6 +823,34 @@ public abstract class Transaction implements Comparator<Transaction>, Comparable
 	 */
 	public ChangeLog getChangeLog() {
 		return changeLog;
+	}
+
+	/**
+	 * @return the txInPassport
+	 */
+	public Passport getTxInPassport() {
+		return txInPassport;
+	}
+
+	/**
+	 * @return the txInLock
+	 */
+	public Lock getTxInLock() {
+		return txInLock;
+	}
+
+	/**
+	 * @return the transactionShape
+	 */
+	public TransactionShape getTransactionShape() {
+		return transactionShape;
+	}
+
+	/**
+	 * @param transactionShape the transactionShape to set
+	 */
+	public void setTransactionShape(TransactionShape transactionShape) {
+		this.transactionShape = transactionShape;
 	}
 	
 }

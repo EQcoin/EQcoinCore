@@ -41,13 +41,11 @@ import java.util.Comparator;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.rpc.TailInfo;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -82,15 +80,18 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	 * @email 10509759@qq.com
 	 */
 	public enum PassportType {
-		EQCOINSEED, ASSET;
+		EQCOINROOT, ASSET, SMARTCONTRACT;
 		public static PassportType get(int ordinal) {
 			PassportType passportTypeType = null;
 			switch (ordinal) {
 			case 0:
-				passportTypeType = PassportType.EQCOINSEED;
+				passportTypeType = PassportType.EQCOINROOT;
 				break;
 			case 1:
 				passportTypeType = PassportType.ASSET;
+				break;
+			case 2:
+				passportTypeType = PassportType.SMARTCONTRACT;
 				break;
 			}
 			return passportTypeType;
@@ -106,7 +107,7 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 		return passportType;
 	}
 
-	public static Passport parsePassport(byte[] bytes) throws NoSuchFieldException, IllegalStateException, IOException {
+	public static Passport parsePassport(byte[] bytes) throws Exception {
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		Passport account = null;
 		PassportType passportType = parsepassportType(is);
@@ -115,8 +116,8 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 			if (passportType == PassportType.ASSET) {
 				account = new AssetPassport(bytes);
 			} 
-			else if (passportType == passportType.EQCOINSEED) {
-				account = new EQcoinSeedPassport(bytes);
+			else if (passportType == passportType.EQCOINROOT) {
+				account = new EQcoinRootPassport(bytes);
 			} 
 		} catch (NoSuchFieldException | UnsupportedOperationException | IOException e) {
 			// TODO Auto-generated catch block
@@ -146,7 +147,7 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 			if (passportTypeType == PassportType.ASSET) {
 				passport = new AssetPassport();
 //				passport.setKey(key);
-			} else if (passportTypeType == passportTypeType.EQCOINSEED) {
+			} else if (passportTypeType == passportTypeType.EQCOINROOT) {
 				passport = null;
 			} 
 		} catch (UnsupportedOperationException e) {
@@ -157,17 +158,25 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 		return passport;
 	}
 
-	public Passport(byte[] bytes) throws NoSuchFieldException, IOException {
+	public Passport(byte[] bytes) throws Exception {
 		EQCType.assertNotNull(bytes);
 		init();
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+		parse(is);
+		EQCType.assertNoRedundantData(is);
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse Header
 		parseHeader(is);
 		// Parse Body
  		parseBody(is);
-		EQCType.assertNoRedundantData(is);
 	}
-	
+
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
  		passportType = PassportType.get(EQCType.parseID(is).intValue());
@@ -292,7 +301,7 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) {
+	public boolean isValid() {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -366,6 +375,20 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	 */
 	public ID getBalance() {
 		return balance;
+	}
+
+	/**
+	 * @return the updateHeight
+	 */
+	public ID getUpdateHeight() {
+		return updateHeight;
+	}
+
+	/**
+	 * @param updateHeight the updateHeight to set
+	 */
+	public void setUpdateHeight(ID updateHeight) {
+		this.updateHeight = updateHeight;
 	}
 	
 }

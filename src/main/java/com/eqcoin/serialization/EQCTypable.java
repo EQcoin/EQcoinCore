@@ -32,7 +32,6 @@ package com.eqcoin.serialization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
 
 /**
@@ -44,5 +43,5 @@ public interface EQCTypable {
 	public byte[] getBytes() throws Exception;
 	public byte[] getBin() throws Exception;
 	public boolean isSanity() throws Exception;
-	public boolean isValid(ChangeLog changeLog) throws Exception;
+	public boolean isValid() throws Exception;
 }

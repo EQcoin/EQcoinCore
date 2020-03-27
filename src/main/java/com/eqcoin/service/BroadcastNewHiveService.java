@@ -34,6 +34,7 @@ import java.io.IOException;
 import com.eqcoin.avro.O;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.Info;
 import com.eqcoin.rpc.client.MinerNetworkClient;
@@ -75,7 +76,7 @@ public class BroadcastNewHiveService extends EQCService {
 		try {
 			this.state.set(State.BROADCASTNEWHIVE);
 			newHiveState = (NewHiveState) state;
-			if(!Util.IP.equals(Util.SINGULARITY_IP)) {
+			if(!Util.LOCAL_IP.equals(Util.SINGULARITY_IP)) {
 				try {
 					Log.info("Begin Broadcast new hive with height: " + newHiveState.getNewBlock().getEqcHive().getHeight() + " to SINGULARITY_IP");
 					Info info = MinerNetworkClient.broadcastNewBlock(newHiveState.getNewBlock(), Util.SINGULARITY_IP);
@@ -87,8 +88,8 @@ public class BroadcastNewHiveService extends EQCService {
 			}
 			IPList<O> minerList = EQCBlockChainH2.getInstance().getMinerList();
 			if(!minerList.isEmpty()) {
-				for(String ip:minerList.getIpList()) {
-					if(!Util.IP.equals(ip)) {
+				for(IP ip:minerList.getIpList()) {
+					if(!Util.LOCAL_IP.equals(ip)) {
 						try {
 							Log.info("Begin Broadcast new hive with height: " + newHiveState.getNewBlock().getEqcHive().getHeight() + " to: " + ip);
 							Info info = MinerNetworkClient.broadcastNewBlock(newHiveState.getNewBlock(), ip);

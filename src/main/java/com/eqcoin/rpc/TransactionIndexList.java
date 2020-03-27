@@ -34,9 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 import com.eqcoin.util.Util;
 
 /**
@@ -76,7 +74,7 @@ public class TransactionIndexList<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -95,11 +93,10 @@ public class TransactionIndexList<T> extends IO<T> {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		ARRAY array = EQCType.parseARRAY(is);
-		transactionIndexListSize = array.size;
-		ByteArrayInputStream is1 = new ByteArrayInputStream(array.elements);
-		for(int i=0; i<array.size; ++i) {
-			transactionIndexList.add(new TransactionIndex(is1));
+		Vector<byte[]> array = EQCType.parseArray(is);
+		transactionIndexListSize = array.size();
+		for(byte[] bytes:array) {
+			transactionIndexList.add(new TransactionIndex(bytes));
 		}
 		syncTime = Util.bytesToLong(EQCType.parseEQCBits(is));
 	}
@@ -119,14 +116,7 @@ public class TransactionIndexList<T> extends IO<T> {
 	@Override
 	public byte[] getBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		Vector<byte[]> bytes = null;
-		if (transactionIndexList.size() > 0) {
-			bytes = new Vector<>();
-			for (TransactionIndex transactionIndex : transactionIndexList) {
-				bytes.add(transactionIndex.getBytes());
-			}
-		}
-		os.write(EQCType.bytesArrayToARRAY(bytes));
+		os.write(EQCType.eqcSerializableListToArray(transactionIndexList));
 		os.write(EQCType.longToEQCBits(syncTime));
 		return os.toByteArray();
 	}

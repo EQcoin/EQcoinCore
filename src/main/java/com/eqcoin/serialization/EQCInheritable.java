@@ -40,6 +40,7 @@ import com.eqcoin.blockchain.passport.Lock.LockShape;
  * @email 10509759@qq.com
  */
 public interface EQCInheritable {
+	public void parse(ByteArrayInputStream is)  throws Exception;
 	public void parseHeader(ByteArrayInputStream is)  throws Exception;
 	public void parseBody(ByteArrayInputStream is)  throws Exception;
 	public byte[] getHeaderBytes() throws Exception;

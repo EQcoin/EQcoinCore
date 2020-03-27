@@ -32,7 +32,7 @@ package com.eqcoin.service;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import com.eqcoin.blockchain.changelog.Filter.Mode;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -108,16 +108,16 @@ public class PendingNewHiveService extends EQCService {
 //						+ " just return");
 //				return;
 //			} else {
-			EQcoinSeedPassport eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 			// Here need do more job to check if the checkpoint is valid need add checkpoint
 			// transaction in NewBlock add isValid in NewBlock to handle this
-			if (newBlockState.getNewBlock().getEqcHive().getHeight().compareTo(Util.DB().getEQCBlockTailHeight()) > 0
+			if (newBlockState.getNewBlock().getEqcHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight()) > 0
 					&& newBlockState.getNewBlock().getCheckPointHeight()
 							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
 					&& newBlockState.getNewBlock().getEqcHive().getEqcHeader().isDifficultyValid()) {
-				if(newBlockState.getNewBlock().getEqcHive().getHeight().compareTo(Util.DB().getEQCBlockTailHeight().getNextID()) > 0) {
+				if(newBlockState.getNewBlock().getEqcHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight().getNextID()) > 0) {
 					if(SyncblockNetworkClient.ping(newBlockState.getNewBlock().getCookie().getIp()) == -1) {
-						Log.info("Received new hive and which height:" + newBlockState.getNewBlock().getEqcHive().getHeight() + " is more than one bigger than local tail:" + Util.DB().getEQCBlockTailHeight() + " but it's IP:" + newBlockState.getNewBlock().getCookie().getIp() + " can't reach here have nothing to do");
+						Log.info("Received new hive and which height:" + newBlockState.getNewBlock().getEqcHive().getHeight() + " is more than one bigger than local tail:" + Util.DB().getEQCHiveTailHeight() + " but it's IP:" + newBlockState.getNewBlock().getCookie().getIp() + " can't reach here have nothing to do");
 						return;
 					}
 				}

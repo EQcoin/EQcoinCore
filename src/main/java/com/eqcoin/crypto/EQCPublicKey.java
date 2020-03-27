@@ -58,7 +58,7 @@ import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
 
 /**
- * EQPublicKey is an EQC tool you can use it as PublicKey to verify the
+ * EQCPublicKey is an EQC tool you can use it as PublicKey to verify the
  * signature or get the PublicKey's compressed encode
  * 
  * @author Xun Wang

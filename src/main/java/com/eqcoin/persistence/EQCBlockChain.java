@@ -29,9 +29,11 @@
  */
 package com.eqcoin.persistence;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Vector;
 
+import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.Lock;
@@ -40,6 +42,7 @@ import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
 import com.eqcoin.rpc.Balance;
+import com.eqcoin.rpc.IP;
 import com.eqcoin.rpc.IPList;
 import com.eqcoin.rpc.MaxNonce;
 import com.eqcoin.rpc.Nest;
@@ -54,7 +57,9 @@ import com.eqcoin.util.ID;
  * @date Oct 2, 2018
  * @email 10509759@qq.com
  */
-public interface EQCBlockChain<T> {
+public interface EQCBlockChain {
+	
+	public Connection getConnection();
 
 	// Lock relevant interface for H2, avro(optional).
 	public boolean saveLock(Lock lock, Mode mode) throws Exception;
@@ -92,6 +97,10 @@ public interface EQCBlockChain<T> {
 	// Passport relevant interface for H2, avro(optional).
 	public boolean savePassport(Passport passport, Mode mode) throws Exception;
 
+	public ID getTotalLockNumbers(ID height) throws Exception;
+	
+	public ID getTotalNewLockNumbers(ChangeLog changeLog) throws Exception;
+	
 	/**
 	 * Get Passport from Global state DB according to it's ID which is the latest
 	 * status.
@@ -123,6 +132,10 @@ public interface EQCBlockChain<T> {
 	public boolean deletePassport(ID id, Mode mode) throws Exception;
 
 	public boolean clearPassport(Mode mode) throws Exception;
+	
+	public ID getTotalPassportNumbers(ID height) throws Exception;
+	
+	public ID getTotalNewPassportNumbers(ChangeLog changeLog) throws Exception;
 
 	// relevant interface for for avro, H2(optional).
 	public boolean isEQCHiveExists(ID height) throws Exception;
@@ -173,9 +186,9 @@ public interface EQCBlockChain<T> {
 
 	public byte[] getEQCHeaderBuddyHash(ID height, ID currentTailHeight) throws Exception;
 
-	public ID getEQCBlockTailHeight() throws Exception;
+	public ID getEQCHiveTailHeight() throws Exception;
 
-	public boolean saveEQCBlockTailHeight(ID height) throws Exception;
+	public boolean saveEQCHiveTailHeight(ID height) throws Exception;
 
 	@Deprecated
 	public ID getTotalAccountNumbers(ID height) throws Exception;
@@ -183,29 +196,29 @@ public interface EQCBlockChain<T> {
 	public SignHash getSignHash(ID id) throws Exception;
 
 	// MinerNetwork and FullNodeNetwork relevant interface for H2, avro.
-	public boolean isIPExists(String ip, NODETYPE nodeType) throws SQLException;
+	public boolean isIPExists(IP ip, NODETYPE nodeType) throws SQLException;
 
-	public boolean isMinerExists(String ip) throws SQLException, Exception;
+	public boolean isMinerExists(IP ip) throws SQLException, Exception;
 
-	public boolean saveMiner(String ip) throws SQLException, Exception;
+	public boolean saveMiner(IP ip) throws SQLException, Exception;
 
-	public boolean deleteMiner(String ip) throws SQLException, Exception;
+	public boolean deleteMiner(IP ip) throws SQLException, Exception;
 
-	public boolean saveMinerSyncTime(String ip, long syncTime) throws SQLException, Exception;
+	public boolean saveMinerSyncTime(IP ip, long syncTime) throws SQLException, Exception;
 
-	public long getMinerSyncTime(String ip) throws SQLException, Exception;
+	public long getMinerSyncTime(IP ip) throws SQLException, Exception;
 
-	public boolean saveIPCounter(String ip, int counter) throws SQLException, Exception;
+	public boolean saveIPCounter(IP ip, int counter) throws SQLException, Exception;
 
-	public int getIPCounter(String ip) throws SQLException, Exception;
+	public int getIPCounter(IP ip) throws SQLException, Exception;
 
 	public IPList getMinerList() throws SQLException, Exception;
 
-	public boolean isFullNodeExists(String ip) throws SQLException, Exception;
+	public boolean isFullNodeExists(IP ip) throws SQLException, Exception;
 
-	public boolean saveFullNode(String ip) throws SQLException, Exception;
+	public boolean saveFullNode(IP ip) throws SQLException, Exception;
 
-	public boolean deleteFullNode(String ip) throws SQLException, Exception;
+	public boolean deleteFullNode(IP ip) throws SQLException, Exception;
 
 	public IPList getFullNodeList() throws SQLException, Exception;
 

@@ -33,11 +33,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Lock;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.transaction.Transaction;
-import com.eqcoin.blockchain.transaction.TransferOperationTransaction;
+import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCLockShapeInheritable;
@@ -54,21 +52,32 @@ import com.eqcoin.util.Log;
  */
 // Due to the Lock's state need represent 3 styles(ID, AI, Readable) so here must use EQCLockShapeTypable & EQCLockShapeInheritable
 // Due to the expandability so here need use isMeetPreconditions
-public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInheritable {
-
+public abstract class Operation implements EQCTypable, EQCInheritable {
 	public enum OP {
-		LOCK, CHECKPOINT, TXFEERATE;
+		PUBLICKEY, LOCK, CHECKPOINT, BLOCKINTERVAL, MAXBLOCKSIZE, TXFEERATE, UPDATESCRIPT;
 		public static OP get(int ordinal) {
 			OP op = null;
 			switch (ordinal) {
 			case 0:
-				op = OP.LOCK;
+				op = OP.PUBLICKEY;
 				break;
 			case 1:
+				op = OP.LOCK;
+				break;
+			case 3:
 				op = OP.CHECKPOINT;
 				break;
-			case 2:
+			case 4:
+				op = OP.BLOCKINTERVAL;
+				break;
+			case 5:
+				op = OP.MAXBLOCKSIZE;
+				break;
+			case 6:
 				op = OP.TXFEERATE;
+				break;
+			case 7:
+				op = OP.UPDATESCRIPT;
 				break;
 			}
 			return op;
@@ -76,13 +85,25 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 	}
 
 	protected OP op;
+	protected Transaction transaction;
 
-	public Operation(OP op) {
-		this.op = op;
+	public Operation() {
 	}
 	
-	public boolean execute(Transaction transaction) throws Exception {
-		return false;
+	public Operation(ByteArrayInputStream is) throws Exception {
+		parse(is);
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
+		parseHeader(is);
+		parseBody(is);
+	}
+
+	public void execute() throws Exception {
 	}
 	
 	/**
@@ -99,8 +120,8 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 		this.op = op;
 	}
 
-	public boolean isMeetPreconditions(Transaction transaction) throws Exception {
-		return false;
+	public boolean isMeetPreconditions() throws Exception {
+		return true;
 	}
 
 	public static OP parseOP(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
@@ -113,16 +134,16 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 		return op;
 	}
 
-	public static Operation parseOperation(ByteArrayInputStream is, LockShape lockShape) throws NoSuchFieldException, IllegalArgumentException, IOException {
+	public static Operation parseOperation(ByteArrayInputStream is) throws Exception {
 		Operation operation = null;
 		OP op = parseOP(is);
 
 		if (op == OP.LOCK) {
-			operation = new UpdateLockOperation(is, lockShape);
+			operation = new UpdateLockOP(is);
 		} else if (op == OP.CHECKPOINT) {
 			
 		} else if (op == OP.TXFEERATE) {
-			operation = new UpdateTxFeeRateOperation();
+			operation = new UpdateTxFeeRateOP();
 		} 
 		return operation;
 	}
@@ -143,38 +164,46 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 	}
 
 	@Override
-	public byte[] getBytes(LockShape lockShape) {
-		// TODO Auto-generated method stub
-		return null;
+	public byte[] getBytes() {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			// Serialization Header
+			os.write(getHeaderBytes());
+			// Serialization Body
+			os.write(getBodyBytes());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		return os.toByteArray();
 	}
 
 	@Override
-	public byte[] getBin(LockShape lockShape) {
-		// TODO Auto-generated method stub
-		return null;
+	public byte[] getBin() {
+		return EQCType.bytesToBIN(getBytes());
 	}
 
 	@Override
-	public boolean isSanity(LockShape lockShape) {
+	public boolean isSanity() {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public void parseBody(ByteArrayInputStream is, LockShape lockShape)
-			throws NoSuchFieldException, IOException, IllegalArgumentException {
+	public void parseBody(ByteArrayInputStream is)
+			throws Exception {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
-	public byte[] getHeaderBytes(LockShape lockShape) {
+	public byte[] getHeaderBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization OP
@@ -188,13 +217,13 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 	}
 
 	@Override
-	public byte[] getBodyBytes(LockShape lockShape) {
+	public byte[] getBodyBytes() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void parseHeader(ByteArrayInputStream is, LockShape lockShape)
+	public void parseHeader(ByteArrayInputStream is)
 			throws NoSuchFieldException, IOException, IllegalArgumentException {
 		// Parse OP
 		op = OP.get(EQCType.eqcBitsToInt(EQCType.parseEQCBits(is)));
@@ -208,6 +237,7 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((op == null) ? 0 : op.hashCode());
+		result = prime * result + ((transaction == null) ? 0 : transaction.hashCode());
 		return result;
 	}
 
@@ -216,16 +246,48 @@ public abstract class Operation implements EQCLockShapeTypable, EQCLockShapeInhe
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		Operation other = (Operation) obj;
-		if (op != other.op)
+		if (op != other.op) {
 			return false;
+		}
+		if (transaction == null) {
+			if (other.transaction != null) {
+				return false;
+			}
+		} else if (!transaction.equals(other.transaction)) {
+			return false;
+		}
 		return true;
+	}
+
+	/**
+	 * @return the transaction
+	 */
+	public Transaction getTransaction() {
+		return transaction;
+	}
+
+	/**
+	 * @param transaction the transaction to set
+	 */
+	public void setTransaction(Transaction transaction) {
+		this.transaction = transaction;
+	}
+
+	/**
+	 * @return the op
+	 */
+	public OP getOp() {
+		return op;
 	}
 	
 }

@@ -31,7 +31,6 @@ package com.eqcoin.crypto;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Iterator;
 import java.util.Vector;
 
 import com.eqcoin.util.Util;
@@ -73,13 +72,12 @@ public class MerkleTree {
 	public Vector<byte[]> getNextNodeList(Vector<byte[]> nodes) {
 		Vector<byte[]> nextNodeList = new Vector<byte[]>();
 		byte[] left = null, right = null, bytes = null;
-		Iterator<byte[]> iterator = nodes.iterator();
-		while (iterator.hasNext()) {
+		while (nodes.iterator().hasNext()) {
 			// Left node
-			left = iterator.next();
+			left = nodes.iterator().next();
 			// Right node
-			if (iterator.hasNext()) {
-				right = iterator.next();
+			if (nodes.iterator().hasNext()) {
+				right = nodes.iterator().next();
 				// Left node and right node's hash
 				bytes = new byte[left.length + right.length];
 				System.arraycopy(left, 0, bytes, 0, left.length);

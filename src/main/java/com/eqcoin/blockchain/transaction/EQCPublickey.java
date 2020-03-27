@@ -58,12 +58,13 @@ import com.eqcoin.util.Util.LockTool.LockType;
  * @date Sep 28, 2018
  * @email 10509759@qq.com
  */
-public class CompressedPublickey implements EQCTypable {
+public class EQCPublickey implements EQCTypable {
 	/**
-	 * The No. Passport relevant public key which is BINX type.
+	 * The No. Passport relevant publickey which is BINX type.
 	 */
-	private byte[] compressedPublickey = null;
+	private byte[] publickey = null;
 	private boolean isNew;
+	private ChangeLog changeLog;
 
 	/**
 	 * Publickey relevant ID used to verify Publickey
@@ -72,25 +73,25 @@ public class CompressedPublickey implements EQCTypable {
 	
 	private LockType lockType;
 	
-	public CompressedPublickey() {
+	public EQCPublickey() {
 		super();
 		isNew = false;
 	}
 
-	public CompressedPublickey(byte[] bytes) throws NoSuchFieldException, IOException {
+	public EQCPublickey(byte[] bytes) throws NoSuchFieldException, IOException {
 		EQCType.assertNotNull(bytes);
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		parse(is);
 		EQCType.assertNoRedundantData(is);
 	}
 	
-	public CompressedPublickey(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
+	public EQCPublickey(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
 		parse(is);
 	}
 	
 	private void parse(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
 		// Parse publicKey
-		compressedPublickey = EQCType.parseBIN(is);
+		publickey = EQCType.parseBIN(is);
 	}
 
 	/**
@@ -102,7 +103,7 @@ public class CompressedPublickey implements EQCTypable {
 	public byte[] getBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			os.write(compressedPublickey);
+			os.write(publickey);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -113,23 +114,23 @@ public class CompressedPublickey implements EQCTypable {
 
 	public int getBillingSize() {
 		int size = 0;
-		size += compressedPublickey.length;
+		size += publickey.length;
 		size += EQCType.getEQCTypeOverhead(size);
 	    return size;
 	}
 
 	/**
-	 * @return the compressedPublickey
+	 * @return the publickey
 	 */
-	public byte[] getCompressedPublickey() {
-		return compressedPublickey;
+	public byte[] getPublickey() {
+		return publickey;
 	}
 
 	/**
-	 * @param compressedPublickey the compressedPublickey to set
+	 * @param publickey the publickey to set
 	 */
-	public void setCompressedPublickey(byte[] compressedPublickey) {
-		this.compressedPublickey = compressedPublickey;
+	public void setPublickey(byte[] publickey) {
+		this.publickey = publickey;
 	}
 
 	/**
@@ -160,16 +161,16 @@ public class CompressedPublickey implements EQCTypable {
 	
 	@Override
 	public boolean isSanity() {
-		if (compressedPublickey == null || lockType == null) {
+		if (publickey == null || lockType == null) {
 			return false;
 		}
 		if(lockType != LockType.T1 && lockType != LockType.T2) {
 			return false;
 		}
-		if(lockType == LockType.T1 && compressedPublickey.length != Util.P256_PUBLICKEY_LEN) {
+		if(lockType == LockType.T1 && publickey.length != Util.P256_PUBLICKEY_LEN) {
 			return false;
 		}
-		else if(lockType == LockType.T2 && compressedPublickey.length != Util.P521_PUBLICKEY_LEN) {
+		else if(lockType == LockType.T2 && publickey.length != Util.P521_PUBLICKEY_LEN) {
 			return false;
 		}
 		
@@ -183,7 +184,7 @@ public class CompressedPublickey implements EQCTypable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Arrays.hashCode(compressedPublickey);
+		result = prime * result + Arrays.hashCode(publickey);
 		return result;
 	}
 
@@ -198,8 +199,8 @@ public class CompressedPublickey implements EQCTypable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		CompressedPublickey other = (CompressedPublickey) obj;
-		if (!Arrays.equals(compressedPublickey, other.compressedPublickey))
+		EQCPublickey other = (EQCPublickey) obj;
+		if (!Arrays.equals(publickey, other.publickey))
 			return false;
 		return true;
 	}
@@ -215,19 +216,19 @@ public class CompressedPublickey implements EQCTypable {
 	}
 
 	public String toInnerJson() {
-		return "\"CompressedPublickey\":" + "\"" + Util.dumpBytes(compressedPublickey, 16) + "\"";
+		return "\"EQCPublickey\":" + "\"" + Util.dumpBytes(publickey, 16) + "\"";
 	}
 
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
-		Lock lock = changeLog.getFilter().getLock(LockTool.AIToAddress(LockTool.publickeyToAI(compressedPublickey)), true);
+	public boolean isValid() throws Exception {
+		Lock lock = changeLog.getFilter().getLock(LockTool.AIToAddress(LockTool.publickeyToAI(publickey)), true);
 		if(lock.getPublickey() == null) {
-			if(!LockTool.verifyAddressPublickey(lock.getReadableLock(), compressedPublickey)) {
+			if(!LockTool.verifyLockAndPublickey(lock.getReadableLock(), publickey)) {
 				return false;
 			}
 		}
 		else {
-			if(!Arrays.equals(lock.getPublickey(), compressedPublickey)) {
+			if(!Arrays.equals(lock.getPublickey(), publickey)) {
 				return false;
 			}
 		}
@@ -235,7 +236,7 @@ public class CompressedPublickey implements EQCTypable {
 	}
 	
 	public boolean isNULL() {
-		return compressedPublickey == null;
+		return publickey == null;
 	}
 
 	/**
@@ -264,6 +265,13 @@ public class CompressedPublickey implements EQCTypable {
 	 */
 	public void setLockType(LockType lockType) {
 		this.lockType = lockType;
+	}
+
+	/**
+	 * @param changeLog the changeLog to set
+	 */
+	public void setChangeLog(ChangeLog changeLog) {
+		this.changeLog = changeLog;
 	}
 	
 }

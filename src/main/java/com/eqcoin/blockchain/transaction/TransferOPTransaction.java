@@ -41,16 +41,14 @@ import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
+import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOperation;
+import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.persistence.EQCBlockChainH2.TRANSACTION_OP;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -66,18 +64,18 @@ import com.eqcoin.util.Util.LockTool;
  * @date Mar 25, 2019
  * @email 10509759@qq.com
  */
-public class TransferOperationTransaction extends TransferTransaction {
+public class TransferOPTransaction extends TransferTransaction {
 	protected final static int MIN_TXOUT = 0;
 	private Operation operation;
 
-	public TransferOperationTransaction() {
+	public TransferOPTransaction() {
 		super();
-		transactionType = TransactionType.TRANSFEROPERATION;
+		transactionType = TransactionType.TRANSFEROP;
 	}
 
-	public TransferOperationTransaction(byte[] bytes, TransactionShape transactionShape)
+	public TransferOPTransaction(byte[] bytes)
 			throws Exception {
-		super(bytes, transactionShape);
+		super(bytes);
 	}
 
 	/**
@@ -107,7 +105,7 @@ public class TransferOperationTransaction extends TransferTransaction {
 		size += super.getMaxBillingLength();
 
 		// Operations size
-		size += operation.getBin(LockShape.AI).length;
+		size += operation.getBin().length;
 
 		return size;
 	}
@@ -124,18 +122,18 @@ public class TransferOperationTransaction extends TransferTransaction {
 		size += super.getBillingSize();
 
 		// Operations size
-		size += operation.getBin(LockShape.AI).length;
+		size += operation.getBin().length;
 		return super.getBillingSize();
 	}
 
 	@Override
 	public boolean isValid()
 			throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!operation.isMeetPreconditions(this)) {
+		if(!operation.isMeetPreconditions()) {
 			Log.Error("Operation " + operation + " doesn't meet preconditions.");
 			return false;
 		}
-		if(!operation.isValid(changeLog)) {
+		if(!operation.isValid()) {
 			Log.Error("Operation " + operation + " doesn't valid.");
 			return false;
 		}
@@ -177,7 +175,7 @@ public class TransferOperationTransaction extends TransferTransaction {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		TransferOperationTransaction other = (TransferOperationTransaction) obj;
+		TransferOPTransaction other = (TransferOPTransaction) obj;
 		if (operation == null) {
 			if (other.operation != null)
 				return false;
@@ -193,8 +191,8 @@ public class TransferOperationTransaction extends TransferTransaction {
 				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
 				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
-				+ "\"EQCSegWit\":" + eqcSegWit.toInnerJson() + ",\n" + "\"Publickey\":" 
-				+ ((compressedPublickey.getCompressedPublickey() == null) ? null : "\"" + Util.getHexString(compressedPublickey.getCompressedPublickey()) + "\"")+ "\n" + "}";
+				+ "\"EQCSegWit\":" + eqcWitness.toInnerJson()
+				+ "\n" + "}";
 	}
 	
 	/* (non-Javadoc)
@@ -203,55 +201,61 @@ public class TransferOperationTransaction extends TransferTransaction {
 	@Override
 	protected boolean isTransactionTypeSanity() {
 		// TODO Auto-generated method stub
-		return transactionType == TransactionType.TRANSFEROPERATION;
+		return transactionType == TransactionType.TRANSFEROP;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isDerivedSanity(com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
 	@Override
-	public boolean isDerivedSanity(TransactionShape transactionShape) {
-		if(!super.isDerivedSanity(transactionShape)) {
+	public boolean isDerivedSanity() {
+		if(!super.isDerivedSanity()) {
 			return false;
 		}
 		if(operation == null) {
 			return false;
 		}
-		if(!(operation instanceof UpdateLockOperation)) {
+		if (!(operation instanceof UpdateLockOP)) {
 			return false;
 		}
-		if(transactionShape == TransactionShape.RPC) {
-			if(!operation.isSanity(LockShape.READABLE)) {
-				return false;
-			}
-		}
-		else {
-			if(!operation.isSanity(LockShape.ID)) {
-				return false;
-			}
+		if (!operation.isSanity()) {
+			return false;
 		}
 		return true;
 	}
-	
-	public void planting() throws Exception {
-		super.planting();
-		if(!operation.execute(this)) {
-			throw new IllegalStateException("During execute operation error occur: " + operation);
-		}
+
+//	/* (non-Javadoc)
+//	 * @see com.eqcoin.blockchain.transaction.Transaction#preparePlanting()
+//	 */
+//	@Override
+//	public void preparePlanting() throws Exception {
+////		if(transactionShape == TransactionShape.RPC) {
+////			super.preparePlanting();
+////		}
+////		else {
+////			UpdateLockOP updateLockOperation = (UpdateLockOP) operation;
+////			Lock lock = null;
+////			lock = eQcoinSeed.getNextLock();
+////			Objects.requireNonNull(lock);
+////			updateLockOperation.setLock(lock);
+////		}
+//	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#derivedPlanting()
+	 */
+	@Override
+	protected void derivedPlanting() throws Exception {
+		super.derivedPlanting();
+		operation.execute();
 	}
-	
-	public byte[] getBodyBytes(TransactionShape transactionShape) throws Exception {
+
+	protected byte[] getDerivedBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			// Serialization Operation
-			if(transactionShape == TransactionShape.RPC) {
-				os.write(operation.getBytes(LockShape.READABLE));
-			}
-			else {
-				os.write(operation.getBytes(LockShape.ID));
-			}
+			os.write(operation.getBytes());
 			// Serialization Super body
-			os.write(super.getBodyBytes(transactionShape));
+			os.write(super.getBodyBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -260,25 +264,32 @@ public class TransferOperationTransaction extends TransferTransaction {
 		return os.toByteArray();
 	}
 	
-	public void parseBody(ByteArrayInputStream is, TransactionShape transactionShape) throws Exception {
+	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse Operation
-		if(transactionShape == TransactionShape.RPC) {
-			operation = Operation.parseOperation(is, LockShape.READABLE);
-		}
-		else {
-			operation = Operation.parseOperation(is, LockShape.ID);
-		}
+		operation = Operation.parseOperation(is);
 		// Parse Super body
-		super.parseBody(is, transactionShape);
+		super.parseBody(is);
 	}
 	
-	public void parseHeader(ByteArrayInputStream is, TransactionShape transactionShape)
+	public void parseHeader(ByteArrayInputStream is)
 			throws Exception {
-		parseFullHeader(is, transactionShape);
+		parseSoloAndTransactionType(is);
+		parseNonce(is);
+		parseTxIn(is);
 	}
 
-	public byte[] getHeaderBytes(TransactionShape transactionShape) throws Exception {
-		return getFullHeaderBytes(transactionShape);
+	public byte[] getHeaderBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			serializeSoloAndTransactionTypeBytes(os);
+			serializeNonce(os);
+			serializeTxInBytes(os);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		return os.toByteArray();
 	}
 	
 }

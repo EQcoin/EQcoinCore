@@ -30,6 +30,7 @@
 package com.eqcoin.blockchain.changelog;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Objects;
@@ -37,7 +38,7 @@ import java.util.Vector;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -52,6 +53,7 @@ import com.eqcoin.util.Util;
 public class Filter {
 	private ChangeLog changeLog;
 	private Mode mode;
+	private Connection connection;
 
 	public enum Mode {
 		GLOBAL, MINING, VALID
@@ -59,6 +61,7 @@ public class Filter {
 
 	public Filter(Mode mode) throws ClassNotFoundException, SQLException, Exception {
 		this.mode = mode;
+		connection = Util.DB().getConnection();
 		// In case before close the app crashed or abnormal interruption so here just
 		// clear the table
 		clear();
@@ -107,7 +110,7 @@ public class Filter {
 			// The first time loading account need loading the previous block's snapshot but
 			// doesn't include No.0 EQCHive
 			if (changeLog.getHeight().compareTo(ID.ZERO) > 0) {
-				ID tailHeight = Util.DB().getEQCBlockTailHeight();
+				ID tailHeight = Util.DB().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
 					passport = Util.DB().getPassport(id, Mode.GLOBAL);
 					// here if need check the lock create height?
@@ -121,7 +124,7 @@ public class Filter {
 							changeLog.getHeight().getPreviousID());
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCBlockTailHeight());
+							+ Util.DB().getEQCHiveTailHeight());
 				}
 			} else {
 				passport = EQCBlockChainH2.getInstance().getPassportSnapshot(new ID(id), ID.ZERO);
@@ -141,7 +144,7 @@ public class Filter {
 			lock = Util.DB().getLock(id, mode);
 		}
 		if (lock == null)  {
-				ID tailHeight = Util.DB().getEQCBlockTailHeight();
+				ID tailHeight = Util.DB().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
 					lock = Util.DB().getLock(id, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
@@ -159,7 +162,7 @@ public class Filter {
 					}
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCBlockTailHeight());
+							+ Util.DB().getEQCHiveTailHeight());
 				}
 		}
 		return lock;
@@ -172,7 +175,7 @@ public class Filter {
 			lock = Util.DB().getLock(readableLock, mode);
 		}
 		if (lock == null)  {
-				ID tailHeight = Util.DB().getEQCBlockTailHeight();
+				ID tailHeight = Util.DB().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
 					lock = Util.DB().getLock(readableLock, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
@@ -190,7 +193,7 @@ public class Filter {
 					}
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCBlockTailHeight());
+							+ Util.DB().getEQCHiveTailHeight());
 				}
 		}
 		return lock;
@@ -206,7 +209,7 @@ public class Filter {
 				passport = Util.DB().getPassport(lock2.getId(), mode);
 			}
 			if (passport == null) {
-				ID tailHeight = Util.DB().getEQCBlockTailHeight();
+				ID tailHeight = Util.DB().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
 					passport = Util.DB().getPassport(lock2.getId(), Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
@@ -215,7 +218,7 @@ public class Filter {
 							changeLog.getHeight().getPreviousID());
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCBlockTailHeight());
+							+ Util.DB().getEQCHiveTailHeight());
 				}
 			}
 		}
@@ -266,7 +269,7 @@ public class Filter {
 	/**
 	 * @param changeLog the changeLog to set
 	 */
-	public void setAccountsMerkleTree(ChangeLog changeLog) {
+	public void setChangeLog(ChangeLog changeLog) {
 		this.changeLog = changeLog;
 	}
 
@@ -276,5 +279,9 @@ public class Filter {
 	public Mode getMode() {
 		return mode;
 	}
-
+	
+	public Connection getConnection() throws ClassNotFoundException, SQLException {
+		return connection;
+	}
+	
 }

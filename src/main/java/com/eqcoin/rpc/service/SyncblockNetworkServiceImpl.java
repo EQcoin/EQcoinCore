@@ -36,9 +36,9 @@ import org.apache.avro.AvroRemoteException;
 import com.eqcoin.avro.O;
 import com.eqcoin.avro.SyncblockNetwork;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
-import com.eqcoin.blockchain.hive.EQCHeader;
+import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.hive.EQCHive;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
@@ -106,11 +106,11 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	public O getBlockTail() {
 		O io = null;
 		TailInfo<O> europa = null;
-		EQcoinSeedPassport eQcoinSubchainAccount = null;
+		EQcoinRootPassport eQcoinSubchainAccount = null;
 		try {
 			europa = new TailInfo();
-			europa.setHeight(Util.DB().getEQCBlockTailHeight());
-			eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+			europa.setHeight(Util.DB().getEQCHiveTailHeight());
+			eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 			europa.setCheckPointHeight(eQcoinSubchainAccount.getCheckPointHeight());
 			europa.setBlockTailProof(Util.DB().getEQCHive(europa.getHeight(), true).getEqcHeader().getProof());
 			io = europa.getProtocol();
@@ -157,7 +157,7 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	@Override
 	public O getEQCHeader(O height) {
 		O eqcHeader = null;
-		EQCHeader eqcHeader1 = null;
+		EQCHiveRoot eqcHeader1 = null;
 		try {
 			eqcHeader1 = Util.DB().getEQCHive(new ID(height.getO().array()), true).getEqcHeader();
 			if(eqcHeader1 != null) {

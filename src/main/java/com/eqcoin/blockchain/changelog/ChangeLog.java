@@ -32,6 +32,7 @@ package com.eqcoin.blockchain.changelog;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,12 +41,18 @@ import java.util.Vector;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
+import com.eqcoin.blockchain.seed.EQcoinSeed;
+import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.CompressedPublickey;
+import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.Transaction;
+import com.eqcoin.blockchain.transaction.TransferOPTransaction;
+import com.eqcoin.blockchain.transaction.TransferTransaction;
+import com.eqcoin.blockchain.transaction.ZionOPTransaction;
+import com.eqcoin.blockchain.transaction.ZionTransaction;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -71,29 +78,40 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class ChangeLog {
-	public final static int E1024 = 1024;
 	/**
 	 * Current EQCHive's height which is the base for the new EQCHive
 	 */
 	private ID height;
-	
-	private Vector<byte[]> passportBaseList;
-	private byte[] passportMerkleTreeRoot;
-	private ID totalPassportNumbers;
-	private ID previousTotalPassportNumbers;
 	
 	private Vector<byte[]> lockBaseList;
 	private byte[] lockMerkleTreeRoot;
 	private ID totalLockNumbers;
 	private ID previousTotalLockNumbers;
 	
+	private Vector<byte[]> passportBaseList;
+	private byte[] passportMerkleTreeRoot;
+	private ID totalPassportNumbers;
+	private ID previousTotalPassportNumbers;
+	
+	private ID previousTotalPublickeyNumbers;
+	
+	private ID totalNewUpdatedLockNumbers;
+	private ID totalNewPassportNumbers;
+	private ID totalNewPublickeyNumbers;
+	
 	private Filter filter;
+	private EQcoinSeedRoot eQcoinSeedRoot;
+	Statistics statistics;
 
 	public ChangeLog(ID height, Filter filter) throws Exception {
 		super();
-		EQcoinSeedPassport eQcoinSubchainPassport = null;
+		EQCHive eqcHive = null;
 		
-		filter.setAccountsMerkleTree(this);
+		statistics = new Statistics(this);
+		totalNewUpdatedLockNumbers = ID.ZERO;
+		totalNewPassportNumbers = ID.ZERO;
+		totalNewPublickeyNumbers = ID.ZERO;
+		filter.setChangeLog(this);
 		this.height = height;
 		// When recoverySingularityStatus the No.0 EQCHive doesn't exist so here need special operation
 //		if (height.equals(ID.ZERO)) {
@@ -110,17 +128,21 @@ public class ChangeLog {
 		if(height.equals(ID.ZERO)) {
 			totalLockNumbers = ID.ZERO;
 			totalPassportNumbers = ID.ZERO;
+			previousTotalPublickeyNumbers = ID.ZERO;
 		}
 		else {
-			eQcoinSubchainPassport = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, height);
-			totalLockNumbers = eQcoinSubchainPassport.getTotalLockNumbers();
-			totalPassportNumbers = eQcoinSubchainPassport.getTotalPassportNumbers();
+			eqcHive = Util.DB().getEQCHive(height, true);
+			eQcoinSeedRoot = eqcHive.getEQcoinSeed().getEQcoinSeedRoot();
+			totalLockNumbers = eQcoinSeedRoot.getTotalLockNumbers();
+			totalPassportNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
+			previousTotalPublickeyNumbers = eQcoinSeedRoot.getTotalPublickeyNumbers();
 		}
 		
 		previousTotalLockNumbers = totalLockNumbers;
 		previousTotalPassportNumbers = totalPassportNumbers;
 		this.filter = filter;
 		passportBaseList = new Vector<>();
+		lockBaseList = new Vector<>();
 	}
 	
 	/**
@@ -299,78 +321,8 @@ public class ChangeLog {
 		return hash;
 	}
 	
-	public EQCHive getEQCBlock(ID height, boolean isSegwit) throws Exception {
+	public EQCHive getEQCHive(ID height, boolean isSegwit) throws Exception {
 		return Util.DB().getEQCHive(height, true);
-	}
-
-//	/**
-//	 * Update current Transaction's TxIn Account's Nonce&Balance
-//	 * 
-//	 * @param transaction
-//	 * @return
-//	 */
-//	public boolean updateAccount(Transaction transaction){
-//		// Update current Transaction's TxIn Account's Nonce&Balance
-//		Account account = getAccount(transaction.getTxIn().getAddress().getId());
-//		// Update current Transaction's TxIn Account's Nonce
-//		account.increaseNonce();
-//		// Update current Transaction's TxIn Account's Balance
-//		account.updateBalance(-transaction.getBillingValue());
-//		return saveAccount(account);
-//	}
-//	
-//	/**
-//	 * Update current Transaction's TxIn Publickey if need
-//	 * 
-//	 * @param transaction
-//	 * @return
-//	 */
-//	public boolean updatePublickey(Transaction transaction) {
-//		boolean isSucc = false;
-//		// Update current Transaction's TxIn Publickey if need
-//		if (transaction.getPublickey().isNew()) {
-//			isSucc = savePublicKey(transaction.getPublickey(), height.getNextID());
-//		}
-//		return isSucc;
-//	}
-	
-	public class Statistics {
-		
-		private ID totalSupply;
-		private ID totalTransactionNumbers;
-		
-		public Statistics() {
-			totalSupply = ID.ZERO;
-			totalTransactionNumbers = ID.ZERO;
-		}
-		
-		public boolean isValid(ChangeLog changeLog) throws Exception {
-			EQcoinSeedPassport eQcoinSeedPassport = (EQcoinSeedPassport) changeLog.getFilter().getPassport(ID.ONE, true);
-			if(!totalSupply.equals(eQcoinSeedPassport.getTotalSupply())) {
-				Log.Error("totalSupply is invalid. Expect: " + eQcoinSeedPassport.getTotalSupply() + " actual: " + totalSupply);
-				return false;
-			}
-			if(!totalTransactionNumbers.equals(eQcoinSeedPassport.getTotalTransactionNumbers())) {
-				Log.Error("totalTransactionNumbers is invalid. Expect: " + eQcoinSeedPassport.getTotalTransactionNumbers() + " actual: " + totalTransactionNumbers);
-				return false;
-			}
-			return true;
-		}
-		
-		public void update(Passport passport) {
-			totalSupply = totalSupply.add(passport.getBalance());
-			totalTransactionNumbers = totalTransactionNumbers.add(passport.getNonce());
-		}
-	}
-	
-	public Statistics getStatistics() throws Exception {
-		Passport passport;
-		Statistics statistics = new Statistics();
-		for(long i=1; i<=totalPassportNumbers.longValue(); ++i) {
-			passport = filter.getPassport(new ID(i), true);
-			statistics.update(passport);
-		}
-		return statistics;
 	}
 	
 	public void takeSnapshot() throws Exception {
@@ -429,13 +381,48 @@ public class ChangeLog {
 	}
 	
 	public synchronized ID getNextLockId() {
+		ID nextLockId = totalLockNumbers;
 		totalLockNumbers = totalLockNumbers.getNextID();
-		return totalLockNumbers;
+		return nextLockId;
 	}
 	
 	public synchronized ID getNextPassportId() {
+		ID nextPassportId = totalPassportNumbers;
 		totalPassportNumbers = totalPassportNumbers.getNextID();
-		return totalLockNumbers;
+		return nextPassportId;
+	}
+
+	/**
+	 * @return the statistics
+	 */
+	public Statistics getStatistics() {
+		return statistics;
+	}
+
+	/**
+	 * @return the totalNewPublickeyNumbers
+	 */
+	public ID getTotalNewPublickeyNumbers() {
+		return totalNewPublickeyNumbers;
+	}
+	
+	public void increaseTotalNewPublickeyNumbers() {
+		totalNewPublickeyNumbers = totalNewPublickeyNumbers.getNextID();
+	}
+	
+	/**
+	 * @return the totalNewUpdatedLockNumbers
+	 */
+	public ID getTotalNewUpdatedLockNumbers() {
+		return totalNewUpdatedLockNumbers;
+	}
+	
+	public void increaseTotalNewUpdatedLockNumbers() {
+		totalNewUpdatedLockNumbers = totalNewUpdatedLockNumbers.getNextID();
+	}
+	
+	public ID getTotalPublickeyNumbers() {
+		return previousTotalPublickeyNumbers.add(totalNewPublickeyNumbers);
 	}
 	
 }

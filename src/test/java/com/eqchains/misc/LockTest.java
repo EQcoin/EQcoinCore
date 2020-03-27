@@ -75,8 +75,8 @@ public class LockTest {
 		   byte[] publickey =  Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(1).getPublicKey(), "abc");
 		   String address = LockTool.generateAddress(publickey, LockType.T1);
 		   Log.info(address);
-		   assertTrue(LockTool.verifyAddressPublickey(Keystore.getInstance().getUserAccounts().get(1).getReadableLock(), publickey));
-		   assertTrue(LockTool.verifyAddressPublickey(address, publickey));
+		   assertTrue(LockTool.verifyLockAndPublickey(Keystore.getInstance().getUserAccounts().get(1).getReadableLock(), publickey));
+		   assertTrue(LockTool.verifyLockAndPublickey(address, publickey));
 	   }
 	   
 	   @Test

@@ -43,7 +43,6 @@ import com.eqcoin.blockchain.passport.Passport.PassportType;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
-import com.eqcoin.serialization.EQCType.ARRAY;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -190,7 +189,7 @@ public abstract class SmartContractPassport extends Passport {
 //		return subchainType;
 //	}
 
-	public SmartContractPassport(byte[] bytes) throws NoSuchFieldException, IOException {
+	public SmartContractPassport(byte[] bytes) throws Exception {
 		super(bytes);
 	}
 

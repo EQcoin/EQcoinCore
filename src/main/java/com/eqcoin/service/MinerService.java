@@ -66,7 +66,7 @@ import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.rpc.NewHive;
@@ -169,7 +169,7 @@ public final class MinerService extends EQCService {
 			// Get current EQCBlock's tail
 			ID blockTailHeight;
 			try {
-				blockTailHeight = Util.DB().getEQCBlockTailHeight();
+				blockTailHeight = Util.DB().getEQCHiveTailHeight();
 				/////////////////////////////////////////////////
 //				if(blockTailHeight.compareTo(ID.valueOf(2)) == 0) {
 //					break;
@@ -226,11 +226,11 @@ public final class MinerService extends EQCService {
 			Log.info("New hive height: " + newHiveHeight);
 //			Log.info(newEQCBlock.toString());
 			Log.info("Size: " + newEQCHive.getBytes().length);
-			Log.info("EQcoin new transaction numbers: " + newEQCHive.geteQcoinSeed().getNewTransactionList().size());
-			Log.info("EQcoin new passport numbers: " + newEQCHive.geteQcoinSeed().getNewHelixList().size());
-			Log.info("EQcoin new compressed publickey numbers: " + newEQCHive.geteQcoinSeed().getNewCompressedPublickeyList().size());
+			Log.info("EQcoin new transaction numbers: " + newEQCHive.getEQcoinSeed().getNewTransactionList().size());
+//			Log.info("EQcoin new passport numbers: " + newEQCHive.getEQcoinSeed().getNewHelixList().size());
+//			Log.info("EQcoin new compressed publickey numbers: " + newEQCHive.getEQcoinSeed().getNewCompressedPublickeyList().size());
 			try {
-				EQCHive eqcHive = new EQCHive(newEQCHive.getBytes(), false);
+				EQCHive eqcHive = new EQCHive(newEQCHive.getBytes());
 			} catch (Exception e) {
 				e.printStackTrace();
 				Log.Error(e.getMessage());
@@ -277,15 +277,15 @@ public final class MinerService extends EQCService {
 //								Log.Error(e.getMessage());
 //							}
 							// Check if current local tail is the mining base in case which has been changed by SyncBlockService
-							if (newHiveHeight.isNextID(Util.DB().getEQCBlockTailHeight())) {
+							if (newHiveHeight.isNextID(Util.DB().getEQCHiveTailHeight())) {
 								Log.info("Still on the tail just save it");
 								Util.DB().saveEQCHive(newEQCHive);
 								changeLog.updateGlobalState();
-								Util.DB().saveEQCBlockTailHeight(newEQCHive.getHeight());
+								Util.DB().saveEQCHiveTailHeight(newEQCHive.getHeight());
 								try {
 									// Send new block to EQC Miner network
 									NewHiveState newBlockState = new NewHiveState(State.BROADCASTNEWHIVE);
-									EQcoinSeedPassport eQcoinSubchainAccount = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
+									EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 									NewHive newBlock = new NewHive();
 									newBlock.setEqcHive(newEQCHive);
 									newBlock.setCheckPointHeight(eQcoinSubchainAccount.getCheckPointHeight());
@@ -309,7 +309,7 @@ public final class MinerService extends EQCService {
 //								}
 							}
 							else {
-								Log.Error("Current mining height is: " + newHiveHeight + " but local tail height changed to: " + Util.DB().getEQCBlockTailHeight() + 
+								Log.Error("Current mining height is: " + newHiveHeight + " but local tail height changed to: " + Util.DB().getEQCHiveTailHeight() + 
 										" so have to discard this block");
 							}
 							Log.info("End synchronized (EQCService.class)");

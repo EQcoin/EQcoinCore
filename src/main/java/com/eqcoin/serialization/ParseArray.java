@@ -1,8 +1,8 @@
 /**
- * EQcoin core - EQcoin Federation's EQcoin core library
- * @copyright 2018-present EQcoin Federation All rights reserved...
- * Copyright of all works released by EQcoin Federation or jointly released by
- * EQcoin Federation with cooperative partners are owned by EQcoin Federation
+ * EQchains core - EQchains Foundation's EQchains core library
+ * @copyright 2018-present EQchains Foundation All rights reserved...
+ * Copyright of all works released by EQchains Foundation or jointly released by
+ * EQchains Foundation with cooperative partners are owned by EQchains Foundation
  * and entitled to protection available from copyright law by country as well as
  * international conventions.
  * Attribution — You must give appropriate credit, provide a link to the license.
@@ -10,10 +10,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Federation reserves all rights to
+ * or without prior written permission, EQchains Foundation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
+ * https://www.eqchains.com
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -27,55 +27,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.eqcoin.rpc.client;
+package com.eqcoin.serialization;
 
-import com.eqcoin.avro.O;
-import com.eqcoin.rpc.Code;
-import com.eqcoin.rpc.Cookie;
-import com.eqcoin.rpc.Info;
-import com.eqcoin.util.Util;
+import java.io.InputStream;
+import java.util.Vector;
 
 /**
  * @author Xun Wang
- * @date Jun 29, 2019
+ * @date Mar 25, 2020
  * @email 10509759@qq.com
  */
-public abstract class EQCRPCClient<T> {
-	protected  Cookie<T> cookie;
-	protected Info info;
-	
-	public EQCRPCClient() {
-		info = new Info();
-		info.setCode(Code.OK);
-		cookie = new Cookie<T>();
-		cookie.setIp(Util.LOCAL_IP);
-		cookie.setVersion(Util.PROTOCOL_VERSION);
-		info.setCookie(cookie);
-	}
-	
-	/**
-	 * @return the cookie
-	 */
-	public Cookie<T> getCookie() {
-		return cookie;
-	}
-	/**
-	 * @param cookie the cookie to set
-	 */
-	public void setCookie(Cookie<T> cookie) {
-		this.cookie = cookie;
-	}
-	/**
-	 * @return the info
-	 */
-	public Info getInfo() {
-		return info;
-	}
-	/**
-	 * @param info the info to set
-	 */
-	public void setInfo(Info info) {
-		this.info = info;
-	}
-	
+public interface ParseArray<T> {
+	public Vector<T> parseArray(InputStream is);
 }

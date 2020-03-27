@@ -34,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
@@ -47,7 +46,7 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class Cookie<T> extends IO<T> {
-	private String ip;
+	private IP ip;
 	private ID version;
 
 	public Cookie(ByteArrayInputStream is) throws Exception {
@@ -55,7 +54,7 @@ public class Cookie<T> extends IO<T> {
 	}
 	
 	public Cookie() {
-		ip = Util.IP;
+		ip = Util.LOCAL_IP;
 		version = Util.PROTOCOL_VERSION;
 	}
 	
@@ -78,21 +77,21 @@ public class Cookie<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		return false;
 	}
 
 	/**
 	 * @return the ip
 	 */
-	public String getIp() {
+	public IP getIp() {
 		return ip;
 	}
 
 	/**
 	 * @param ip the ip to set
 	 */
-	public void setIp(String ip) {
+	public void setIp(IP ip) {
 		this.ip = ip;
 	}
 
@@ -111,7 +110,8 @@ public class Cookie<T> extends IO<T> {
 	}
 
 	public boolean isIPNull() {
-		return ip == null || ip.equals("");
+		// Here need do more job to check if the ip format is valid
+		return ip == null || ip.getIp().isEmpty();
 	}
 
 	@Override
@@ -122,7 +122,7 @@ public class Cookie<T> extends IO<T> {
 
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		ip = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
+		ip = new IP(EQCType.bytesToASCIISting(EQCType.parseBIN(is)));
 		version = EQCType.eqcBitsToID(EQCType.parseEQCBits(is));
 	}
 
@@ -135,7 +135,7 @@ public class Cookie<T> extends IO<T> {
 	@Override
 	public byte[] getBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(EQCType.stringToBIN(ip));
+		os.write(ip.getBytes());
 		os.write(version.getEQCBits());
 		return os.toByteArray();
 	}

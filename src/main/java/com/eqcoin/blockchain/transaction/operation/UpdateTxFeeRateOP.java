@@ -33,14 +33,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
-import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.EQcoinSeedPassport;
+
+import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.Transaction;
-import com.eqcoin.blockchain.transaction.TransferOperationTransaction;
-import com.eqcoin.blockchain.transaction.ZionOperationTransaction;
+import com.eqcoin.blockchain.transaction.TransferOPTransaction;
+import com.eqcoin.blockchain.transaction.ZionOPTransaction;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -52,84 +51,43 @@ import com.eqcoin.util.Util.LockTool;
  * @date Jun 22, 2019
  * @email 10509759@qq.com
  */
-public class UpdateTxFeeRateOperation extends Operation {
+public class UpdateTxFeeRateOP extends Operation {
 	private byte txFeeRate;
 	
-	public UpdateTxFeeRateOperation() {
-		super(OP.TXFEERATE);
+	public UpdateTxFeeRateOP() {
+		op = OP.TXFEERATE;
 	}
 	
-	public UpdateTxFeeRateOperation(ByteArrayInputStream is, LockShape lockShape) throws NoSuchFieldException, IllegalArgumentException, IOException {
-		super(OP.TXFEERATE);
-		parseHeader(is, lockShape);
-		parseBody(is, lockShape);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#getBytes(com.eqzip
-	 * .eqcoin.blockchain.Address.AddressShape)
-	 */
-	@Override
-	public byte[] getBytes(LockShape lockShape) {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Header
-			os.write(getHeaderBytes(lockShape));
-			// Serialization Body
-			os.write(getBodyBytes(lockShape));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#getBin(com.eqzip.
-	 * eqcoin.blockchain.Address.AddressShape)
-	 */
-	@Override
-	public byte[] getBin(LockShape lockShape) {
-		return EQCType.bytesToBIN(getBytes(lockShape));
+	public UpdateTxFeeRateOP(ByteArrayInputStream is, LockShape lockShape) throws Exception {
+		super(is);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#execute()
 	 */
 	@Override
-	public boolean execute(Transaction transaction) throws Exception {
-		EQcoinSeedPassport eQcoinSeedPassport = (EQcoinSeedPassport) transaction.getChangeLog().getFilter().getPassport(ID.ONE, true);
+	public void execute() throws Exception {
+		EQcoinRootPassport eQcoinSeedPassport = (EQcoinRootPassport) transaction.getChangeLog().getFilter().getPassport(ID.ONE, true);
 		eQcoinSeedPassport.setTxFeeRate(txFeeRate);
 		transaction.getChangeLog().getFilter().savePassport(eQcoinSeedPassport);
-		return true;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isMeetPreconditions()
 	 */
 	@Override
-	public boolean isMeetPreconditions(Transaction transaction) throws Exception {
-		if(!(transaction instanceof ZionOperationTransaction)) {
+	public boolean isMeetPreconditions() throws Exception {
+		if(!(transaction instanceof ZionOPTransaction)) {
 			return false;
 		}
-		if(!transaction.getTxIn().getPassportId().equals(ID.TWO)) {
+		if(!transaction.getTxIn().getLock().getId().equals(ID.TWO)) {
 			return false;
 		}
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isSanity(com.eqzip.eqcoin.blockchain.transaction.Address.AddressShape[])
-	 */
 	@Override
-	public boolean isSanity(LockShape lockShape) {
+	public boolean isSanity() {
 		if(op != OP.TXFEERATE) {
 			return false;
 		}
@@ -152,7 +110,7 @@ public class UpdateTxFeeRateOperation extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#parseBody(java.io.ByteArrayInputStream, com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public void parseBody(ByteArrayInputStream is, LockShape lockShape)
+	public void parseBody(ByteArrayInputStream is)
 			throws NoSuchFieldException, IOException, IllegalArgumentException {
 		// Parse TxFeeRate
 		txFeeRate = EQCType.parseBIN(is)[0];
@@ -162,7 +120,7 @@ public class UpdateTxFeeRateOperation extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#getBodyBytes(com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public byte[] getBodyBytes(LockShape lockShape) {
+	public byte[] getBodyBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization TxFeeRate
@@ -191,15 +149,19 @@ public class UpdateTxFeeRateOperation extends Operation {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!super.equals(obj))
+		}
+		if (!super.equals(obj)) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		UpdateTxFeeRateOperation other = (UpdateTxFeeRateOperation) obj;
-		if (txFeeRate != other.txFeeRate)
+		}
+		UpdateTxFeeRateOP other = (UpdateTxFeeRateOP) obj;
+		if (txFeeRate != other.txFeeRate) {
 			return false;
+		}
 		return true;
 	}
 
@@ -221,7 +183,7 @@ public class UpdateTxFeeRateOperation extends Operation {
 	 * @see com.eqcoin.blockchain.transaction.operation.Operation#isValid(com.eqcoin.blockchain.changelog.ChangeLog)
 	 */
 	@Override
-	public boolean isValid(ChangeLog changeLog) throws Exception {
+	public boolean isValid() throws Exception {
 		return true;
 	}
 	
