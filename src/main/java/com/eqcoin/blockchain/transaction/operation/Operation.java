@@ -33,13 +33,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.passport.Lock;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferOPTransaction;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.serialization.EQCInheritable;
-import com.eqcoin.serialization.EQCLockShapeInheritable;
-import com.eqcoin.serialization.EQCLockShapeTypable;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -52,7 +52,7 @@ import com.eqcoin.util.Log;
  */
 // Due to the Lock's state need represent 3 styles(ID, AI, Readable) so here must use EQCLockShapeTypable & EQCLockShapeInheritable
 // Due to the expandability so here need use isMeetPreconditions
-public abstract class Operation implements EQCTypable, EQCInheritable {
+public class Operation  extends EQCSerializable {
 	public enum OP {
 		PUBLICKEY, LOCK, CHECKPOINT, BLOCKINTERVAL, MAXBLOCKSIZE, TXFEERATE, UPDATESCRIPT;
 		public static OP get(int ordinal) {
@@ -87,23 +87,24 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 	protected OP op;
 	protected Transaction transaction;
 
-	public Operation() {
+	public Operation(Transaction transaction) throws Exception {
+		super();
+		this.transaction = transaction;
+	}
+	
+	public Operation() throws Exception {
+		super();
+	}
+	
+	public Operation(byte[] bytes) throws Exception {
+		super(bytes);
 	}
 	
 	public Operation(ByteArrayInputStream is) throws Exception {
 		parse(is);
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-		parseHeader(is);
-		parseBody(is);
-	}
-
-	public void execute() throws Exception {
+	public void planting() throws Exception {
 	}
 	
 	/**
@@ -124,6 +125,15 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 		return true;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
+		UpdateEQCPublickeyOP.class.getDeclaredConstructor().newInstance().parse(is);
+		return (T) parseOperation(is);
+	}
+
 	public static OP parseOP(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
 		is.mark(0);
 		OP op = null;
@@ -131,19 +141,21 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 		opCode = EQCType.eqcBitsToInt(EQCType.parseEQCBits(is));
 		op = OP.get(opCode);
 		is.reset();
+		if(op == null) {
+			throw new IllegalStateException("OP shouldn't null.");
+		}
 		return op;
 	}
 
 	public static Operation parseOperation(ByteArrayInputStream is) throws Exception {
 		Operation operation = null;
 		OP op = parseOP(is);
-
-		if (op == OP.LOCK) {
-			operation = new UpdateLockOP(is);
+		if(op == OP.PUBLICKEY) {
+			operation = new UpdateEQCPublickeyOP(is);
+		} else if (op == OP.LOCK) {
+			operation = new ChangeLockOP(is);
 		} else if (op == OP.CHECKPOINT) {
-			
-		} else if (op == OP.TXFEERATE) {
-			operation = new UpdateTxFeeRateOP();
+			operation = new ChangeCheckPointOP(is);
 		} 
 		return operation;
 	}
@@ -164,23 +176,17 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 	}
 
 	@Override
-	public byte[] getBytes() {
+	public byte[] getBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Header
-			os.write(getHeaderBytes());
-			// Serialization Body
-			os.write(getBodyBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+		// Serialization Header
+		os.write(getHeaderBytes());
+		// Serialization Body
+		os.write(getBodyBytes());
 		return os.toByteArray();
 	}
 
 	@Override
-	public byte[] getBin() {
+	public byte[] getBin() throws Exception {
 		return EQCType.bytesToBIN(getBytes());
 	}
 
@@ -217,7 +223,7 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 	}
 
 	@Override
-	public byte[] getBodyBytes() {
+	public byte[] getBodyBytes() throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -270,6 +276,17 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 	}
 
 	/**
+	 * @return the op
+	 */
+	public OP getOp() {
+		return op;
+	}
+	
+	public Value getProofLength() {
+		return Value.ZERO;
+	}
+
+	/**
 	 * @return the transaction
 	 */
 	public Transaction getTransaction() {
@@ -281,13 +298,6 @@ public abstract class Operation implements EQCTypable, EQCInheritable {
 	 */
 	public void setTransaction(Transaction transaction) {
 		this.transaction = transaction;
-	}
-
-	/**
-	 * @return the op
-	 */
-	public OP getOp() {
-		return op;
 	}
 	
 }

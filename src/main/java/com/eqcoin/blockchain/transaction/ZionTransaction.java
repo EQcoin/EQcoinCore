@@ -34,15 +34,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
+import com.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
@@ -50,16 +50,30 @@ import com.eqcoin.util.Log;
  * @email 10509759@qq.com
  */
 public class ZionTransaction extends TransferTransaction {
+	protected Vector<ZionTxOut> txOutList;
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#init()
+	 */
+	@Override
+	protected void init() {
+		super.init();
+		transactionType = TransactionType.ZION;
+		txOutList = new Vector<>();
+	}
+
+	public ZionTransaction() {
+		super();
+	}
 	
 	public ZionTransaction(byte[] bytes) throws Exception {
 		super(bytes);
 	}
 	
-	public ZionTransaction() {
-		super();
-		transactionType = TransactionType.ZION;
+	public ZionTransaction(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isTransactionTypeSanity()
 	 */
@@ -74,25 +88,26 @@ public class ZionTransaction extends TransferTransaction {
 	 */
 	@Override
 	public boolean isDerivedValid() throws Exception {
-		for(TxOut txOut:txOutList) {
-			Lock lock = changeLog.getFilter().getLock(txOut.getLock().getReadableLock(), true);
-			if(lock != null) {
+		ID lockId = null;
+		for(ZionTxOut txOut:txOutList) {
+			lockId = changeLog.getFilter().isLockExists(txOut.getLock(), true);
+			if(lockId != null) {
 				Log.Error("The Lock already exists this is invalid.");
 				return false;
 			}
 		}
-		// Check if TxFeeLimit is valid
-		// Here maybe exists one bug pay attention to the total txout values need less than txin value
-		// Here need avoid the result of txin value - total txout values is negative
-		if (!isTxFeeLimitValid()) {
-			Log.Error("isTxFeeLimitValid failed");
-			return false;
-		}
+//		// Check if TxFeeLimit is valid
+//		// Here maybe exists one bug pay attention to the total txout values need less than txin value
+//		// Here need avoid the result of txin value - total txout values is negative
+//		if (!isTxFeeLimitValid()) {
+//			Log.Error("isTxFeeLimitValid failed");
+//			return false;
+//		}
 		return true;
 	}
 
 	@Override
-	public boolean isDerivedSanity() {
+	public boolean isDerivedSanity() throws Exception {
 		// Check if the TxOutList is sanity
 		if(txOutList == null) {
 			return false;
@@ -100,8 +115,8 @@ public class ZionTransaction extends TransferTransaction {
 		if (!(txOutList.size() >= MIN_TXOUT)) {
 			return false;
 		}
-		for (TxOut txOut : txOutList) {
-				if (!txOut.isSanity(LockShape.READABLE)) {
+		for (ZionTxOut txOut : txOutList) {
+				if (!txOut.isSanity()) {
 					return false;
 				}
 		}
@@ -116,7 +131,7 @@ public class ZionTransaction extends TransferTransaction {
 	public boolean isTxOutPassportUnique() {
 		for (int i = 0; i < txOutList.size(); ++i) {
 			for (int j = i + 1; j < txOutList.size(); ++j) {
-				if (txOutList.get(i).getLock().getReadableLock().equals(txOutList.get(j).getLock().getReadableLock())) {
+				if (txOutList.get(i).getLock().equals(txOutList.get(j).getLock())) {
 					return false;
 				}
 			}
@@ -129,16 +144,17 @@ public class ZionTransaction extends TransferTransaction {
 	 */
 	@Override
 	protected void derivedTxOutPlanting() throws Exception {
-		Lock lock = null;
+		EQCLockMate lock = null;
 		Passport passport = null;
 		// Update current Transaction's TxOut Passport
-		for (TxOut txOut : txOutList) {
-			lock = txOut.getLock();
+		for (ZionTxOut txOut : txOutList) {
+			lock = new EQCLockMate();
+			lock.setLock(txOut.getLock());
 			lock.setId(changeLog.getNextLockId());
 			passport = new AssetPassport();
 			passport.setId(changeLog.getNextPassportId());
 			passport.setLockID(lock.getId());
-			passport.deposit(new ID(txOut.getValue()));
+			passport.deposit(txOut.getValue());
 			passport.setUpdateHeight(changeLog.getHeight());
 			lock.setPassportId(passport.getId());
 			changeLog.getFilter().saveLock(lock);
@@ -173,5 +189,77 @@ public class ZionTransaction extends TransferTransaction {
 		}
 		return os.toByteArray();
 	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseDerivedBody(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	protected void parseDerivedBody(ByteArrayInputStream is) throws Exception {
+		// Parse TxOut
+		txOutList = EQCType.parseArray(is, new ZionTxOut());
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#getProofLength()
+	 */
+	@Override
+	protected Value getProofLength() throws Exception {
+		Value proofLength = Value.ZERO;
+		for(ZionTxOut aiTxOut:txOutList) {
+			proofLength = proofLength.add(Util.ASSET_PASSPORT_PROOF_SPACE_COST);
+			proofLength = proofLength.add(aiTxOut.getLock().getProofLength());
+		}
+		return proofLength;
+	}
+
+	public void addTxOut(ZionTxOut txOut) {
+		if (!isTxOutPassportExists(txOut)) {
+			txOutList.add(txOut);
+		} else {
+			Log.Error(txOut + " already exists in txOutList just ignore it.");
+		}
+	}
+
+	public boolean isTxOutPassportExists(ZionTxOut txOut) {
+		boolean boolIsExists = false;
+		for (ZionTxOut txOut2 : txOutList) {
+			if (txOut2.getLock().equals(txOut.getLock())) {
+				boolIsExists = true;
+//				Log.info("TxOutAddressExists" + " a: " + txOut2.getAddress().getAddress() + " b: " + txOut.getAddress().getAddress());
+				break;
+			}
+		}
+		return boolIsExists;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#getDerivedBodyBytes()
+	 */
+	@Override
+	protected byte[] getDerivedBodyBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			// Serialization TxOut
+			os.write(EQCType.eqcSerializableListToArray(txOutList));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		return os.toByteArray();
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#getTxOutValues()
+	 */
+	@Override
+	public Value getTxOutValues() {
+		Value totalTxOut = Value.ZERO;
+		for (ZionTxOut txOut : txOutList) {
+			totalTxOut = totalTxOut.add(txOut.getValue());
+		}
+		return totalTxOut;
+	}
+	
 	
 }

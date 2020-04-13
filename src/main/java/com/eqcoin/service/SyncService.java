@@ -109,7 +109,7 @@ public class SyncService extends EQCService {
 					}
 				}
 			}
-			sleeping(Util.BLOCK_INTERVAL/10);
+			sleeping(Util.getCurrentBlockInterval().longValue()/10);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.Error(e.getMessage());
@@ -124,7 +124,12 @@ public class SyncService extends EQCService {
 	public synchronized void start() {
 		// TODO Auto-generated method stub
 		super.start();
-		sleeping(Util.BLOCK_INTERVAL/10);
+		try {
+			sleeping(Util.getCurrentBlockInterval().longValue()/10);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
 	}
 
 }

@@ -31,10 +31,13 @@ package com.eqcoin.blockchain.seed;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
+
+import org.bouncycastle.jcajce.provider.asymmetric.dsa.DSASigner.noneDSA;
 
 import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.serialization.EQCType;
@@ -48,7 +51,7 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class EQcoinSeedRoot extends EQCSeedRoot {
-	private ID totalSupply;
+	private Value totalSupply;
 	/**
 	 * Calculate this according to newHelixList ARRAY's length which equal to the
 	 * new Locks in ZionTransaction and UpdateLockOP
@@ -59,22 +62,18 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	 */
 	private ID totalPassportNumbers;
 	/**
-	 * Calculate this according to newPublickeyList ARRAY's length which equal to
-	 * the total numbers of Lock which have the Publickey.
+	 * Save the root of lively lock proof Merkel Tree.
 	 */
-	private ID totalPublickeyNumbers;
-	/**
-	 * Save the root of Lock Merkel Tree.
-	 */
-	private byte[] lockMerkelTreeRoot;
+	private byte[] livelyLockProofRoot;
 	/**
 	 * Save the root of Passport Merkel Tree.
 	 */
-	private byte[] passportMerkelTreeRoot;
-	private TransferCoinbaseTransaction coinbaseTransaction;
-	private EQcoinSeed eQcoinSeed;
-	private final int SIZE64 = 64;
-	private ChangeLog changeLog;
+	private byte[] passportProofRoot;
+	/**
+	 * Save the root of forbidden lock proof Merkel Tree.
+	 */
+	private byte[] forbiddenLockProofRoot;
+	private Transaction coinbaseTransaction;
 	
 	public EQcoinSeedRoot(byte[] bytes) throws Exception {
 		super(bytes);
@@ -94,12 +93,20 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		super.parseBody(is);
-		totalSupply = EQCType.parseID(is);
+		totalSupply = EQCType.parseValue(is);
 		totalLockNumbers = EQCType.parseID(is);
 		totalPassportNumbers = EQCType.parseID(is);
-		lockMerkelTreeRoot = EQCType.parseBIN(is);
-		passportMerkelTreeRoot = EQCType.parseBIN(is);
-		coinbaseTransaction = (TransferCoinbaseTransaction) Transaction.parseTransaction(EQCType.parseBIN(is));
+		livelyLockProofRoot = EQCType.parseNBytes(is, Util.SHA3_512_LEN);
+		passportProofRoot = EQCType.parseNBytes(is, Util.SHA3_512_LEN);
+		byte[] bytes = null;
+		bytes = EQCType.parseBIN(is);
+		if(EQCType.isNULL(bytes)) {
+			forbiddenLockProofRoot = null;
+		}
+		else {
+			forbiddenLockProofRoot = bytes;
+		}
+		coinbaseTransaction = Transaction.class.newInstance().Parse(is);
 	}
 
 	/* (non-Javadoc)
@@ -112,9 +119,10 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 		os.write(totalSupply.getEQCBits());
 		os.write(totalLockNumbers.getEQCBits());
 		os.write(totalPassportNumbers.getEQCBits());
-		os.write(EQCType.bytesToBIN(lockMerkelTreeRoot));
-		os.write(EQCType.bytesToBIN(passportMerkelTreeRoot));
-		os.write(coinbaseTransaction.getBin());
+		os.write(livelyLockProofRoot);
+		os.write(passportProofRoot);
+		os.write(EQCType.bytesToBIN(forbiddenLockProofRoot));
+		os.write(coinbaseTransaction.getBytes());
 		return os.toByteArray();
 	}
 
@@ -135,42 +143,48 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	/**
 	 * @return the coinbaseTransaction
 	 */
-	public TransferCoinbaseTransaction getCoinbaseTransaction() {
+	public Transaction getCoinbaseTransaction() {
 		return coinbaseTransaction;
 	}
 
 	/**
 	 * @param coinbaseTransaction the coinbaseTransaction to set
 	 */
-	public void setCoinbaseTransaction(TransferCoinbaseTransaction coinbaseTransaction) {
+	public void setCoinbaseTransaction(Transaction coinbaseTransaction) {
 		this.coinbaseTransaction = coinbaseTransaction;
 	}
 
 	protected String toInnerJson() {
-		return "\"EQcoinSeedHeader\":" + "{\n"
+		return "\"EQcoinSeedRoot\":" + "{\n"
 				+ "\"TotalTransactionNumbers\":" + "\"" + totalTransactionNumbers + "\"" + ",\n"
-				+ "\"TotalLockNumbers\":" + "\"" + totalLockNumbers + "\"" + ",\n" 
-				+ "\"TotalPassportNumbers\":" + "\"" + totalPassportNumbers + "\"" + ",\n" 
-				+ "\"LockMerkelTreeRoot\":" + "\"" + Util.getHexString(lockMerkelTreeRoot) + "\"" + ",\n" 
-				+ "\"PassportMerkelTreeRoot\":" + "\"" + Util.getHexString(passportMerkelTreeRoot) + "\"" + ",\n" 
+				+ "\"TotalSupply\":" + "\"" + totalSupply.longValue() + "\"" + ",\n" 
+				+ "\"TotalLockNumbers\":" + "\"" + totalLockNumbers.longValue() + "\"" + ",\n" 
+				+ "\"TotalPassportNumbers\":" + "\"" + totalPassportNumbers.longValue() + "\"" + ",\n" 
+				+ "\"LivelyLockProofRoot\":" + "\"" + Util.getHexString(livelyLockProofRoot) + "\"" + ",\n" 
+				+ "\"PassportProofRoot\":" + "\"" + Util.getHexString(passportProofRoot) + "\"" + ",\n" 
+				+ "\"ForbiddenLockProofRoot\":" + "\"" + Util.getHexString(forbiddenLockProofRoot) + "\"" + ",\n" 
 				+ coinbaseTransaction.toInnerJson()
 				+ "\n" + "}";
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.seed.EQCSeedHeader#isSanity()
 	 */
 	@Override
-	public boolean isSanity() {
-		if (!super.isSanity()) {
-			return false;
-		}
-		if (totalLockNumbers == null || !totalLockNumbers.isSanity() || totalPassportNumbers == null
-				|| !totalPassportNumbers.isSanity() || lockMerkelTreeRoot == null || lockMerkelTreeRoot.length != SIZE64
-				|| passportMerkelTreeRoot == null || passportMerkelTreeRoot.length != SIZE64) {
-			return false;
-		}
+	public boolean isSanity() throws Exception {
+		return super.isSanity() && totalSupply != null && totalSupply.isSanity()
+				&& totalLockNumbers != null && totalLockNumbers.isSanity() && totalPassportNumbers != null && totalPassportNumbers.isSanity()
+				&& livelyLockProofRoot != null && livelyLockProofRoot.length == Util.SHA3_512_LEN && passportProofRoot != null 
+				&& passportProofRoot.length == Util.SHA3_512_LEN && (forbiddenLockProofRoot == null || (forbiddenLockProofRoot != null && forbiddenLockProofRoot.length == Util.SHA3_512_LEN)) 
+				&& coinbaseTransaction != null && coinbaseTransaction.isSanity();
+	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.seed.EQCSeedHeader#isValid(com.eqcoin.blockchain.changelog.ChangeLog)
+	 */
+	@Override
+	public boolean isValid() throws Exception {
+		// Check if CoinbaseTransaction is need
 		if(changeLog.getHeight().compareTo(Util.getMaxCoinbaseHeight(changeLog.getHeight())) < 0) {
 			if(coinbaseTransaction == null || !coinbaseTransaction.isSanity()) {
 				return false;
@@ -181,24 +195,35 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 				return false;
 			}
 		}
-		
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.seed.EQCSeedHeader#isValid(com.eqcoin.blockchain.changelog.ChangeLog)
-	 */
-	@Override
-	public boolean isValid() throws Exception {
-		changeLog.buildLockMerkleTreeBase();
-		changeLog.generateLockMerkleTreeRoot();
-		changeLog.buildPassportMerkleTreeBase();
-		changeLog.generatePassportMerkleTreeRoot();
-		if(!totalTransactionNumbers.equals(changeLog.getStatistics().getTotalTransactionNumbers())) {
-			Log.Error("TotalTransactionNumbers is invalid expected: " + totalTransactionNumbers + " but actual: " + changeLog.getStatistics().getTotalTransactionNumbers());
+		if(!super.isValid()) {
 			return false;
 		}
-		
+		if(!totalSupply.equals(changeLog.getStatistics().getTotalSupply())) {
+			Log.Error("TotalSupply is invalid expected: " + changeLog.getStatistics().getTotalSupply() + " but actual: " + totalSupply);
+			return false;
+		}
+		if(!totalLockNumbers.equals(changeLog.getTotalLockNumbers())) {
+			Log.Error("TotalLockNumbers is invalid expected: " + changeLog.getTotalLockNumbers() + " but actual: " + totalLockNumbers);
+			return false;
+		}
+		if(!totalPassportNumbers.equals(changeLog.getTotalPassportNumbers())) {
+			Log.Error("TotalLockNumbers is invalid expected: " + changeLog.getTotalPassportNumbers() + " but actual: " + totalPassportNumbers);
+			return false;
+		}
+		changeLog.buildProofBase();
+		changeLog.generateProofRoot();
+		if (!Arrays.equals(livelyLockProofRoot, changeLog.getLockProofRoot())) {
+			Log.Error("LivelyLockProofRoot is invalid expected: " + Util.getHexString(changeLog.getLockProofRoot()) + " but actual: " + Util.getHexString(livelyLockProofRoot));
+			return false;
+		}
+		if (!Arrays.equals(passportProofRoot, changeLog.getPassportProofRoot())) {
+			Log.Error("PassportProofRoot is invalid expected: " + Util.getHexString(changeLog.getPassportProofRoot()) + " but actual: " + Util.getHexString(passportProofRoot));
+			return false;
+		}
+		if (!Arrays.equals(forbiddenLockProofRoot, changeLog.getForbiddenLockProofRoot())) {
+			Log.Error("ForbiddenLockProofRoot is invalid expected: " + Util.getHexString(changeLog.getForbiddenLockProofRoot()) + " but actual: " + Util.getHexString(forbiddenLockProofRoot));
+			return false;
+		}
 		return true;
 	}
 
@@ -217,51 +242,44 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	}
 
 	/**
-	 * @param EQcoinSeed the EQcoinSeed to set
+	 * @return the livelyLockProofRoot
 	 */
-	public void setEQcoinSeed(EQcoinSeed eQcoinSeed) {
-		this.eQcoinSeed = eQcoinSeed;
+	public byte[] getLivelyLockProofRoot() {
+		return livelyLockProofRoot;
 	}
 
 	/**
-	 * @return the lockMerkelTreeRoot
+	 * @param livelyLockProofRoot the livelyLockProofRoot to set
 	 */
-	public byte[] getLockMerkelTreeRoot() {
-		return lockMerkelTreeRoot;
+	public void setLivelyLockProofRoot(byte[] livelyLockProofRoot) {
+		this.livelyLockProofRoot = livelyLockProofRoot;
 	}
 
 	/**
-	 * @param lockMerkelTreeRoot the lockMerkelTreeRoot to set
+	 * @return the passportProofRoot
 	 */
-	public void setLockMerkelTreeRoot(byte[] lockMerkelTreeRoot) {
-		this.lockMerkelTreeRoot = lockMerkelTreeRoot;
+	public byte[] getPassportProofRoot() {
+		return passportProofRoot;
 	}
 
 	/**
-	 * @return the passportMerkelTreeRoot
+	 * @param passportProofRoot the passportProofRoot to set
 	 */
-	public byte[] getPassportMerkelTreeRoot() {
-		return passportMerkelTreeRoot;
-	}
-
-	/**
-	 * @param passportMerkelTreeRoot the passportMerkelTreeRoot to set
-	 */
-	public void setPassportMerkelTreeRoot(byte[] passportMerkelTreeRoot) {
-		this.passportMerkelTreeRoot = passportMerkelTreeRoot;
+	public void setPassportProofRoot(byte[] passportProofRoot) {
+		this.passportProofRoot = passportProofRoot;
 	}
 
 	/**
 	 * @return the totalSupply
 	 */
-	public ID getTotalSupply() {
+	public Value getTotalSupply() {
 		return totalSupply;
 	}
 
 	/**
 	 * @param totalSupply the totalSupply to set
 	 */
-	public void setTotalSupply(ID totalSupply) {
+	public void setTotalSupply(Value totalSupply) {
 		this.totalSupply = totalSupply;
 	}
 
@@ -273,17 +291,17 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	}
 
 	/**
-	 * @return the totalPublickeyNumbers
+	 * @return the forbiddenLockProofRoot
 	 */
-	public ID getTotalPublickeyNumbers() {
-		return totalPublickeyNumbers;
+	public byte[] getForbiddenLockProofRoot() {
+		return forbiddenLockProofRoot;
 	}
 
 	/**
-	 * @param totalPublickeyNumbers the totalPublickeyNumbers to set
+	 * @param forbiddenLockProofRoot the forbiddenLockProofRoot to set
 	 */
-	public void setTotalPublickeyNumbers(ID totalPublickeyNumbers) {
-		this.totalPublickeyNumbers = totalPublickeyNumbers;
+	public void setForbiddenLockProofRoot(byte[] forbiddenLockProofRoot) {
+		this.forbiddenLockProofRoot = forbiddenLockProofRoot;
 	}
 	
 }

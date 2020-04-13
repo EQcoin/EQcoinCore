@@ -38,13 +38,13 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Vector;
 import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
+import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.persistence.EQCBlockChainH2.TRANSACTION_OP;
 import com.eqcoin.serialization.EQCTypable;
@@ -66,7 +66,15 @@ import com.eqcoin.util.Util.LockTool;
  */
 public class TransferOPTransaction extends TransferTransaction {
 	protected final static int MIN_TXOUT = 0;
-	private Operation operation;
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#init()
+	 */
+	@Override
+	protected void init() {
+		super.init();
+		operationList = new Vector<>();
+	}
 
 	public TransferOPTransaction() {
 		super();
@@ -78,116 +86,15 @@ public class TransferOPTransaction extends TransferTransaction {
 		super(bytes);
 	}
 
-	/**
-	 * @return the operation
-	 */
-	public Operation getOperation() {
-		return operation;
+	public TransferOPTransaction(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
 
-	/**
-	 * @param operation the operation to set
-	 */
-	public void setOperation(Operation operation) {
-		this.operation = operation;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqzip.eqcoin.blockchain.Transaction#getMaxBillingSize()
-	 */
-	@Override
-	public int getMaxBillingLength() {
-		int size = 0;
-
-		// TransferTransaction size
-		size += super.getMaxBillingLength();
-
-		// Operations size
-		size += operation.getBin().length;
-
-		return size;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqzip.eqcoin.blockchain.Transaction#getBillingSize()
-	 */
-	@Override
-	public int getBillingSize() throws Exception {
-		int size = 0;
-		// TransferTransaction size
-		size += super.getBillingSize();
-
-		// Operations size
-		size += operation.getBin().length;
-		return super.getBillingSize();
-	}
-
-	@Override
-	public boolean isValid()
-			throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!operation.isMeetPreconditions()) {
-			Log.Error("Operation " + operation + " doesn't meet preconditions.");
-			return false;
-		}
-		if(!operation.isValid()) {
-			Log.Error("Operation " + operation + " doesn't valid.");
-			return false;
-		}
-		if(!super.isValid()) {
-			return false;
-		}
-		return true;
-	}
-
-//	/*
-//	 * (non-Javadoc)
-//	 * 
-//	 * @see com.eqzip.eqcoin.blockchain.Transaction#isTxOutNumberValid()
-//	 */
-//	@Override
-//	public boolean isTxOutNumberValid() {
-//		return (txOutList.size() >= MIN_TXOUT) && (txOutList.size() <= MAX_TXOUT);
-//	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((operation == null) ? 0 : operation.hashCode());
-		return result;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		TransferOPTransaction other = (TransferOPTransaction) obj;
-		if (operation == null) {
-			if (other.operation != null)
-				return false;
-		} else if (!operation.equals(other.operation))
-			return false;
-		return true;
-	}
-	
 	public String toInnerJson() {
 		return
 		"\"TransferOperationTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n"
-				+ operation.toInnerJson() + ",\n"
+			+ "\"OperationList\":" + "\n{\n" + "\"Size\":" + "\"" + operationList.size() + "\"" + ",\n"
+			+ "\"List\":" + "\n" + getOperationListString() + "\n},\n"
 				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
 				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
@@ -208,38 +115,15 @@ public class TransferOPTransaction extends TransferTransaction {
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isDerivedSanity(com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
 	@Override
-	public boolean isDerivedSanity() {
+	public boolean isDerivedSanity() throws Exception {
 		if(!super.isDerivedSanity()) {
 			return false;
 		}
-		if(operation == null) {
-			return false;
-		}
-		if (!(operation instanceof UpdateLockOP)) {
-			return false;
-		}
-		if (!operation.isSanity()) {
+		if(!isOperationListSanity()) {
 			return false;
 		}
 		return true;
 	}
-
-//	/* (non-Javadoc)
-//	 * @see com.eqcoin.blockchain.transaction.Transaction#preparePlanting()
-//	 */
-//	@Override
-//	public void preparePlanting() throws Exception {
-////		if(transactionShape == TransactionShape.RPC) {
-////			super.preparePlanting();
-////		}
-////		else {
-////			UpdateLockOP updateLockOperation = (UpdateLockOP) operation;
-////			Lock lock = null;
-////			lock = eQcoinSeed.getNextLock();
-////			Objects.requireNonNull(lock);
-////			updateLockOperation.setLock(lock);
-////		}
-//	}
 
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#derivedPlanting()
@@ -247,15 +131,16 @@ public class TransferOPTransaction extends TransferTransaction {
 	@Override
 	protected void derivedPlanting() throws Exception {
 		super.derivedPlanting();
-		operation.execute();
+		plantingOperationList();
 	}
 
 	protected byte[] getDerivedBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			os.write(operation.getBytes());
 			// Serialization Super body
-			os.write(super.getBodyBytes());
+			os.write(super.getDerivedBodyBytes());
+			// Serialization Operation list
+			os.write(EQCType.eqcSerializableListToArray(operationList));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -264,13 +149,16 @@ public class TransferOPTransaction extends TransferTransaction {
 		return os.toByteArray();
 	}
 	
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		// Parse Operation
-		operation = Operation.parseOperation(is);
-		// Parse Super body
-		super.parseBody(is);
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseDerivedBody(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	protected void parseDerivedBody(ByteArrayInputStream is) throws Exception {
+		super.parseDerivedBody(is);
+		// Parse Operation list
+		operationList = EQCType.parseArray(is, new Operation(this));
 	}
-	
+
 	public void parseHeader(ByteArrayInputStream is)
 			throws Exception {
 		parseSoloAndTransactionType(is);
@@ -290,6 +178,46 @@ public class TransferOPTransaction extends TransferTransaction {
 			Log.Error(e.getMessage());
 		}
 		return os.toByteArray();
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#getProofLength()
+	 */
+	@Override
+	protected Value getProofLength() throws Exception {
+		return super.getProofLength().add(new Value(EQCType.eqcSerializableListToArray(operationList).length));
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isDerivedValid()
+	 */
+	@Override
+	public boolean isDerivedValid() throws Exception {
+		return (super.isDerivedValid() && isOperationListValid());
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isTxInPublickeyValid()
+	 */
+	@Override
+	protected boolean isTxInPublickeyValid() {
+		if(isIncludeUpdateEQCPublickeyOP()) {
+			return true;
+		}
+		else {
+			return super.isTxInPublickeyValid();
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#init(com.eqcoin.blockchain.changelog.ChangeLog)
+	 */
+	@Override
+	public void init(ChangeLog changeLog) throws Exception {
+		super.init(changeLog);
+		for(Operation operation:operationList) {
+			operation.setTransaction(this);
+		}
 	}
 	
 }

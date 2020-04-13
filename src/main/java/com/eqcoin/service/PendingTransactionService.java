@@ -78,16 +78,16 @@ public class PendingTransactionService extends EQCService {
 			Log.info("Received new Transaction");
 			pendingTransactionState = (PendingTransactionState) state;
 			transaction = Transaction.parseTransaction(pendingTransactionState.getTransaction());
-			account = Util.DB().getPassport(transaction.getTxIn().getLock().getAddressAI(), Mode.GLOBAL);
+			account = Util.DB().getPassport(transaction.getTxIn().getPassportId(), Mode.GLOBAL);
 			if(account == null) {
-				Log.info("Transaction with readable address " + transaction.getTxIn().getLock().getReadableLock() + "'s relevant Account doesn't exists just discard it");
+				Log.info("Transaction with id " + transaction.getTxIn().getPassportId() + "'s relevant Passport doesn't exists just discard it");
 				return;
 			}
 			if(transaction.getNonce().compareTo(account.getNonce()) < 0) {
 				Log.info("Transaction's nonce " + transaction.getNonce() + " less than relevant Account's Asset's nonce " + account.getNonce() + " just discard it");
 				return;
 			}
-			transaction.getTxIn().getLock().setId(account.getId());
+//			transaction.getTxIn().getLock().setId(account.getId());
 //			maxNonce = EQCBlockChainH2.getInstance().getTransactionMaxNonce(transaction.getNest());
 //			// Here maybe exists one bug maybe need remove this
 //			if(transaction.getNonce().compareTo(maxNonce.getNonce().getNextID()) > 0) {
@@ -100,7 +100,7 @@ public class PendingTransactionService extends EQCService {
 //					EQCBlockChainH2.getInstance().saveTransactionMaxNonce(transaction.getNest(), transaction.getMaxNonce());
 //				}
 				EQCBlockChainH2.getInstance().saveTransactionInPool(transaction);
-				Log.info("Transaction with ID " + transaction.getTxIn().getLock().getId()  + " and nonce " + transaction.getNonce() + " is valid just save it");
+				Log.info("Transaction with ID " + transaction.getTxIn().getPassportId()  + " and nonce " + transaction.getNonce() + " is valid just save it");
 			}
 			else {
 				Log.Error("Transaction is invalid just discard it");

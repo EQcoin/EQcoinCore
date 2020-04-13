@@ -37,7 +37,8 @@ import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
-import com.eqcoin.blockchain.passport.Lock;
+import com.eqcoin.blockchain.lock.EQCLock;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.transaction.Transaction;
@@ -436,12 +437,6 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	}
 
 	@Override
-	public boolean savePassport(Passport account, Mode mode) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public Passport getPassport(ID id, Mode mode) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
@@ -454,19 +449,13 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	}
 
 	@Override
-	public Passport getPassport(byte[] addressAI, Mode mode) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public boolean mergePassport(Mode mode) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean takePassportSnapshot(Mode mode, ID height) throws SQLException, Exception {
+	public boolean takePassportSnapshot(Mode mode, ChangeLog changeLog) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -490,25 +479,19 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	}
 
 	@Override
-	public boolean saveLock(Lock lock, Mode mode) throws Exception {
+	public boolean saveLock(EQCLockMate lock, Mode mode) throws Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public Lock getLock(ID id, Mode mode) throws Exception {
+	public EQCLockMate getLock(ID id, Mode mode) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Lock getLock(ID id, ID height) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Lock getLock(String readableLock, Mode mode) throws Exception {
+	public EQCLockMate getLock(ID id, ID height) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -532,37 +515,19 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	}
 
 	@Override
-	public Passport getPassportSnapshot(byte[] addressAI, ID height) throws SQLException, Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean savePassportSnapshot(Passport account, ID height) throws SQLException, Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public boolean deletePassportSnapshotFrom(ID height, boolean isForward) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public Lock getLockSnapshot(ID lockID, ID height) throws SQLException, Exception {
+	public EQCLockMate getLockSnapshot(ID lockID, ID height) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Lock getLockSnapshot(byte[] addressAI, ID height) throws SQLException, Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean saveLockSnapshot(Lock lock, ID height) throws SQLException, Exception {
+	public boolean saveLockSnapshot(EQCLockMate lock, ID height) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -580,7 +545,7 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	}
 
 	@Override
-	public boolean takeLockSnapshot(Mode mode, ID height) throws SQLException, Exception {
+	public boolean takeLockSnapshot(Mode mode, ChangeLog changeLog) throws SQLException, Exception {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -611,6 +576,48 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 
 	@Override
 	public ID getTotalNewPassportNumbers(ChangeLog changeLog) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isLockExists(ID id, Mode mode) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean savePassport(ID passportId, byte[] passportBytes, Mode mode) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public byte[] getPassportBytes(ID id, Mode mode) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isPassportExists(ID id, Mode mode) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean savePassportSnapshot(ID passportID, byte[] passportBytes, ID height) throws SQLException, Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public EQCLockMate getLock(EQCLock eqcLock, Mode mode) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ID isLockExists(EQCLock eqcLock, Mode mode) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

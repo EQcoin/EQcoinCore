@@ -33,13 +33,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
-import com.eqcoin.blockchain.transaction.operation.UpdateCheckPointOP;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
+import com.eqcoin.blockchain.transaction.operation.ChangeCheckPointOP;
+import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -62,6 +62,10 @@ public class ModerateOPTransaction extends Transaction {
 		super(bytes);
 	}
 
+	public ModerateOPTransaction(ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
+
 	/**
 	 * @return the operation
 	 */
@@ -74,40 +78,6 @@ public class ModerateOPTransaction extends Transaction {
 	 */
 	public void setOperation(Operation operation) {
 		this.operation = operation;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqzip.eqcoin.blockchain.Transaction#getMaxBillingSize()
-	 */
-	@Override
-	public int getMaxBillingLength() {
-		int size = 0;
-
-		// TransferTransaction size
-		size += super.getMaxBillingLength();
-
-		// Operations size
-		size += operation.getBin().length;
-
-		return size;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqzip.eqcoin.blockchain.Transaction#getBillingSize()
-	 */
-	@Override
-	public int getBillingSize() throws Exception {
-		int size = 0;
-		// TransferTransaction size
-		size += super.getBillingSize();
-
-		// Operations size
-		size += operation.getBin().length;
-		return super.getBillingSize();
 	}
 
 	@Override
@@ -184,7 +154,7 @@ public class ModerateOPTransaction extends Transaction {
 		if(operation == null) {
 			return false;
 		}
-		if(!(operation instanceof UpdateCheckPointOP)) {
+		if(!(operation instanceof ChangeCheckPointOP)) {
 			return false;
 		}
 		if (!operation.isSanity()) {
@@ -200,7 +170,7 @@ public class ModerateOPTransaction extends Transaction {
 	@Override
 	protected void derivedPlanting() throws Exception {
 		super.derivedPlanting();
-		operation.execute();
+		operation.planting();
 	}
 
 	public byte[] getBodyBytes() throws Exception {

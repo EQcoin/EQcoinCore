@@ -66,18 +66,20 @@ import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHiveRoot;
+import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.TxIn;
-import com.eqcoin.blockchain.transaction.TxOut;
-import com.eqcoin.blockchain.transaction.Transaction.TXFEE_RATE;
+import com.eqcoin.blockchain.transaction.Value;
+import com.eqcoin.blockchain.transaction.ZionTxOut;
+import com.eqcoin.blockchain.transaction.TransferTxOut;
+import com.eqcoin.blockchain.transaction.Transaction.TRANSACTION_PRIORITY;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
+import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.EQCPublicKey;
 import com.eqcoin.keystore.Keystore;
@@ -108,38 +110,6 @@ import com.eqcoin.util.Util.LockTool.LockType;
  * @email 10509759@qq.com
  */
 public class Test {
-	public static void testSignTransaction() {
-		TransferTransaction transaction = new TransferTransaction();
-		TxIn txIn = new TxIn();
-		Lock key = new Lock();
-		key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
-		key.setId(new ID(BigInteger.ZERO));
-		txIn.setLock(key);
-		txIn.setValue(25 * Util.ABC);
-		transaction.setTxIn(txIn);
-		key = new Lock();
-		key.setReadableLock("abc");
-		key.setId(new ID(BigInteger.TWO));
-		TxOut txOut = new TxOut();
-		txOut.setLock(key);
-		txOut.setValue(24 * Util.ABC);
-		transaction.addTxOut(txOut);
-		transaction.setNonce(ID.ONE);
-
-		byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPrivateKey(), "abc");
-		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPublicKey(), "abc");
-		byte[] sign = Util.signTransaction(transaction.getTxIn().getLock().getAddressType(), privateKey, transaction,
-				new byte[4]);
-		transaction.getEqcWitness().setSignature(sign);
-		com.eqcoin.blockchain.transaction.EQCPublickey publicKey2 = new com.eqcoin.blockchain.transaction.EQCPublickey();
-		publicKey2.setPublickey(publickey);
-//		boolean result = Util.verifySignature(transaction.getTxIn().getLock().getAddressType(), transaction, new byte[4]);
-//		if (result) {
-//			Log.info("verify passed");
-//		} else {
-//			Log.info("verify failed");
-//		}
-	}
 
 	public static void testHashTime() {
 		EQCHiveRoot header = new EQCHiveRoot();
@@ -387,7 +357,7 @@ public class Test {
 	public static void testKeystore() {
 		UserAccount account;
 		Log.info("testKeystore");
-		for (int i = 0; i < 3; ++i) {
+		for (int i = 0; i < 30; ++i) {
 			Log.info("i: " + i);
 			account = Keystore.getInstance().createUserAccount("nju2006", "abc", ECCTYPE.P521);
 //			if(account.getAddress().length() > 51 || account.getAddress().length() < 49) {
@@ -400,9 +370,9 @@ public class Test {
 	public static void testAIToAddress() {
 		Log.info(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
 		try {
-			Log.info(Util.LockTool.AIToAddress(Util.LockTool
-					.addressToAI(Keystore.getInstance().getUserAccounts().get(0).getReadableLock())));
-		} catch (NoSuchFieldException e) {
+			Log.info(Util.LockTool.AIToReadableLock(Util.LockTool
+					.readableLockToAI(Keystore.getInstance().getUserAccounts().get(0).getReadableLock())));
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -821,18 +791,22 @@ public class Test {
 
 	public static void testToString() {
 		TxIn txIn = new TxIn();
-		Lock key = new Lock();
-		key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
-		key.setId(new ID(BigInteger.ZERO));
-		txIn.setLock(key);
-		txIn.setValue(25 * Util.ABC);
+		txIn.setPassportId(ID.ZERO);
+		txIn.setValue(Util.getValue(25));
+		EQCLock key = new EQCLock();
+		try {
+			key.cloneFromReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		Log.info(txIn.toString());
 		Log.info(key.toString());
 		// Create Transaction
 		TransferTransaction transaction = new TransferTransaction();
-		TxOut txOut = new TxOut();
-		txOut.setLock(key);
-		txOut.setValue(25 * Util.ABC);
+		TransferTxOut txOut = new TransferTxOut();
+		txOut.setPassportId(ID.ONE);
+		txOut.setValue(Util.getValue(25));
 		transaction.setTxIn(txIn);
 		transaction.addTxOut(txOut);
 		Log.info(transaction.toString());
@@ -850,154 +824,6 @@ public class Test {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-	}
-
-	public static void testSpendCoinBase() {
-		try {
-			TransferTransaction transaction;
-			TxIn txIn;
-			TxOut txOut;
-			Lock key;
-			transaction = new TransferTransaction();
-			txIn = new TxIn();
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
-//		address.setSerialNumber(serialNumber);
-			txIn.setLock(key);
-
-			txOut = new TxOut();
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(1).getReadableLock());
-//		address.setSerialNumber((serialNumber = serialNumber.getNextSerialNumber()));
-			txOut.setLock(key);
-			txOut.setValue(24 * Util.ABC);
-			transaction.setTxIn(txIn);
-			transaction.addTxOut(txOut);
-
-			byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPrivateKey(), "abc");
-			byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPublicKey(), "abc");
-
-			com.eqcoin.blockchain.transaction.EQCPublickey publicKey1 = new com.eqcoin.blockchain.transaction.EQCPublickey();
-			publicKey1.setPublickey(publickey);
-			publicKey1.setId(ID.ZERO);
-//		EQCBlockChainH2.getInstance().appendPublicKey(publicKey1, SerialNumber.ZERO);
-
-			// TxFee
-			transaction.setTxFeeLimit(Transaction.TXFEE_RATE.POSTPONE0);
-			Log.info("TxIn value:" + txIn.getValue());
-			Log.info("TxFeeLimit: " + transaction.getTxFeeLimit());
-
-//		if(TransferTransaction.isValid(transaction.getBytes(Address.AddressShape.READABLE), AddressShape.READABLE)) {
-//			Log.info("Right format");
-//		}
-//		else {
-//			Log.info("Bad format");
-//		}
-//		Log.info(transaction.toString());
-//		byte[] bytes = transaction.getBytes(AddressShape.ADDRESS);
-//		Transaction transaction1 = new Transaction(transaction.getBytes(AddressShape.ADDRESS), AddressShape.ADDRESS);
-//		Log.info(transaction1.toString());
-
-			byte[] sign = Util.signTransaction(transaction.getTxIn().getLock().getAddressType(), privateKey, transaction,
-					new byte[4]);
-			transaction.getEqcWitness().setSignature(sign);
-
-//			if (Util.verifySignature(transaction.getTxIn().getLock().getAddressType(), transaction, new byte[4])) {
-//				Log.info("Passed");
-//			}
-			Log.info(transaction.toString());
-			EQCBlockChainH2.getInstance().saveTransactionInPool(transaction);
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-//		Vector<Transaction> transactions = EQCBlockChainH2.getInstance().getTransactionListInPool();
-//		
-//		try {
-//			if(transactions.get(0).isValid(10000000)) {
-//				Log.info("Passed2");
-//			}
-//			else {
-//				Log.info("Failed");
-//			}
-//		} catch (NoSuchFieldException | IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-	}
-
-	public static void testMultiTransaction() {
-		// Create Transaction
-		EQCHive transactions;
-		TransferTransaction transaction;
-		TxIn txIn;
-		TxOut txOut;
-		Lock key;
-		ID serialNumber = new ID(BigInteger.ZERO);
-		transactions = new EQCHive();
-
-		try {
-			transaction = new TransferTransaction();
-			txIn = new TxIn();
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
-			key.setId(serialNumber);
-			txIn.setLock(key);
-			txIn.setValue(25 * Util.ABC);
-			txOut = new TxOut();
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(1).getReadableLock());
-			key.setId((serialNumber = serialNumber.getNextID()));
-			txOut.setLock(key);
-			txOut.setValue(24 * Util.ABC);
-			transaction.setTxIn(txIn);
-			transaction.addTxOut(txOut);
-			transactions.getEQcoinSeed().addTransaction(transaction);
-
-			transaction = new TransferTransaction();
-			txIn = new TxIn();
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(2).getReadableLock());
-			key.setId((serialNumber = serialNumber.getNextID()));
-			txIn.setLock(key);
-			txIn.setValue(25 * Util.ABC);
-			txOut = new TxOut();
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(3).getReadableLock());
-//			Log.info("a:" + address.getAddress());
-			key.setId((serialNumber = serialNumber.getNextID()));
-			txOut.setLock(key);
-			txOut.setValue(12 * Util.ABC);
-			transaction.setTxIn(txIn);
-			transaction.addTxOut(txOut);
-
-			// Add new TxOut
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(4).getReadableLock());
-//			Log.info("b:" + address.getAddress());
-			key.setId((serialNumber = serialNumber.getNextID()));
-			txOut = new TxOut();
-			txOut.setLock(key);
-			txOut.setValue(12 * Util.ABC);
-			transaction.addTxOut(txOut);
-
-			// Add new TxOut
-			key = new Lock();
-			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(5).getReadableLock());
-//					Log.info("b:" + address.getAddress());
-			key.setId((serialNumber = serialNumber.getNextID()));
-			txOut = new TxOut();
-			txOut.setLock(key);
-			txOut.setValue((long) (0.9 * Util.ABC));
-			transaction.addTxOut(txOut);
-
-//			Log.info("txout number: " + transaction.getTxOutNumber());
-			transactions.getEQcoinSeed().addTransaction(transaction);
-
-			Log.info(transactions.toString());
-		}
-		catch (Exception e) {
-			// TODO: handle exception
 		}
 	}
 
@@ -1062,25 +888,25 @@ public class Test {
 
 	public static void testAddressFormat() {
 		String key = "1w6WJRsMFEcGVEqXMwGmLHWW";
-		if (Util.isAddressFormatValid(key)) {
+		if (LockTool.isReadableLockSanity(key)) {
 			Log.info(key + " Passed.");
 		} else {
 			Log.info(key + " Failed.");
 		}
 		key = "4w6WJRsMFEcGVEqXMwGmLHWW";
-		if (Util.isAddressFormatValid(key)) {
+		if (LockTool.isReadableLockSanity(key)) {
 			Log.info(key + " Passed.");
 		} else {
 			Log.info(key + " Failed.");
 		}
 		key = "1w6WJRsMFEcGVEqXMwG";
-		if (Util.isAddressFormatValid(key)) {
+		if (LockTool.isReadableLockSanity(key)) {
 			Log.info(key + " Passed.");
 		} else {
 			Log.info(key + " Failed.");
 		}
 		key = "1w6WJRsMFEcGVEq0XMwGmLHW";
-		if (Util.isAddressFormatValid(key)) {
+		if (LockTool.isReadableLockSanity(key)) {
 			Log.info(key + " Passed.");
 		} else {
 			Log.info(key + " Failed.");
@@ -2013,50 +1839,50 @@ public class Test {
 	}
 	
 	public static void sendTransaction() {
-		UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(0);
-		UserAccount userAccount1 = Keystore.getInstance().getUserAccounts().get(3);
+//		UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(0);
+//		UserAccount userAccount1 = Keystore.getInstance().getUserAccounts().get(3);
 		TransferTransaction transaction = new TransferTransaction();
-		TxIn txIn = new TxIn();
-		txIn.setLock(new Lock(userAccount.getReadableLock()));
+//		TxIn txIn = new TxIn();
+//		txIn.setLock(new EQCLock(userAccount.getReadableLock()));
+//		try {
+//			txIn.getLock().setId(EQCBlockChainRPC.getInstance().getPassport(txIn.getLock().getId(), Mode.GLOBAL).getId());
+//		} catch (Exception e2) {
+//			// TODO Auto-generated catch block
+//			e2.printStackTrace();
+//		}
+//		transaction.setTxIn(txIn);
+//		TransferTxOut txOut = new TransferTxOut();
+//		txOut.setLock(new EQCLock(userAccount1.getReadableLock()));
+//		txOut.setValue(Util.getValue(500));
+//		transaction.addTxOut(txOut);
 		try {
-			txIn.getLock().setId(EQCBlockChainRPC.getInstance().getPassport(txIn.getLock().getAddressAI(), Mode.GLOBAL).getId());
-		} catch (Exception e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		transaction.setTxIn(txIn);
-		TxOut txOut = new TxOut();
-		txOut.setLock(new Lock(userAccount1.getReadableLock()));
-		txOut.setValue(500 * Util.ABC);
-		transaction.addTxOut(txOut);
-		try {
-			transaction.setNonce(EQCBlockChainRPC.getInstance().getTransactionMaxNonce(transaction.getNest()).getNonce().getNextID());
-//			Log.info("Nonce: " + transaction.getNonce());
-			byte[] privateKey = Util.AESDecrypt(userAccount.getPrivateKey(), "abc");
-			byte[] publickey = Util.AESDecrypt(userAccount.getPublicKey(), "abc");
-			com.eqcoin.blockchain.transaction.EQCPublickey publicKey2 = new com.eqcoin.blockchain.transaction.EQCPublickey();
-			publicKey2.setPublickey(publickey);
-			transaction.cypherTxInValue(TXFEE_RATE.POSTPONE0);
-//			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
-//			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
-//			Log.info("getQosRate: " + transaction.getQosRate());
-//			Log.info("getQos: " + transaction.getQos());
-
-			Signature ecdsa = null;
-			try {
-				ecdsa = Signature.getInstance("NONEwithECDSA", "SunEC");
-				ecdsa.initSign(Util.getPrivateKey(privateKey, transaction.getTxIn().getLock().getAddressType()));
-			} catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-//			AccountsMerkleTree changeLog = new AccountsMerkleTree(
-//					EQCBlockChainRocksDB.getInstance().getInstance().getEQCBlockTailHeight(),
-//					new Filter(Mode.MINING));
-//			publicKey2.setID(changeLog.getAddressID(transaction.getTxIn().getPassport()));
-//			transaction.getTxIn().getPassport()
-//					.setID(changeLog.getAddressID(transaction.getTxIn().getPassport()));
-			transaction.sign(ecdsa);
+//			transaction.setNonce(EQCBlockChainRPC.getInstance().getTransactionMaxNonce(transaction.getNest()).getNonce().getNextID());
+////			Log.info("Nonce: " + transaction.getNonce());
+//			byte[] privateKey = Util.AESDecrypt(userAccount.getPrivateKey(), "abc");
+//			byte[] publickey = Util.AESDecrypt(userAccount.getPublicKey(), "abc");
+//			com.eqcoin.blockchain.transaction.EQCPublickey publicKey2 = new com.eqcoin.blockchain.transaction.EQCPublickey();
+//			publicKey2.setPublickey(publickey);
+//			transaction.setPriority(TRANSACTION_PRIORITY.ASAP, null);
+////			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
+////			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
+////			Log.info("getQosRate: " + transaction.getQosRate());
+////			Log.info("getQos: " + transaction.getQos());
+//
+//			Signature ecdsa = null;
+//			try {
+//				ecdsa = Signature.getInstance("NONEwithECDSA", "SunEC");
+//				ecdsa.initSign(Util.getPrivateKey(privateKey, transaction.getTxIn().getLock().getLockType()));
+//			} catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+////			AccountsMerkleTree changeLog = new AccountsMerkleTree(
+////					EQCBlockChainRocksDB.getInstance().getInstance().getEQCBlockTailHeight(),
+////					new Filter(Mode.MINING));
+////			publicKey2.setID(changeLog.getAddressID(transaction.getTxIn().getPassport()));
+////			transaction.getTxIn().getPassport()
+////					.setID(changeLog.getAddressID(transaction.getTxIn().getPassport()));
+//			transaction.sign(ecdsa);
 		
 //			if (transaction.verify(changeLog)) {
 //				Log.info("passed");

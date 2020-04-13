@@ -47,21 +47,25 @@ public class ID extends BigInteger {
 	 */
 	private static final long serialVersionUID = -8644553965845085710L;
 
-	public static ID ZERO = new ID(BigInteger.ZERO);
+	public static final ID ZERO = new ID(BigInteger.ZERO);
 	
-	public static ID ONE = new ID(BigInteger.ONE);
+	public static final ID ONE = new ID(BigInteger.ONE);
 	
-	public static ID TWO = new ID(BigInteger.TWO);
+	public static final ID TWO = new ID(BigInteger.TWO);
 	
-	public static ID THREE = new ID(3);
+	public static final ID THREE = new ID(3);
 	
-	public static ID FOUR = new ID(4);
+	public static final ID FOUR = new ID(4);
 	
-	public static ID FIVE = new ID(5);
+	public static final ID FIVE = new ID(5);
 	
-	public static ID NINE = new ID(9);
+	public static final ID NINE = new ID(9);
 	
-	public static ID SIX = new ID(6);
+	public static final ID SIX = new ID(6);
+	
+	public ID() {
+		super(BigInteger.ZERO.toByteArray());
+	}
 	
 	/**
 	 * @param EQCBits
@@ -161,10 +165,6 @@ public class ID extends BigInteger {
 
 	public boolean isSanity() {
 		return this.compareTo(ID.ZERO) >= 0;
-	}
-
-	public static ID valueOf(long value) {
-		return new ID(value);
 	}
 	
 }

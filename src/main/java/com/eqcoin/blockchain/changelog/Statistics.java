@@ -29,7 +29,7 @@
  */
 package com.eqcoin.blockchain.changelog;
 
-import com.eqcoin.blockchain.passport.Lock;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
@@ -37,6 +37,7 @@ import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.ZionOPTransaction;
 import com.eqcoin.blockchain.transaction.ZionTransaction;
 import com.eqcoin.util.ID;
@@ -49,32 +50,36 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class Statistics {
-	private ID totalSupply;
+	private Value totalSupply;
 	private ID totalTransactionNumbers;
 	private ID totalPublickeyNumbers;
 	private ChangeLog changeLog;
 	
 	public Statistics(ChangeLog changeLog) {
-		totalSupply = ID.ZERO;
+		totalSupply = Value.ZERO;
 		totalTransactionNumbers = ID.ZERO;
 		totalPublickeyNumbers = ID.ZERO;
 		this.changeLog = changeLog;
 	}
 	
 	public boolean isValid(EQCSeed eQcoinSeed) throws Exception {
+		if(changeLog.getHeight().equals(ID.ZERO)) {
+			// Axiomatic
+			return true;
+		}
 		// Check if total new lock numbers equal to total new passport numbers + total new updated Lock numbers
 		EQcoinSeedRoot preEQcoinSeedRoot = changeLog.getEQCHive(changeLog.getHeight().getPreviousID(), true).getEQcoinSeed()
 				.getEQcoinSeedRoot();
 		ID totalNewLockNumbers = changeLog.getTotalLockNumbers().subtract(preEQcoinSeedRoot.getTotalLockNumbers());
 		ID totalNewPassportNumbers = changeLog.getTotalPassportNumbers().subtract(preEQcoinSeedRoot.getTotalPassportNumbers());
-		if(!totalNewLockNumbers.equals(totalNewPassportNumbers.add(changeLog.getTotalNewUpdatedLockNumbers()))) {
+		if(!totalNewLockNumbers.equals(totalNewPassportNumbers.add(new ID(changeLog.getForbiddenLockList().size())))) {
 			Log.Error("TotalNewLockNumbers doesn't equal to totalNewPassportNumbers + totalNewUpdateLockNumbers. This is invalid.");
 			throw new IllegalStateException("TotalNewLockNumbers doesn't equal to totalNewPassportNumbers + totalNewUpdateLockNumbers. This is invalid.");
 		}
 		
 		// Check if total supply is valid
-		if(!totalSupply.equals(Util.cypherTotalSupply(changeLog.getHeight()))) {
-			Log.Error("TotalSupply is invalid expected: " + Util.cypherTotalSupply(changeLog.getHeight()) + " but actual: " + totalSupply);
+		if(!totalSupply.equals(Util.cypherTotalSupply(changeLog))) {
+			Log.Error("TotalSupply is invalid expected: " + Util.cypherTotalSupply(changeLog) + " but actual: " + totalSupply);
 			return false;
 		}
 		
@@ -107,7 +112,7 @@ public class Statistics {
 	/**
 	 * @return the totalSupply
 	 */
-	public ID getTotalSupply() {
+	public Value getTotalSupply() {
 		return totalSupply;
 	}
 
@@ -120,16 +125,10 @@ public class Statistics {
 
 	public void generateStatistics(EQCSeed eQcoinSeed) throws Exception {
 		Passport passport;
-		for(long i=1; i<=changeLog.getTotalPassportNumbers().longValue(); ++i) {
+		for(long i=0; i<changeLog.getTotalPassportNumbers().longValue(); ++i) {
 			passport = changeLog.getFilter().getPassport(new ID(i), true);
+			Log.info("Hive height: " + changeLog.getHeight() + " Passport id: " + passport.getId() + " balance: " + passport.getBalance());
 			update(passport);
-		}
-		Lock lock;
-		for(long i=1; i<=changeLog.getTotalLockNumbers().longValue(); ++i) {
-			lock = changeLog.getFilter().getLock(new ID(i), true);
-			if(lock.getPublickey() != null) {
-				totalPublickeyNumbers = totalPublickeyNumbers.getNextID();
-			}
 		}
 	}
 	

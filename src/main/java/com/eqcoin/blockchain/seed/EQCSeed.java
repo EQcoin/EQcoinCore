@@ -40,14 +40,13 @@ import org.apache.velocity.runtime.directive.Parse;
 
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
+import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.EQCPublickey;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
-import com.eqcoin.blockchain.passport.Lock;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.passport.Passport.PassportType;
-import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
-import com.eqcoin.blockchain.transaction.TxOut;
+import com.eqcoin.blockchain.transaction.ZionTxOut;
 import com.eqcoin.blockchain.transaction.ZionTransaction;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCTypable;
@@ -149,7 +148,7 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse NewTransactionList
-		newTransactionList = EQCType.parseArray(is, Transaction.class);
+		newTransactionList = EQCType.parseArray(is, new Transaction());
 	}
 
 	@Override
@@ -200,11 +199,11 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 			newTransactionListLength += transaction.getBytes().length;
 	}
 	
-	public byte[] getHash() throws Exception {
+	public byte[] getProofRoot() throws Exception {
 		return null;
 	}
 	
-	public byte[] getNewTransactionListMerkelTreeRoot() throws Exception {
+	public byte[] getNewTransactionListProofRoot() throws Exception {
 		if(newTransactionList.isEmpty()) {
 			return EQCType.NULL_ARRAY;
 		}
@@ -263,7 +262,7 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 		return tx;
 	}
 	
-	public void plantingTransaction(Vector<Transaction> transactionList, ChangeLog changeLog) throws NoSuchFieldException, IllegalStateException, IOException, Exception {
+	public void plantingTransaction(Vector<Transaction> transactionList) throws NoSuchFieldException, IllegalStateException, IOException, Exception {
 		
 	}
 	
@@ -276,6 +275,7 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	 */
 	public void setChangeLog(ChangeLog changeLog) {
 		this.changeLog = changeLog;
+		eqcSeedRoot.setChangeLog(changeLog);
 	}
 	
 }

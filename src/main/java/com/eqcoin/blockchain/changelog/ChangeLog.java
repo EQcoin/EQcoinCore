@@ -40,21 +40,22 @@ import java.util.Vector;
 
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
+import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.EQCPublickey;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
-import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.ZionOPTransaction;
 import com.eqcoin.blockchain.transaction.ZionTransaction;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.MerkleTree;
+import com.eqcoin.persistence.EQCBlockChain;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
@@ -83,34 +84,33 @@ public class ChangeLog {
 	 */
 	private ID height;
 	
-	private Vector<byte[]> lockBaseList;
-	private byte[] lockMerkleTreeRoot;
+	private Vector<byte[]> livelyLockBaseList;
+	private byte[] livelyLockProofRoot;
 	private ID totalLockNumbers;
 	private ID previousTotalLockNumbers;
 	
 	private Vector<byte[]> passportBaseList;
-	private byte[] passportMerkleTreeRoot;
+	private byte[] passportProofRoot;
 	private ID totalPassportNumbers;
 	private ID previousTotalPassportNumbers;
 	
-	private ID previousTotalPublickeyNumbers;
-	
-	private ID totalNewUpdatedLockNumbers;
 	private ID totalNewPassportNumbers;
-	private ID totalNewPublickeyNumbers;
+	private Vector<EQCLockMate> forbiddenLockList;
+	private Vector<byte[]> forbiddenLockBaseList;
+	private byte[] forbiddenLockProofRoot;
 	
 	private Filter filter;
 	private EQcoinSeedRoot eQcoinSeedRoot;
-	Statistics statistics;
+	private Transaction coinbaseTransaction;
+	private Statistics statistics;
+	private Value txFeeRate;
 
 	public ChangeLog(ID height, Filter filter) throws Exception {
 		super();
-		EQCHive eqcHive = null;
+		EQCHive previousEQCHive = null;
 		
 		statistics = new Statistics(this);
-		totalNewUpdatedLockNumbers = ID.ZERO;
 		totalNewPassportNumbers = ID.ZERO;
-		totalNewPublickeyNumbers = ID.ZERO;
 		filter.setChangeLog(this);
 		this.height = height;
 		// When recoverySingularityStatus the No.0 EQCHive doesn't exist so here need special operation
@@ -126,23 +126,28 @@ public class ChangeLog {
 //		}
 		
 		if(height.equals(ID.ZERO)) {
-			totalLockNumbers = ID.ZERO;
-			totalPassportNumbers = ID.ZERO;
-			previousTotalPublickeyNumbers = ID.ZERO;
+			previousTotalLockNumbers = ID.ZERO;
+			previousTotalPassportNumbers = ID.ZERO;
+			txFeeRate = new Value(Util.DEFAULT_TXFEE_RATE);
 		}
 		else {
-			eqcHive = Util.DB().getEQCHive(height, true);
-			eQcoinSeedRoot = eqcHive.getEQcoinSeed().getEQcoinSeedRoot();
-			totalLockNumbers = eQcoinSeedRoot.getTotalLockNumbers();
-			totalPassportNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
-			previousTotalPublickeyNumbers = eQcoinSeedRoot.getTotalPublickeyNumbers();
+			previousEQCHive = Util.DB().getEQCHive(height.getPreviousID(), true);
+			eQcoinSeedRoot = previousEQCHive.getEQcoinSeed().getEQcoinSeedRoot();
+			// Here exists one bug prevous total supply also need retrieve from previous EQCHive
+			previousTotalLockNumbers = eQcoinSeedRoot.getTotalLockNumbers();
+			previousTotalPassportNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
+			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) filter.getPassport(ID.ZERO, false);
+			txFeeRate = new Value(eQcoinRootPassport.getTxFeeRate());
 		}
 		
-		previousTotalLockNumbers = totalLockNumbers;
-		previousTotalPassportNumbers = totalPassportNumbers;
+		totalLockNumbers = previousTotalLockNumbers;
+		totalPassportNumbers = previousTotalPassportNumbers;
 		this.filter = filter;
 		passportBaseList = new Vector<>();
-		lockBaseList = new Vector<>();
+		livelyLockBaseList = new Vector<>();
+		forbiddenLockList = new Vector<>();
+		forbiddenLockBaseList = new Vector<>();
+		forbiddenLockProofRoot = EQCType.NULL_ARRAY;
 	}
 	
 	/**
@@ -227,70 +232,108 @@ public class ChangeLog {
 		this.height = height;
 	}
 
-	public void buildPassportMerkleTreeBase() throws Exception {
-		Log.info("Begin buildPassportMerkleTree base");
+	public void buildProofBase() throws Exception {
+		buildPassportAndLivelyLockProofBase();
+		buildForbiddenLockProofBase();
+	}
+	
+	public void buildPassportAndLivelyLockProofBase() throws Exception {
+		Log.info("Begin buildPassportAndLockProofBase");
 		Passport passport = null;
-		MerkleTree merkleTree = null;
+		MerkleTree passportMerkleTree = null;
 		Vector<byte[]> passportList = new Vector<>();
+		EQCLockMate lock = null;
+		MerkleTree livelyLockMerkleTree = null;
+		Vector<byte[]> livelyLockList = new Vector<>();
 		
-		for (long i = 1; i <= totalPassportNumbers.longValue(); ++i) {
+		for (long i = 0; i < totalPassportNumbers.longValue(); ++i) {
+			// Build passport proof base
 			passport = filter.getPassport(new ID(i), true);
 			passportList.add(passport.getBytes());
-			if((i%1024) == 0) {
-				merkleTree = new MerkleTree(passportList, true);
-				merkleTree.generateRoot();
-				passportBaseList.add(merkleTree.getRoot());
-				merkleTree = null;
+			if((i%Util.KILOBYTE) == 0) {
+				passportMerkleTree = new MerkleTree(passportList, true);
+				passportMerkleTree.generateRoot();
+				passportBaseList.add(passportMerkleTree.getRoot());
+				passportMerkleTree = null;
 				passportList = new Vector<>();
 			}
-		}
-		merkleTree = new MerkleTree(passportList, true);
-		merkleTree.generateRoot();
-		passportBaseList.add(merkleTree.getRoot());
-		merkleTree = null;
-	}
-	
-	public void generatePassportMerkleTreeRoot() throws NoSuchAlgorithmException {
-		MerkleTree merkleTree = new MerkleTree(passportBaseList, false);
-		merkleTree.generateRoot();
-		passportMerkleTreeRoot = merkleTree.getRoot();
-	}
-	
-	public byte[] getPassportMerkleTreeRoot() {
-		return passportMerkleTreeRoot;
-	}
-
-	public void buildLockMerkleTreeBase() throws Exception {
-		Log.info("Begin buildLockMerkleTree base");
-		Lock lock = null;
-		MerkleTree merkleTree = null;
-		Vector<byte[]> lockList = new Vector<>();
-		
-		for (long i = 1; i <= totalLockNumbers.longValue(); ++i) {
-			lock = filter.getLock(new ID(i), true);
-			lockList.add(lock.getBytes(LockShape.FULL));
-			if((i%1024) == 0) {
-				merkleTree = new MerkleTree(lockList, true);
-				merkleTree.generateRoot();
-				lockBaseList.add(merkleTree.getRoot());
-				merkleTree = null;
-				lockList = new Vector<>();
+			// Build lively lock proof base
+			lock = filter.getLock(new ID(passport.getLockID()), true);
+			livelyLockList.add(lock.getBytes());
+			if((i%Util.KILOBYTE) == 0) {
+				livelyLockMerkleTree = new MerkleTree(livelyLockList, true);
+				livelyLockMerkleTree.generateRoot();
+				livelyLockBaseList.add(livelyLockMerkleTree.getRoot());
+				livelyLockMerkleTree = null;
+				livelyLockList = new Vector<>();
 			}
 		}
-		merkleTree = new MerkleTree(lockList, true);
-		merkleTree.generateRoot();
-		lockBaseList.add(merkleTree.getRoot());
-		merkleTree = null;
+
+		passportMerkleTree = new MerkleTree(passportList, true);
+		passportMerkleTree.generateRoot();
+		passportBaseList.add(passportMerkleTree.getRoot());
+		
+		livelyLockMerkleTree = new MerkleTree(livelyLockList, true);
+		livelyLockMerkleTree.generateRoot();
+		livelyLockBaseList.add(livelyLockMerkleTree.getRoot());
+		
 	}
 	
-	public void generateLockMerkleTreeRoot() throws NoSuchAlgorithmException {
-		MerkleTree merkleTree = new MerkleTree(passportBaseList, false);
+	public void generateLivelyLockAndPassportProofRoot() throws NoSuchAlgorithmException {
+		MerkleTree merkleTree = new MerkleTree(livelyLockBaseList, false);
 		merkleTree.generateRoot();
-		lockMerkleTreeRoot = merkleTree.getRoot();
+		livelyLockProofRoot = merkleTree.getRoot();
+		merkleTree = new MerkleTree(passportBaseList, false);
+		merkleTree.generateRoot();
+		passportProofRoot = merkleTree.getRoot();
 	}
 	
-	public byte[] getLockMerkleTreeRoot() {
-		return lockMerkleTreeRoot;
+	public void generateProofRoot() throws NoSuchAlgorithmException {
+		generateLivelyLockAndPassportProofRoot();
+		generateForbiddenLockProofRoot();
+	}
+	
+	public byte[] getPassportProofRoot() {
+		return passportProofRoot;
+	}
+
+	public byte[] getLockProofRoot() {
+		return livelyLockProofRoot;
+	}
+	
+	public void buildForbiddenLockProofBase() throws Exception {
+		Log.info("Begin buildForbiddenLockProofBase");
+		EQCLockMate lock = null;
+		MerkleTree merkleTree = null;
+		Vector<byte[]> forbiddenLockBytesList = new Vector<>();
+		
+		for (int i = 0; i <forbiddenLockList.size(); ++i) {
+			lock = forbiddenLockList.get(i);
+			forbiddenLockBytesList.add(lock.getBytes());
+			if((i%Util.KILOBYTE) == 0) {
+				merkleTree = new MerkleTree(forbiddenLockBytesList, true);
+				merkleTree.generateRoot();
+				forbiddenLockBaseList.add(merkleTree.getRoot());
+				merkleTree = null;
+				forbiddenLockBytesList = new Vector<>();
+			}
+		}
+		merkleTree = new MerkleTree(forbiddenLockBytesList, true);
+		merkleTree.generateRoot();
+		if(merkleTree.getRoot() != null) {
+			// Exists forbidden lock just generate it's root
+			forbiddenLockBaseList.add(merkleTree.getRoot());
+		}
+	}
+	
+	public void generateForbiddenLockProofRoot() throws NoSuchAlgorithmException {
+		MerkleTree merkleTree = new MerkleTree(forbiddenLockBaseList, false);
+		merkleTree.generateRoot();
+		forbiddenLockProofRoot = merkleTree.getRoot();
+	}
+	
+	public byte[] getForbiddenLockProofRoot() {
+		return forbiddenLockProofRoot;
 	}
 	
 	public void merge() throws Exception {
@@ -400,29 +443,35 @@ public class ChangeLog {
 	}
 
 	/**
-	 * @return the totalNewPublickeyNumbers
+	 * @return the forbiddenLockList
 	 */
-	public ID getTotalNewPublickeyNumbers() {
-		return totalNewPublickeyNumbers;
+	public Vector<EQCLockMate> getForbiddenLockList() {
+		return forbiddenLockList;
 	}
-	
-	public void increaseTotalNewPublickeyNumbers() {
-		totalNewPublickeyNumbers = totalNewPublickeyNumbers.getNextID();
-	}
-	
+
 	/**
-	 * @return the totalNewUpdatedLockNumbers
+	 * @param coinbaseTransaction the coinbaseTransaction to set
 	 */
-	public ID getTotalNewUpdatedLockNumbers() {
-		return totalNewUpdatedLockNumbers;
+	public void setCoinbaseTransaction(Transaction coinbaseTransaction) {
+		this.coinbaseTransaction = coinbaseTransaction;
+	}
+
+	/**
+	 * @return the coinbaseTransaction
+	 */
+	public Transaction getCoinbaseTransaction() {
+		return coinbaseTransaction;
+	}
+
+	/**
+	 * @return the txFeeRate
+	 */
+	public Value getTxFeeRate() {
+		return txFeeRate;
 	}
 	
-	public void increaseTotalNewUpdatedLockNumbers() {
-		totalNewUpdatedLockNumbers = totalNewUpdatedLockNumbers.getNextID();
-	}
-	
-	public ID getTotalPublickeyNumbers() {
-		return previousTotalPublickeyNumbers.add(totalNewPublickeyNumbers);
+	public EQCBlockChain getDB() throws Exception {
+		return Util.DB();
 	}
 	
 }

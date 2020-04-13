@@ -40,9 +40,8 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
-
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.crypto.EQCPublicKey;
 import com.eqcoin.keystore.Keystore.ECCTYPE;
@@ -65,7 +64,7 @@ public class UserAccount implements EQCTypable {
 	private byte[] privateKey;
 	private byte[] publicKey;
 	private String readableLock;
-	private long balance;
+	private Value balance;
 
 	public UserAccount() {
 	}
@@ -78,7 +77,7 @@ public class UserAccount implements EQCTypable {
 	 * @param readableAddress
 	 * @param balance
 	 */
-	public UserAccount(String userName, byte[] pwdHash, byte[] privateKey, byte[] publicKey, String readableAddress, long balance) {
+	public UserAccount(String userName, byte[] pwdHash, byte[] privateKey, byte[] publicKey, String readableAddress, Value balance) {
 		super();
 		this.userName = userName;
 		this.pwdHash = pwdHash;
@@ -108,7 +107,7 @@ public class UserAccount implements EQCTypable {
 		readableLock = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
 
 		// Parse balance
-		balance = EQCType.eqcBitsToLong(EQCType.parseEQCBits(is));
+		balance = EQCType.parseValue(is);
 
 	}
 
@@ -127,7 +126,7 @@ public class UserAccount implements EQCTypable {
 			// address
 			os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(readableLock)));
 			// balance
-			os.write(EQCType.longToEQCBits(balance));
+			os.write(balance.getEQCBits());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -204,8 +203,8 @@ public class UserAccount implements EQCTypable {
 		return readableLock;
 	}
 	
-	public byte[] getAddressAI() {
-		return LockTool.addressToAI(readableLock);
+	public byte[] getAddressAI() throws Exception {
+		return LockTool.readableLockToAI(readableLock);
 	}
 
 	/**
@@ -218,14 +217,14 @@ public class UserAccount implements EQCTypable {
 	/**
 	 * @return the balance
 	 */
-	public long getBalance() {
+	public Value getBalance() {
 		return balance;
 	}
 
 	/**
 	 * @param balance the balance to set
 	 */
-	public void setBalance(long balance) {
+	public void setBalance(Value balance) {
 		this.balance = balance;
 	}
 
@@ -274,12 +273,12 @@ public class UserAccount implements EQCTypable {
 	public byte[] signTransaction(String password, TransferTransaction transaction) {
 		byte[] signature = null;
 		try {
-			Signature ecdsa;
-			ecdsa = Signature.getInstance("SHA1withECDSA", "SunEC");
-			PrivateKey privateKey = Util.getPrivateKey(Util.AESDecrypt(this.privateKey, password), transaction.getTxIn().getLock().getAddressType());
-			ecdsa.initSign(privateKey);
-			ecdsa.update(transaction.getBytes());
-			signature = ecdsa.sign();
+//			Signature ecdsa;
+//			ecdsa = Signature.getInstance("SHA1withECDSA", "SunEC");
+//			PrivateKey privateKey = Util.getPrivateKey(Util.AESDecrypt(this.privateKey, password), transaction.getTxIn().getLock().getLockType());
+//			ecdsa.initSign(privateKey);
+//			ecdsa.update(transaction.getBytes());
+//			signature = ecdsa.sign();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -290,25 +289,25 @@ public class UserAccount implements EQCTypable {
 	
 	public boolean verifyTransaction(String password, TransferTransaction transaction) {
 		boolean boolVerifyResult = false;
-		EQCPublicKey eqcPublicKey = null;
-		if(Util.LockTool.getAddressType(transaction.getTxIn().getLock().getReadableLock()) == LockType.T1) {
-			eqcPublicKey = new EQCPublicKey(ECCTYPE.P256);
-		}
-		else if(transaction.getTxIn().getLock().getAddressType() == LockType.T2) {
-			eqcPublicKey = new EQCPublicKey(ECCTYPE.P521);
-		}
-		eqcPublicKey.setECPoint(Util.AESDecrypt(publicKey, password));
-		Signature sign;
-		try {
-			sign = Signature.getInstance("SHA1withECDSA", "SunEC");
-			sign.initVerify(eqcPublicKey);
-			sign.update(transaction.getBytes());
-			boolVerifyResult = sign.verify(transaction.getEqcWitness().getSignature());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		} 
+//		EQCPublicKey eqcPublicKey = null;
+//		if(Util.LockTool.getLockType(transaction.getTxIn().getLock().getReadableLock()) == LockType.T1) {
+//			eqcPublicKey = new EQCPublicKey(ECCTYPE.P256);
+//		}
+//		else if(transaction.getTxIn().getLock().getLockType() == LockType.T2) {
+//			eqcPublicKey = new EQCPublicKey(ECCTYPE.P521);
+//		}
+//		eqcPublicKey.setECPoint(Util.AESDecrypt(publicKey, password));
+//		Signature sign;
+//		try {
+//			sign = Signature.getInstance("SHA1withECDSA", "SunEC");
+//			sign.initVerify(eqcPublicKey);
+//			sign.update(transaction.getBytes());
+//			boolVerifyResult = sign.verify(transaction.getEqcWitness().getSignature());
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			Log.Error(e.getMessage());
+//		} 
 		return boolVerifyResult;
 	}
 
@@ -328,18 +327,18 @@ public class UserAccount implements EQCTypable {
 					"\"privateKey\":" + "\"" + Util.dumpBytes(privateKey, 16)  + "\"" + ",\n" +
 					"\"publicKey\":" + "\"" + Util.dumpBytes(publicKey, 16)  + "\"" + ",\n" +
 					"\"address\":" + "\"" + readableLock + "\"" + ",\n" +
-					"\"balance\":" + "\"" + Long.toHexString(balance) + "\"" + "\n" +
+					"\"balance\":" + "\"" + Long.toHexString(balance.longValue()) + "\"" + "\n" +
 				"}\n" +
 			"}";
 	}
 
 	public LockType getAddressType() {
-		return Util.LockTool.getAddressType(readableLock);
+		return Util.LockTool.getLockType(readableLock);
 	}
 
 	@Override
-	public boolean isSanity() {
-		if(userName == null || pwdHash == null || privateKey == null || publicKey == null || readableLock == null) {
+	public boolean isSanity() throws Exception {
+		if(userName == null || pwdHash == null || privateKey == null || publicKey == null || readableLock == null || balance == null) {
 			return false;
 		}
 		if(pwdHash.length != Util.HASH_LEN) {
@@ -348,7 +347,7 @@ public class UserAccount implements EQCTypable {
 		if(readableLock.length() < Util.MIN_ADDRESS_LEN || readableLock.length() > Util.MAX_ADDRESS_LEN) {
 			return false;
 		}
-		if(balance < 0 || balance >= Util.MAX_EQC) {
+		if(!balance.isSanity()) {
 			return false;
 		}
 		return true;

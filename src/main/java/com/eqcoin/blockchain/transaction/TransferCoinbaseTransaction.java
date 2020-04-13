@@ -37,11 +37,10 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Vector;
 import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
@@ -59,17 +58,31 @@ import com.eqcoin.util.Util.LockTool.LockType;
  * @date Mar 21, 2019
  * @email 10509759@qq.com
  */
-public class TransferCoinbaseTransaction extends TransferTransaction {
-	public final static int REWARD_NUMBERS = 2;
+public class TransferCoinbaseTransaction extends Transaction {
+	private TransferTxOut eqCoinFederalTxOut;
+	private TransferTxOut eqCoinMinerTxOut;
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#init()
+	 */
+	@Override
+	protected void init() {
+		// TODO Auto-generated method stub
+		super.init();
+		transactionType = TransactionType.TRANSFERCOINBASE;
+	}
+
 	public TransferCoinbaseTransaction() {
 		super();
-		transactionType = TransactionType.TRANSFERCOINBASE;
 	}
 
 	public TransferCoinbaseTransaction(byte[] bytes)
 			throws Exception {
 		super(bytes);
+	}
+
+	public TransferCoinbaseTransaction(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
 
 	/*
@@ -87,29 +100,21 @@ public class TransferCoinbaseTransaction extends TransferTransaction {
 		if(!nonce.equals(changeLog.getHeight().getNextID())) {
 			return false;
 		}
-		if (changeLog.getHeight().compareTo(Util.getMaxCoinbaseHeight(changeLog.getHeight())) < 0) {
-			if(!txOutList.get(0).isNew()) {
-				Lock lock = changeLog.getFilter().getLock(txOutList.get(0).getLock().getReadableLock(), true);
-				if(!lock.getPassportId().equals(ID.ONE)) {
-					Log.Error("EQC Federation Coinbase Reward Passport's ID should equal to 1");
-					return false;
-				}
-			}
-			if(!txOutList.get(1).isNew()) {
-				Lock lock = changeLog.getFilter().getLock(txOutList.get(1).getLock().getReadableLock(), true);
-				if(lock.getPassportId().equals(ID.ONE)) {
-					Log.Error("Miner Coinbase Reward Passport's ID shouldn't equal to 1");
-					return false;
-				}
-			}
-			if(txOutList.get(0).getValue() != Util.EQC_FEDERATION_COINBASE_REWARD) {
-				return false;
-			}
-			if(txOutList.get(1).getValue() != Util.MINER_COINBASE_REWARD) {
-				return false;
-			}
-		} else {
-			throw new IllegalStateException("After MaxCoinbaseHeight haven't any CoinBase reward");
+		Passport passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), false);
+		if(passport == null) {
+			return false;
+		}
+		passport = null;
+		passport = changeLog.getFilter().getPassport(eqCoinMinerTxOut.getPassportId(), false);
+		if(passport == null) {
+			return false;
+		}
+		Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
+		if(!eqCoinFederalTxOut.getValue().equals(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward))) {
+			return false;
+		}
+		if(!eqCoinMinerTxOut.getValue().equals(minerCoinbaseReward)) {
+			return false;
 		}
 		return true;
 	}
@@ -131,132 +136,44 @@ public class TransferCoinbaseTransaction extends TransferTransaction {
 	}
 
 	@Override
-	public boolean isDerivedSanity() {
-		if (txOutList.size() != REWARD_NUMBERS) {
-			Log.Error("Total TxOut numbers is invalid");
+	public boolean isDerivedSanity() throws Exception {
+		if(eqCoinFederalTxOut == null || !eqCoinFederalTxOut.isSanity() || eqCoinMinerTxOut == null || !eqCoinMinerTxOut.isSanity()) {
 			return false;
 		}
-		for (TxOut txOut : txOutList) {
-			if (!txOut.isSanity(LockShape.ID)) {
-				Log.Error("TxOut's sanity test failed");
-				return false;
-			}
+		if(!eqCoinFederalTxOut.getPassportId().equals(ID.ZERO)) {
+			return false;
 		}
-		if (txOutList.get(0).getLock().getId().equals(txOutList.get(1).getLock().getId())) {
+		if (eqCoinFederalTxOut.getPassportId().equals(eqCoinMinerTxOut.getPassportId())) {
 			Log.Error("Miner's Lock shouldn't equal to EQcoin Federal's lock");
 			return false;
 		}
-
 		return true;
 	}
 
-//	@Override
-//	public void preparePlanting()
-//			throws Exception {
-//		Lock lock = null;
-//		if(transactionShape == TransactionShape.RPC) {
-//			// Update TxOut's Lock's isNew status if need
-//			for(TxOut txOut:txOutList) {
-//				lock = changeLog.getFilter().getLock(txOut.getLock().getReadableLock(), true);
-//				if (lock == null) {
-//					txOut.setNew(true);
-//				} else {
-//					// For security issue need retrieve and fill in every Lock' ID according to
-//					// it's readableLock
-//					txOut.getLock().setId(lock.getPassportId());
-//				}
-//			}
-//		}
-//		else {
-//			// Update TxOut's Address' isNew status if need
-//			for (TxOut txOut : txOutList) {
-//				if(txOut.getLock().getId().compareTo(changeLog.getPreviousTotalPassportNumbers()) > 0) {
-//					txOut.setNew(true);
-//					txOut.setLock(eQcoinSeed.getNextLock());
-//					if(!txOut.getLock().getId().equals(changeLog.getNextPassportId())) {
-//						throw new IllegalStateException("CoinbaseTransaction's ID is invalid.");
-//					}
-//				}
-//			}
-//		}
-//	}
-	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#derivedPlanting()
 	 */
 	@Override
 	protected void derivedPlanting() throws Exception {
 		Passport passport = null;
-		// Update CoinbaseTransaction's relevant Passport
-		for(TxOut txOut:txOutList) {
-			passport = changeLog.getFilter().getPassport(txOut.getLock().getId(), false);
-			passport.deposit(new ID(txOut.getValue()));
-			changeLog.getFilter().savePassport(passport);
-		}
+		passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), false);
+		passport.deposit(eqCoinFederalTxOut.getValue());
+		changeLog.getFilter().savePassport(passport);
+		passport = null;
+		passport = changeLog.getFilter().getPassport(eqCoinMinerTxOut.getPassportId(), false);
+		passport.deposit(eqCoinMinerTxOut.getValue());
+		changeLog.getFilter().savePassport(passport);
 	}
 	
-//	public boolean prepareGaining() throws Exception {
-//		// Update TxOut's Address' isNew status if need
-//		for (TxOut txOut : txOutList) {
-//			if(txOut.getLock().getId().compareTo(changeLog.getPreviousTotalPassportNumbers()) > 0) {
-//				txOut.setNew(true);
-//				txOut.setLock(eQcoinSeed.getNextLock());
-//				if(!txOut.getLock().getId().equals(changeLog.getNextPassportId())) {
-//					return false;
-//				}
-//			}
-//		}
-//		return true;
-//	}
-//	
-//	protected void derivedGaining() throws Exception {
-//		Passport passport = null;
-//		Lock lock = null;
-//		// Update CoinbaseTransaction's relevant Passport
-//		for(TxOut txOut:txOutList) {
-//			if (txOut.isNew()) {
-//				lock = changeLog.getFilter().getLock(txOut.getLock().getReadableLock(), true);
-//				if(lock.getId().equals(ID.ONE)) {
-//					EQcoinRootPassport  eqcFederalPassport = new EQcoinRootPassport();
-//					eqcFederalPassport.setId(changeLog.getNextPassportId());
-//					eqcFederalPassport.setLockID(lock.getId());
-//					eqcFederalPassport.setTxFeeRate((byte) Util.TXFEE_RATE);
-//					eqcFederalPassport.setCheckPointHeight(ID.ZERO);
-//					eqcFederalPassport.setCheckPointHash(Util.MAGIC_HASH);
-//					lock.setPassportId(eqcFederalPassport.getId());
-//					changeLog.getFilter().saveLock(lock);
-//					passport = eqcFederalPassport;
-//				}
-//				else {
-//					passport = new AssetPassport();
-//					passport.setId(changeLog.getNextPassportId());
-//					passport.setLockID(lock.getId());
-//					lock.setPassportId(passport.getId());
-//					changeLog.getFilter().saveLock(lock);
-//				}
-//			} else {
-//				passport = changeLog.getFilter().getPassport(txOut.getLock().getId(), true);
-//			}
-//			passport.deposit(new ID(txOut.getValue()));
-//			changeLog.getFilter().savePassport(passport);
-//		}
-//	}
-
 	public String toInnerJson() {
 		return
-
-		"\"CoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
-		+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
-		+ "\"List\":" + "\n" + getTxOutString() + "\n,"
+		"\"TransferCoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
+		+ "\"EQcoinFederalTxOut\":" + "\n" + eqCoinFederalTxOut.toInnerJson() + "\n,"
+		+ "\"EQcoinMinerTxOut\":" + "\n" + eqCoinMinerTxOut.toInnerJson() + "\n,"
 		+ "\"Nonce\":" + "\"" + nonce + "\"" + 
 		"\n}";
 	}
 
-	@Override
-	public int getBillingSize() {
-		return 0;
-	}
-	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseHeader(java.io.ByteArrayInputStream, com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
@@ -267,10 +184,8 @@ public class TransferCoinbaseTransaction extends TransferTransaction {
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		byte txOutValidCount = 0;
-		while (txOutValidCount++ < REWARD_NUMBERS && !EQCType.isInputStreamEnd(is)) {
-			txOutList.add(new TxOut(is, LockShape.ID));
-		}
+		eqCoinFederalTxOut = new TransferTxOut(is);
+		eqCoinMinerTxOut = new TransferTxOut(is);
 	}
 	
 	/* (non-Javadoc)
@@ -293,10 +208,8 @@ public class TransferCoinbaseTransaction extends TransferTransaction {
 	public byte[] getBodyBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			// Serialization TxOut
-			for (TxOut txOut : txOutList) {
-				os.write(txOut.getBytes(LockShape.ID));
-			}
+			os.write(eqCoinFederalTxOut.getBytes());
+			os.write(eqCoinMinerTxOut.getBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -305,24 +218,55 @@ public class TransferCoinbaseTransaction extends TransferTransaction {
 		return os.toByteArray();
 	}
 
+	/**
+	 * @return the eqCoinFederalTxOut
+	 */
+	public TransferTxOut getEqCoinFederalTxOut() {
+		return eqCoinFederalTxOut;
+	}
+
+	/**
+	 * @param eqCoinFederalTxOut the eqCoinFederalTxOut to set
+	 */
+	public void setEqCoinFederalTxOut(TransferTxOut eqCoinFederalTxOut) {
+		this.eqCoinFederalTxOut = eqCoinFederalTxOut;
+	}
+
+	/**
+	 * @return the eqCoinMinerTxOut
+	 */
+	public TransferTxOut getEqCoinMinerTxOut() {
+		return eqCoinMinerTxOut;
+	}
+
+	/**
+	 * @param eqCoinMinerTxOut the eqCoinMinerTxOut to set
+	 */
+	public void setEqCoinMinerTxOut(TransferTxOut eqCoinMinerTxOut) {
+		this.eqCoinMinerTxOut = eqCoinMinerTxOut;
+	}
+	
 	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.transaction.Transaction#compare(com.eqchains.blockchain.transaction.Transaction)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#isEQCWitnessSanity()
 	 */
 	@Override
-	public boolean compare(Transaction transaction) {
-		if(transaction instanceof TransferCoinbaseTransaction) {
-			return false;
-		}
-		TransferCoinbaseTransaction coinbaseTransaction = (TransferCoinbaseTransaction) transaction;
-		for(int i=0; i<REWARD_NUMBERS; ++i) {
-			if(!txOutList.get(i).compare(coinbaseTransaction.getTxOutList().get(i))) {
-				return false;
-			}
-		}
-		if(!nonce.equals(transaction.getNonce())) {
-			return false;
-		}
-		return true;
+	protected boolean isEQCWitnessSanity() {
+		return eqcWitness.isNull();
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#init(com.eqcoin.blockchain.changelog.ChangeLog)
+	 */
+	@Override
+	public void init(ChangeLog changeLog) throws Exception {
+		this.changeLog = changeLog;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#initPlanting()
+	 */
+	@Override
+	protected void initPlanting() throws Exception {
 	}
 	
 }

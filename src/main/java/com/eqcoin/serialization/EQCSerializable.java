@@ -33,7 +33,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.seed.EQCWitness;
+import org.apache.velocity.runtime.directive.Parse;
+
+import com.eqcoin.blockchain.transaction.EQCWitness;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.util.Log;
 
@@ -43,14 +45,14 @@ import com.eqcoin.util.Log;
  * @email 10509759@qq.com
  */
 public abstract class EQCSerializable implements EQCTypable, EQCInheritable {
-
+	
 	public EQCSerializable() {
 		init();
 	}
 	
 	public EQCSerializable(byte[] bytes) throws Exception {
-		init();
 		EQCType.assertNotNull(bytes);
+		init();
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		parse(is);
 		EQCType.assertNoRedundantData(is);
@@ -68,6 +70,10 @@ public abstract class EQCSerializable implements EQCTypable, EQCInheritable {
 	public void parse(ByteArrayInputStream is) throws Exception {
 		parseHeader(is);
 		parseBody(is);
+	}
+	
+	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
+		return null;
 	}
 
 	/* (non-Javadoc)

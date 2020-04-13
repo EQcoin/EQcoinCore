@@ -32,12 +32,13 @@ package com.eqcoin.blockchain.transaction;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Vector;
 
+import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.serialization.EQCType;
@@ -50,17 +51,32 @@ import com.eqcoin.util.Util;
  * @date Mar 25, 2020
  * @email 10509759@qq.com
  */
-public class ZionCoinbaseTransaction extends ZionTransaction {
-public final static int REWARD_NUMBERS = 2;
+public class ZionCoinbaseTransaction extends Transaction {
+	private TransferTxOut eqCoinFederalTxOut;
+	private ZionTxOut eqCoinMinerTxOut;
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.ZionTransaction#init()
+	 */
+	@Override
+	protected void init() {
+		// TODO Auto-generated method stub
+		super.init();
+		transactionType = TransactionType.ZIONCOINBASE;
+	}
+
 	public ZionCoinbaseTransaction() {
 		super();
-		transactionType = TransactionType.ZIONCOINBASE;
 	}
 
 	public ZionCoinbaseTransaction(byte[] bytes)
 			throws Exception {
 		super(bytes);
+	}
+	
+	public ZionCoinbaseTransaction(ByteArrayInputStream is)
+			throws Exception {
+		super(is);
 	}
 
 	/*
@@ -78,29 +94,17 @@ public final static int REWARD_NUMBERS = 2;
 		if(!nonce.equals(changeLog.getHeight().getNextID())) {
 			return false;
 		}
-		if (changeLog.getHeight().compareTo(Util.getMaxCoinbaseHeight(changeLog.getHeight())) < 0) {
-			if(!txOutList.get(0).isNew()) {
-				Lock lock = changeLog.getFilter().getLock(txOutList.get(0).getLock().getReadableLock(), true);
-				if(!lock.getPassportId().equals(ID.ONE)) {
-					Log.Error("EQC Federation Coinbase Reward Passport's ID should equal to 1");
-					return false;
-				}
-			}
-			if(!txOutList.get(1).isNew()) {
-				Lock lock = changeLog.getFilter().getLock(txOutList.get(1).getLock().getReadableLock(), true);
-				if(lock.getPassportId().equals(ID.ONE)) {
-					Log.Error("Miner Coinbase Reward Passport's ID shouldn't equal to 1");
-					return false;
-				}
-			}
-			if(txOutList.get(0).getValue() != Util.EQC_FEDERATION_COINBASE_REWARD) {
-				return false;
-			}
-			if(txOutList.get(1).getValue() != Util.MINER_COINBASE_REWARD) {
-				return false;
-			}
-		} else {
-			throw new IllegalStateException("After MaxCoinbaseHeight haven't any CoinBase reward");
+		ID lockId = changeLog.getFilter().isLockExists(eqCoinMinerTxOut.getLock(), true);
+		if(lockId != null) {
+			Log.Error("Miner Coinbase Passport relevant Lock shouldn't exists.");
+			return false;
+		}
+		Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
+		if(!eqCoinFederalTxOut.getValue().equals(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward))) {
+			return false;
+		}
+		if(!eqCoinMinerTxOut.getValue().equals(minerCoinbaseReward)) {
+			return false;
 		}
 		return true;
 	}
@@ -122,31 +126,11 @@ public final static int REWARD_NUMBERS = 2;
 	}
 
 	@Override
-	public boolean isDerivedSanity() {
-		if (txOutList.size() != REWARD_NUMBERS) {
-			Log.Error("Total TxOut numbers is invalid");
-			return false;
-		}
-		if(changeLog.getHeight().equals(ID.ZERO)) {
-			for (TxOut txOut : txOutList) {
-				if (!txOut.isSanity(LockShape.READABLE)) {
-					Log.Error("TxOut's sanity test failed");
-					return false;
-				}
-			}
-			if(txOutList.get(0).getLock().getReadableLock().equals(txOutList.get(1).getLock().getReadableLock())) {
-				Log.Error("Miner's Lock shouldn't equal to EQcoin Federal's Lock");
-				return false;
-			}
-		}
-		else {
-				if (!txOutList.get(1).isSanity(LockShape.READABLE)) {
-					Log.Error("TxOut's sanity test failed");
-					return false;
-				}
-		}
-
-		return true;
+	public boolean isDerivedSanity() throws Exception {
+		return (eqCoinFederalTxOut != null && eqCoinFederalTxOut instanceof TransferTxOut && eqCoinFederalTxOut.isSanity()
+				&& eqCoinMinerTxOut != null && eqCoinMinerTxOut instanceof ZionTxOut && eqCoinMinerTxOut.isSanity()
+				&& eqCoinMinerTxOut.getValue().compareTo(Util.MIN_EQC) >= 0
+				&& eqCoinFederalTxOut.getPassportId().equals(ID.ZERO));
 	}
 	
 	/* (non-Javadoc)
@@ -155,53 +139,34 @@ public final static int REWARD_NUMBERS = 2;
 	@Override
 	protected void derivedPlanting() throws Exception {
 		Passport passport = null;
-		Lock lock = null;
-		// Update CoinbaseTransaction's relevant Passport
-		for(TxOut txOut:txOutList) {
-			if (txOut.isNew()) {
-				lock = txOut.getLock();
-				lock.setId(changeLog.getNextLockId());
-				if(lock.getId().equals(ID.ONE)) {
-					EQcoinRootPassport  eqcFederalPassport = new EQcoinRootPassport();
-					eqcFederalPassport.setId(changeLog.getNextPassportId());
-					eqcFederalPassport.setLockID(lock.getId());
-					eqcFederalPassport.setTxFeeRate((byte) Util.TXFEE_RATE);
-					eqcFederalPassport.setCheckPointHeight(ID.ZERO);
-					eqcFederalPassport.setCheckPointHash(Util.MAGIC_HASH);
-					lock.setPassportId(eqcFederalPassport.getId());
-					changeLog.getFilter().saveLock(lock);
-					passport = eqcFederalPassport;
-				}
-				else {
-					passport = new AssetPassport();
-					passport.setId(changeLog.getNextPassportId());
-					passport.setLockID(lock.getId());
-					lock.setPassportId(passport.getId());
-					changeLog.getFilter().saveLock(lock);
-				}
-			} else {
-				passport = changeLog.getFilter().getPassport(txOut.getLock().getId(), true);
-			}
-			passport.deposit(new ID(txOut.getValue()));
-			changeLog.getFilter().savePassport(passport);
-		}
+		EQCLockMate lock = null;
+		// Planting CoinbaseTransaction's relevant Passport
+		// Planting EQcoin Federal's Passport
+		passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), true);
+		passport.deposit(eqCoinFederalTxOut.getValue());
+		changeLog.getFilter().savePassport(passport);
+		// Planting Miner's Passport
+		lock = new EQCLockMate();
+		lock.setLock(eqCoinMinerTxOut.getLock());
+		lock.setId(changeLog.getNextLockId());
+		passport = new AssetPassport();
+		passport.setId(changeLog.getNextPassportId());
+		passport.setLockID(lock.getId());
+		lock.setPassportId(passport.getId());
+		changeLog.getFilter().saveLock(lock);
+		passport.deposit(eqCoinMinerTxOut.getValue());
+		changeLog.getFilter().savePassport(passport);
 	}
 	
 	public String toInnerJson() {
 		return
-
-		"\"CoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
-		+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
-		+ "\"List\":" + "\n" + getTxOutString() + "\n,"
+		"\"ZionCoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
+		+ "\"EQcoinFederalTxOut\":" + "\n" + eqCoinFederalTxOut.toInnerJson() + "\n,"
+		+ "\"EQcoinMinerTxOut\":" + "\n" + eqCoinMinerTxOut.toInnerJson() + "\n,"
 		+ "\"Nonce\":" + "\"" + nonce + "\"" + 
 		"\n}";
 	}
 
-	@Override
-	public int getBillingSize() {
-		return 0;
-	}
-	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseHeader(java.io.ByteArrayInputStream, com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
@@ -212,10 +177,8 @@ public final static int REWARD_NUMBERS = 2;
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		byte txOutValidCount = 0;
-		while (txOutValidCount++ < REWARD_NUMBERS && !EQCType.isInputStreamEnd(is)) {
-			txOutList.add(new TxOut(is, LockShape.ID));
-		}
+		eqCoinFederalTxOut = new TransferTxOut(is);
+		eqCoinMinerTxOut = new ZionTxOut(is);
 	}
 	
 	/* (non-Javadoc)
@@ -239,9 +202,8 @@ public final static int REWARD_NUMBERS = 2;
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization TxOut
-			for (TxOut txOut : txOutList) {
-				os.write(txOut.getBytes(LockShape.ID));
-			}
+			os.write(eqCoinFederalTxOut.getBytes());
+			os.write(eqCoinMinerTxOut.getBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -250,24 +212,55 @@ public final static int REWARD_NUMBERS = 2;
 		return os.toByteArray();
 	}
 
+	/**
+	 * @return the eqCoinFederalTxOut
+	 */
+	public TransferTxOut getEqCoinFederalTxOut() {
+		return eqCoinFederalTxOut;
+	}
+
+	/**
+	 * @param eqCoinFederalTxOut the eqCoinFederalTxOut to set
+	 */
+	public void setEqCoinFederalTxOut(TransferTxOut eqCoinFederalTxOut) {
+		this.eqCoinFederalTxOut = eqCoinFederalTxOut;
+	}
+
+	/**
+	 * @return the eqCoinMinerTxOut
+	 */
+	public ZionTxOut getEqCoinMinerTxOut() {
+		return eqCoinMinerTxOut;
+	}
+
+	/**
+	 * @param eqCoinMinerTxOut the eqCoinMinerTxOut to set
+	 */
+	public void setEqCoinMinerTxOut(ZionTxOut eqCoinMinerTxOut) {
+		this.eqCoinMinerTxOut = eqCoinMinerTxOut;
+	}
+	
 	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.transaction.Transaction#compare(com.eqchains.blockchain.transaction.Transaction)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#isEQCWitnessSanity()
 	 */
 	@Override
-	public boolean compare(Transaction transaction) {
-		if(transaction instanceof ZionCoinbaseTransaction) {
-			return false;
-		}
-		ZionCoinbaseTransaction coinbaseTransaction = (ZionCoinbaseTransaction) transaction;
-		for(int i=0; i<REWARD_NUMBERS; ++i) {
-			if(!txOutList.get(i).compare(coinbaseTransaction.getTxOutList().get(i))) {
-				return false;
-			}
-		}
-		if(!nonce.equals(transaction.getNonce())) {
-			return false;
-		}
-		return true;
+	protected boolean isEQCWitnessSanity() {
+		return eqcWitness.isNull();
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#init(com.eqcoin.blockchain.changelog.ChangeLog)
+	 */
+	@Override
+	public void init(ChangeLog changeLog) throws Exception {
+		this.changeLog = changeLog;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.blockchain.transaction.Transaction#initPlanting()
+	 */
+	@Override
+	protected void initPlanting() throws Exception {
 	}
 	
 }

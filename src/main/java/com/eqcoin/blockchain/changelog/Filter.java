@@ -36,9 +36,10 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Vector;
 import com.eqcoin.blockchain.hive.EQCHive;
-import com.eqcoin.blockchain.passport.Lock;
+import com.eqcoin.blockchain.lock.EQCLock;
+import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.EQCPublickey;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -96,8 +97,8 @@ public class Filter {
 //		return isSucc;
 //	}
 
-	public void savePassport(Passport account) throws ClassNotFoundException, SQLException, Exception {
-		Util.DB().savePassport(account, mode);
+	public void savePassport(Passport passport) throws ClassNotFoundException, SQLException, Exception {
+		Util.DB().savePassport(passport.getId(), passport.getBytes(), mode);
 	}
 
 	public Passport getPassport(ID id, boolean isFiltering) throws Exception {
@@ -133,12 +134,12 @@ public class Filter {
 		return passport;
 	}
 	
-	public void saveLock(Lock lock) throws ClassNotFoundException, SQLException, Exception {
+	public void saveLock(EQCLockMate lock) throws ClassNotFoundException, SQLException, Exception {
 		Util.DB().saveLock(lock, mode);
 	}
 
-	public Lock getLock(ID id, boolean isFiltering) throws Exception {
-		Lock lock = null;
+	public EQCLockMate getLock(ID id, boolean isFiltering) throws Exception {
+		EQCLockMate lock = null;
 		// Check if Lock already loading in filter
 		if(isFiltering) {
 			lock = Util.DB().getLock(id, mode);
@@ -148,17 +149,12 @@ public class Filter {
 				if (changeLog.getHeight().isNextID(tailHeight)) {
 					lock = Util.DB().getLock(id, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
-					lock = Util.DB().getLock(id, Mode.GLOBAL);
-					if(lock != null && lock.getId().compareTo(changeLog.getPreviousTotalLockNumbers()) <= 0) {
-						// Load relevant Lock from snapshot
-						Lock lockSnapshot = EQCBlockChainH2.getInstance().getLockSnapshot(lock.getId(),
-								changeLog.getHeight().getPreviousID());
-						if(lockSnapshot != null) {
-							lock.setPublickey(null);
+					if(id.compareTo(changeLog.getPreviousTotalLockNumbers()) <= 0) {
+						lock =  EQCBlockChainH2.getInstance().getLockSnapshot(id,
+								changeLog.getHeight());
+						if(lock == null) {
+							lock = Util.DB().getLock(id, Mode.GLOBAL);
 						}
-					}
-					else {
-						lock = null;
 					}
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
@@ -168,98 +164,38 @@ public class Filter {
 		return lock;
 	}
 	
-	public Lock getLock(String readableLock, boolean isFiltering) throws Exception {
-		Lock lock = null;
+	public ID isLockExists(EQCLock eqcLock, boolean isFiltering) throws Exception {
+		ID lockId = null;
 		// Check if Lock already loading in filter
 		if(isFiltering) {
-			lock = Util.DB().getLock(readableLock, mode);
+			lockId = Util.DB().isLockExists(eqcLock, mode);
 		}
-		if (lock == null)  {
+		if (lockId == null)  {
 				ID tailHeight = Util.DB().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
-					lock = Util.DB().getLock(readableLock, Mode.GLOBAL);
+					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
-					lock = Util.DB().getLock(readableLock, Mode.GLOBAL);
-					if(lock != null && lock.getId().compareTo(changeLog.getPreviousTotalLockNumbers()) <= 0) {
-						// Load relevant Lock from snapshot
-						Lock lockSnapshot = EQCBlockChainH2.getInstance().getLockSnapshot(lock.getId(),
-								changeLog.getHeight().getPreviousID());
-						if(lockSnapshot != null) {
-							lock.setPublickey(null);
-						}
-					}
-					else {
-						lock = null;
+					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
+					if(lockId.compareTo(changeLog.getPreviousTotalLockNumbers()) > 0) {
+						lockId = null;
 					}
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
 							+ Util.DB().getEQCHiveTailHeight());
 				}
 		}
-		return lock;
+		return lockId;
 	}
 	
-	public Passport getPassport(Lock lock, boolean isFiltering) throws Exception {
-		Passport passport = null;
-		Lock lock2 = null;
-		lock2 = getLock(lock.getReadableLock(), isFiltering);
-		if (lock2 != null) {
-			// Check if Account already loading in filter
-			if (isFiltering) {
-				passport = Util.DB().getPassport(lock2.getId(), mode);
-			}
-			if (passport == null) {
-				ID tailHeight = Util.DB().getEQCHiveTailHeight();
-				if (changeLog.getHeight().isNextID(tailHeight)) {
-					passport = Util.DB().getPassport(lock2.getId(), Mode.GLOBAL);
-				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
-					// Load relevant Account from snapshot
-					passport = EQCBlockChainH2.getInstance().getPassportSnapshot(lock2.getId(),
-							changeLog.getHeight().getPreviousID());
-				} else {
-					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCHiveTailHeight());
-				}
-			}
-		}
-
-		return passport;
-	}
-
 	public void merge() throws Exception {
+		Util.DB().mergeLock(mode);
 		Util.DB().mergePassport(mode);
 	}
 
 	public void takeSnapshot() throws Exception {
-		Util.DB().takePassportSnapshot(mode, changeLog.getHeight());
+		Util.DB().takeLockSnapshot(mode, changeLog);
+		Util.DB().takePassportSnapshot(mode, changeLog);
 	}
-
-//	/**
-//	 * Use this to fill in the relevant Transaction's TxIn or TxOut's ID which can't
-//	 * be null
-//	 * 
-//	 * @param address
-//	 * @return
-//	 * @throws Exception 
-//	 * @throws SQLException 
-//	 * @throws ClassNotFoundException 
-//	 */
-//	public ID getPassportID(Passport passport)
-//			throws ClassNotFoundException, SQLException, Exception {
-//		ID id = null;
-//		Account account = null;
-//		account = Util.DB().getAccount(passport.getAddressAI(), mode);
-//		if (account != null) {
-//			id = account.getId();
-//		} else {
-//			account = Util.DB().getAccount(passport.getAddressAI());
-//			if (account != null) {
-//				id = account.getId();
-//			}
-//		}
-//		Objects.requireNonNull(id);
-//		return id;
-//	}
 
 	public void clear() throws ClassNotFoundException, SQLException, Exception {
 		Util.DB().clearLock(mode);

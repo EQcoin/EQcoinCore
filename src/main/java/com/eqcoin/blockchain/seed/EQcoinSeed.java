@@ -38,20 +38,21 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Vector;
 
-import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Statistics;
+import com.eqcoin.blockchain.hive.EQCHive;
+import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.EQCPublickey;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
-import com.eqcoin.blockchain.transaction.EQCPublickey;
 import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
-import com.eqcoin.blockchain.transaction.TxOut;
+import com.eqcoin.blockchain.transaction.Value;
+import com.eqcoin.blockchain.transaction.ZeroZionCoinbaseTransaction;
+import com.eqcoin.blockchain.transaction.ZionTxOut;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -88,7 +89,7 @@ public class EQcoinSeed extends EQCSeed {
 			newTransactionListLength += transaction.getBytes().length;
 	}
 	
-	public void addCoinbaseTransaction(TransferCoinbaseTransaction coinbaseTransaction, ChangeLog changeLog) throws ClassNotFoundException, SQLException, Exception {
+	public void addCoinbaseTransaction(Transaction coinbaseTransaction) throws ClassNotFoundException, SQLException, Exception {
 		// Add Coinbase Transaction
 		((EQcoinSeedRoot) eqcSeedRoot).setCoinbaseTransaction(coinbaseTransaction);
 	}
@@ -103,15 +104,13 @@ public class EQcoinSeed extends EQCSeed {
 			
 			// Verify CoinBaseTransaction
 			// Here need check if need exist CoinbaseTransaction
-			TransferCoinbaseTransaction coinbaseTransaction = getEQcoinSeedRoot().getCoinbaseTransaction();
+			TransferCoinbaseTransaction coinbaseTransaction = (TransferCoinbaseTransaction) getEQcoinSeedRoot().getCoinbaseTransaction();
 			if(!coinbaseTransaction.isSanity()) {
 				Log.Error("CoinBaseTransaction isn't sanity: " + coinbaseTransaction);
 				return false;
 			}
 			coinbaseTransaction.init(changeLog);
-			if (coinbaseTransaction.isValid()) {
-				coinbaseTransaction.planting();
-			} else {
+			if (!coinbaseTransaction.planting()) {
 				Log.Error("CoinBaseTransaction is invalid: " + coinbaseTransaction);
 				return false;
 			}
@@ -134,9 +133,8 @@ public class EQcoinSeed extends EQCSeed {
 					return false;
 				}
 
-				if (transaction.isValid()) {
+				if (transaction.planting()) {
 					newTransactionListLength += transaction.getBytes().length;
-					transaction.planting();
 				} else {
 					Log.info("Transaction is invalid: " + transaction);
 					return false;
@@ -149,7 +147,7 @@ public class EQcoinSeed extends EQCSeed {
 				return false;
 			}
 			
-			// Verify new EQcoinSeed finished just check if relevant Statistics data is valid
+			// Verify new EQcoinSeed finished just audit if relevant Statistics data is valid
 			changeLog.getStatistics().generateStatistics(this);
 			if (!changeLog.getStatistics().isValid(this)) {
 				Log.Error("Statistics is invalid!");
@@ -157,7 +155,10 @@ public class EQcoinSeed extends EQCSeed {
 			}
 			
 			// Check if EQcoinSeedRoot is valid
-		
+			if(!eqcSeedRoot.isValid()) {
+				Log.Error("EQcoinSeedRoot is invalid!");
+				return false;
+			}
 			
 		} catch (Exception e) {
 			Log.Error("EQcoinSeed is invalid: " + e.getMessage());
@@ -213,64 +214,94 @@ public class EQcoinSeed extends EQCSeed {
 					_getNewTransactionList() + "\n}\n}";
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.subchain.EQCSubchain#accountingTransaction(java.util.Vector)
-	 */
-	@Override
-	public void plantingTransaction(Vector<Transaction> transactionList, ChangeLog changeLog) throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if (changeLog.getHeight().compareTo(Util.getMaxCoinbaseHeight(changeLog.getHeight())) < 0) {
-			// Create CoinBase Transaction
-			Lock lock = new Lock();
-			lock.setId(ID.ONE);
-			TransferCoinbaseTransaction coinbaseTransaction = Util.generateTransferCoinbaseTransaction(lock, changeLog);
+	public void plantingTransaction(Vector<Transaction> transactionList) throws NoSuchFieldException, IllegalStateException, IOException, Exception {
+		// Here need sort all transactions from transaction pool
+		
+		Transaction coinbaseTransaction = null;
+		if(changeLog.getHeight().equals(ID.ZERO)) {
+			ZeroZionCoinbaseTransaction zeroZionCoinbaseTransaction = new ZeroZionCoinbaseTransaction();
+
+			ZionTxOut txOut = new ZionTxOut();
+			txOut.getLock().cloneFromReadableLock(Util.SINGULARITY_A);
+			Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
+			txOut.setValue(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
+			zeroZionCoinbaseTransaction.setEqCoinFederalTxOut(txOut);
+
+			txOut = new ZionTxOut();
+			txOut.getLock().cloneFromReadableLock(Util.SINGULARITY_B);
+			txOut.setValue(minerCoinbaseReward);
+			zeroZionCoinbaseTransaction.setEqCoinMinerTxOut(txOut);
+			zeroZionCoinbaseTransaction.setNonce(changeLog.getHeight().getNextID());
+			coinbaseTransaction = zeroZionCoinbaseTransaction;
+			
 			if(!coinbaseTransaction.isSanity()) {
 				Log.Error("CoinbaseTransaction isn't sanity have to terminate planting Transaction: " + coinbaseTransaction.toString());
 				throw new IllegalStateException("CoinbaseTransaction isn't sanity have to terminate planting Transaction");
 			}
 			coinbaseTransaction.init(changeLog);
-			if (!coinbaseTransaction.isValid()) {
-				throw new IllegalStateException("CoinbaseTransaction is invalid: " + coinbaseTransaction);
-			} else {
+			if (coinbaseTransaction.isValid()) {
 				coinbaseTransaction.planting();
+			} else {
+				throw new IllegalStateException("CoinbaseTransaction is invalid: " + coinbaseTransaction);
 			}
 			// Add CoinBase into EQcoinSeedHeader
-			addCoinbaseTransaction(coinbaseTransaction, changeLog);
+			addCoinbaseTransaction(coinbaseTransaction);
+			// Here need do more job to analysis if exist a better way
+			changeLog.setCoinbaseTransaction(coinbaseTransaction);
+		}
+		else {
+			EQCHive eqcHive = changeLog.getEQCHive(changeLog.getHeight().getPreviousID(), true);
+			if(eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getTotalSupply().compareTo(Util.MAX_EQC) <= 0) {
+				// Create CoinBase Transaction
+				EQCLockMate lock = new EQCLockMate();
+				lock.setId(ID.ONE);
+				coinbaseTransaction = Util.generateTransferCoinbaseTransaction(lock, changeLog);
+				
+				if(!coinbaseTransaction.isSanity()) {
+					Log.Error("CoinbaseTransaction isn't sanity have to terminate planting Transaction: " + coinbaseTransaction.toString());
+					throw new IllegalStateException("CoinbaseTransaction isn't sanity have to terminate planting Transaction");
+				}
+				coinbaseTransaction.init(changeLog);
+				if (coinbaseTransaction.isValid()) {
+					coinbaseTransaction.planting();
+				} else {
+					throw new IllegalStateException("CoinbaseTransaction is invalid: " + coinbaseTransaction);
+				}
+				// Add CoinBase into EQcoinSeedHeader
+				addCoinbaseTransaction(coinbaseTransaction);
+				// Here need do more job to analysis if exist a better way
+				changeLog.setCoinbaseTransaction(coinbaseTransaction);
+			}
 		}
 		
 		// Handle every pending Transaction
 		for (Transaction transaction : transactionList) {
-			try {
-				// Check if Transaction isSanity
-				if(!transaction.isSanity()) {
-					EQCBlockChainH2.getInstance().deleteTransactionInPool(transaction);
-					Log.Error("Transaction isn't sanity just discard it: " + transaction.toString());
-					continue;
-				}
-				
-				// Init Transaction
-				transaction.init(changeLog);
-				
-				// Check if Transaction is valid
-				if (!transaction.isValid()) {
-					EQCBlockChainH2.getInstance().deleteTransactionInPool(transaction);
-					Log.Error("Transaction is invalid: " + transaction);
-					continue;
-				}
-			}
-			catch (Exception e) {
-				EQCBlockChainH2.getInstance().deleteTransactionInPool(transaction);
-				Log.Error("During Transacton planting exception occur:" + e + " just discard it: "
-						+ transaction.toString());
-				continue;
-			}
-			
 			// Add Transaction into EQcoinSeed
 			if ((getNewTransactionListLength()
 					+ transaction.getBytes().length) <= Util.MAX_EQCHIVE_SIZE) {
-				Log.info("Add new Transaction which TxFee is: " + transaction.getTxFee());
+				Log.info("Add new Transaction which Passport ID: " + transaction.getTxIn().getPassportId() + " Nonce: " + transaction.getNonce());
+				
+				try {
+					// Init Transaction
+					transaction.init(changeLog);
+					
+					// Check if Transaction is sanity and valid then planting
+					if (!transaction.planting()) {
+						EQCBlockChainH2.getInstance().deleteTransactionInPool(transaction);
+						Log.Error("Transaction is invalid planting failed: " + transaction);
+						continue;
+					}
+					
+				}
+				catch (Exception e) {
+					EQCBlockChainH2.getInstance().deleteTransactionInPool(transaction);
+					Log.Error("During add new transacton exception occur:" + e + " just discard it: "
+							+ transaction.toString());
+					continue;
+				}
+				
 				addTransaction(transaction);
-				// Planting Transaction
-				transaction.planting();
+	
 			} else {
 				Log.info("Exceed EQcoinSubchain's MAX_BLOCK_SIZE just stop accounting transaction");
 				break;
@@ -285,10 +316,8 @@ public class EQcoinSeed extends EQCSeed {
 		}
 
 		// Generate relevant root
-		changeLog.buildLockMerkleTreeBase();
-		changeLog.generateLockMerkleTreeRoot();
-		changeLog.buildPassportMerkleTreeBase();
-		changeLog.generatePassportMerkleTreeRoot();
+		changeLog.buildProofBase();
+		changeLog.generateProofRoot();
 		
 		// Update EQcoinSeedRoot
 		EQcoinSeedRoot eQcoinSeedRoot = (EQcoinSeedRoot) eqcSeedRoot;
@@ -296,9 +325,9 @@ public class EQcoinSeed extends EQCSeed {
 		eQcoinSeedRoot.setTotalSupply(changeLog.getStatistics().getTotalSupply());
 		eQcoinSeedRoot.setTotalLockNumbers(changeLog.getTotalLockNumbers());
 		eQcoinSeedRoot.setTotalPassportNumbers(changeLog.getTotalPassportNumbers());
-		eQcoinSeedRoot.setTotalPublickeyNumbers(changeLog.getTotalPublickeyNumbers());
-		eQcoinSeedRoot.setLockMerkelTreeRoot(changeLog.getLockMerkleTreeRoot());
-		eQcoinSeedRoot.setPassportMerkelTreeRoot(changeLog.getPassportMerkleTreeRoot());
+		eQcoinSeedRoot.setLivelyLockProofRoot(changeLog.getLockProofRoot());
+		eQcoinSeedRoot.setPassportProofRoot(changeLog.getPassportProofRoot());
+		eQcoinSeedRoot.setForbiddenLockProofRoot(changeLog.getForbiddenLockProofRoot());
 		
 	}
 	
@@ -306,10 +335,10 @@ public class EQcoinSeed extends EQCSeed {
 		return true;
 	}
 	
-	public byte[] getHash() throws Exception {
+	public byte[] getProofRoot() throws Exception {
 		Vector<byte[]> vector = new Vector<>();
 		vector.add(eqcSeedRoot.getBytes());
-		vector.add(getBytes());
+		vector.add(getNewTransactionListProofRoot());
 		return Util.getMerkleTreeRoot(vector, true);
 	}
 

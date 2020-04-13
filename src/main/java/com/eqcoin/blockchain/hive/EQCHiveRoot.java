@@ -41,7 +41,6 @@ import javax.print.attribute.standard.RequestingUserName;
 
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -67,18 +66,18 @@ public class EQCHiveRoot implements EQCTypable {
 	// The EQCHeader's size is lengthen
 	private final int min_size = 139;
 	private final static int MIN_TIMESTAMP_LEN = 6;
-	private final static int MAX_NONCE_LEN = 4;
+	private final static int MAX_NONCE_LEN = 8;
 	private final static int TARGET_LEN = 4;
 	
 	/**
 	 * @param header
-	 * @throws NoSuchFieldException 
+	 * @throws Exception 
 	 */
-	public EQCHiveRoot(byte[] bytes) throws NoSuchFieldException {
+	public EQCHiveRoot(byte[] bytes) throws Exception {
 		parseEQCHeader(bytes);
 	}
 
-	private void parseEQCHeader(byte[] bytes) throws NoSuchFieldException {
+	private void parseEQCHeader(byte[] bytes) throws Exception {
 		EQCType.assertNotNull(bytes);
 		preHash = new byte[Util.HASH_LEN];
 		target = new byte[TARGET_LEN];
@@ -86,11 +85,11 @@ public class EQCHiveRoot implements EQCTypable {
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		try {
 			// Parse PreHash
-			is.read(preHash);
+			preHash = EQCType.parseNBytes(is, Util.HASH_LEN);
 			// Parse Target
-			is.read(target);
+			target = EQCType.parseNBytes(is, TARGET_LEN);
 			// Parse EQCoinSeedHash
-			is.read(eqCoinSeedHash);
+			eqCoinSeedHash = EQCType.parseNBytes(is, Util.HASH_LEN);
 			// Parse Height
 			height = new ID(EQCType.parseEQCBits(is));
 			// Parse Timestamp
@@ -302,7 +301,7 @@ public class EQCHiveRoot implements EQCTypable {
 	}
 
 	public boolean isDifficultyValid(ChangeLog changeLog) throws Exception {
-		if (!Arrays.equals(target, Util.cypherTarget(changeLog.getHeight()))) {
+		if (!Arrays.equals(target, Util.cypherTarget(changeLog.getHeight(), null))) {
 			return false;
 		}
 		// getHash()

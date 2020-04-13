@@ -38,7 +38,6 @@ import java.util.Collections;
 import org.apache.avro.io.parsing.Symbol;
 
 import com.eqcoin.blockchain.changelog.ChangeLog;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.passport.Passport.PassportType;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.serialization.EQCTypable;
@@ -197,7 +196,7 @@ public abstract class SmartContractPassport extends Passport {
 	 * @see com.eqchains.blockchain.account.Account#parseBody(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public void parseBody(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
+	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse Super Body
 		super.parseBody(is);
 		// Parse Sub Body
@@ -254,7 +253,7 @@ public abstract class SmartContractPassport extends Passport {
 	 * @see com.eqchains.blockchain.account.Account#isSanity(changeLog)
 	 */
 	@Override
-	public boolean isSanity() {
+	public boolean isSanity() throws Exception {
 		if(!super.isSanity()) {
 			return false;
 		}

@@ -69,14 +69,14 @@ public class EQcoinRootPassport extends Passport {
 	 * @see com.eqchains.blockchain.account.AssetSubchainAccount#parseBody(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public void parseBody(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
+	public void parseBody(ByteArrayInputStream is) throws Exception {
 		super.parseBody(is);
 		// Parse MaxBlockSize
-		maxBlockSize = EQCType.parseBIN(is)[0];
+		maxBlockSize = EQCType.parseNBytes(is, 1)[0];
 		// Parse BlockInterval
-		blockInterval = EQCType.parseBIN(is)[0];
+		blockInterval = EQCType.parseNBytes(is, 1)[0];
 		// Parse TxFeeRate
-		txFeeRate = EQCType.parseBIN(is)[0];
+		txFeeRate = EQCType.parseNBytes(is, 1)[0];
 		// Parse CheckPoint Height
 		checkPointHeight = EQCType.parseID(is);
 		// Parse CheckPoint Hash
@@ -91,9 +91,9 @@ public class EQcoinRootPassport extends Passport {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			os.write(super.getBodyBytes());
-			os.write(EQCType.bytesToBIN(new byte[] {maxBlockSize}));
-			os.write(EQCType.bytesToBIN(new byte[] {blockInterval}));
-			os.write(EQCType.bytesToBIN(new byte[]{txFeeRate}));
+			os.write(new byte[] {maxBlockSize});
+			os.write(new byte[] {blockInterval});
+			os.write(new byte[]{txFeeRate});
 			os.write(checkPointHeight.getEQCBits());
 			os.write(EQCType.bytesToBIN(checkPointHash));
 		} catch (IOException e) {
@@ -131,7 +131,7 @@ public class EQcoinRootPassport extends Passport {
 	 * @see com.eqchains.blockchain.account.SmartContractAccount#isSanity()
 	 */
 	@Override
-	public boolean isSanity() {
+	public boolean isSanity() throws Exception {
 		if(!super.isSanity()) {
 			return false;
 		}

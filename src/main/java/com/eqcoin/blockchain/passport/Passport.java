@@ -41,9 +41,13 @@ import java.util.Comparator;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
-import com.eqcoin.blockchain.transaction.EQCPublickey;
+import com.eqcoin.blockchain.lock.EQCLock;
+import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.EQCPublickey;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.rpc.TailInfo;
 import com.eqcoin.serialization.EQCInheritable;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -57,7 +61,7 @@ import com.eqcoin.util.Util.LockTool.LockType;
  * @date Nov 5, 2018
  * @email 10509759@qq.com
  */
-public abstract class Passport implements EQCTypable, EQCInheritable {
+public abstract class Passport extends EQCSerializable {
 	/**
 	 * Header field include PassportType
 	 * Passport type can also used to represent different passport type's version
@@ -68,7 +72,7 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	 */
 	private ID id;
 	private ID lockID;
-	private ID balance;
+	private Value balance;
 	private ID nonce;
 	private ID updateHeight;
 	
@@ -131,15 +135,15 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 //		return parseAccount(o.getProtocol().array());
 //	}
 	
-	public static PassportType parsePassportType(Lock lock) {
+	public static PassportType parsePassportType(EQCLock lock) {
 		PassportType passportType = null;
-		if(lock.getAddressType() == LockType.T1 || lock.getAddressType() == LockType.T2) {
+		if(lock.getLockType() == LockType.T1 || lock.getLockType() == LockType.T2) {
 			passportType = PassportType.ASSET;
 		}
 		return passportType;
 	}
 	
-	public static Passport createAccount(Lock key) {
+	public static Passport createAccount(EQCLock key) {
 		Passport passport = null;
 		PassportType passportTypeType = parsePassportType(key);
 
@@ -183,21 +187,23 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	}
 	
 	@Override
-	public void parseBody(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
+	public void parseBody(ByteArrayInputStream is) throws NoSuchFieldException, IOException, Exception {
+		// Parse PassportID
+		id = EQCType.parseID(is);
 		// Parse LockID
 		lockID = EQCType.parseID(is);
 		// Parse Balance
-		balance = EQCType.parseID(is);
+		balance = EQCType.parseValue(is);
 		// Parse Nonce
 		nonce = EQCType.parseID(is);
 		// Parse Update Height
 		updateHeight = EQCType.parseID(is);
 	}
 	
-	private void init() {
-		balance = ID.ZERO;
-		nonce = ID.ZERO;
-		updateHeight = ID.ZERO;
+	protected void init() {
+		balance = new Value();
+		nonce = new ID();
+		updateHeight = new ID();
 	}
 	
 	public Passport(PassportType passportTypeType) {
@@ -287,10 +293,11 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	
 	/**
 	 * Body field include ID, LockID, totalIncome, totalCost, balance, nonce
+	 * @throws Exception 
 	 */
 	
 	@Override
-	public boolean isSanity() {
+	public boolean isSanity() throws Exception {
 		if(passportType == null || id == null || lockID == null || balance == null || nonce == null || updateHeight == null) {
 			return false;
 		}
@@ -312,16 +319,16 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	
 	/**
 	 * For system's security here need check if balance is enough for example SmartContract maybe provide wrong input amount
-	 * @param amount
+	 * @param Value
 	 */
-	public void withdraw(ID amount) {
-		EQCType.assertNotBigger(amount, balance);
-		balance = balance.subtract(amount);
+	public void withdraw(Value value) {
+		EQCType.assertNotBigger(value, balance);
+		balance = balance.subtract(value);
 	}
 	
-	public void deposit(ID amount) {
-		EQCType.assertNotBigger(amount, Util.MAX_EQcoin);
-		balance = balance.add(amount);
+	public void deposit(Value value) {
+		EQCType.assertNotBigger(value, Util.MAX_EQcoin);
+		balance = balance.add(value);
 	}
 
 	/**
@@ -373,7 +380,7 @@ public abstract class Passport implements EQCTypable, EQCInheritable {
 	/**
 	 * @return the balance
 	 */
-	public ID getBalance() {
+	public Value getBalance() {
 		return balance;
 	}
 

@@ -42,6 +42,7 @@ import java.util.Vector;
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -218,7 +219,7 @@ public class EQCType {
 	 * | 1XXXXXXX | ... | 1XXXXXXX | 0XXXXXXX |
 	 */
 	public final static byte EQCBITS = (byte) 128;
-	public final static byte EQCBITS_BUFFER_LEN = 11;
+	public final static byte EQCBITS_BUFFER_LEN = 12;
 	
 	public static final NoSuchFieldException ZERO_EXCEPTION = new NoSuchFieldException("The ID shouldn't be zero.");
 	
@@ -230,7 +231,7 @@ public class EQCType {
 
 	public static final IllegalStateException EOF_EXCEPTION = new IllegalStateException("The ByteArrayInputStream shouldn't end but read EOF.");
 
-	public static byte[] bytesToBINX(final byte[] bytes) {
+	private static byte[] bytesToBINX(final byte[] bytes) {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			if (bytes == null) {
@@ -540,10 +541,9 @@ public class EQCType {
 		return parseArray(is);
 	}
 	
-	public static <T extends EQCSerializable> Vector<T> parseArray(ByteArrayInputStream is, Class<T> eqcSerializable) throws Exception {
+	public static <T extends EQCSerializable> Vector<T> parseArray(ByteArrayInputStream is, T eqcSerializable) throws Exception {
 		int type;
 		byte[] data = null;
-		byte[] bytes = null;
 		/**
 		 * Due to the unsigned integer in java doesn't support very good and
 		 * Vector&Array's size in java is integer type. But in EQCType Array's size type
@@ -551,7 +551,7 @@ public class EQCType {
 		 */
 		long elementLen = 0;
 		int iLen = 0;
-		Vector<T> array = new Vector<>();
+		Vector<T> array = new Vector<T>();
 		
 		assertNotTerminate(is);
 		// Parse type
@@ -562,9 +562,7 @@ public class EQCType {
 			// Get element's length
 			elementLen = type;
 			for(long i=0; i<elementLen; ++i) {
-				T t = eqcSerializable.newInstance();
-				t.parse(is);
-				array.add(t);
+				array.add(eqcSerializable.Parse(is));
 			}
 		} else if (isArray(type)) {
 			// Get Array element's length
@@ -582,9 +580,7 @@ public class EQCType {
 			}
 			// Read the content
 			for(long i=0; i<elementLen; ++i) {
-				T t = eqcSerializable.newInstance();
-				t.parse(is);
-				array.add(t);
+				array.add(eqcSerializable.Parse(is));
 			}
 		} else {
 			throw new IllegalStateException("Unexpected EQCType expected ArrayX type but the type code is: " + type);
@@ -640,6 +636,16 @@ public class EQCType {
 		return array;
 	}
 	
+	public static byte[] parseNBytes(ByteArrayInputStream is, int len) throws Exception {
+		byte[] bytes = new byte[len];
+		int nLen = 0;
+		nLen = is.read(bytes);
+		if(nLen != len) {
+			throw new IllegalStateException("Expected read " + len + " bytes but actually read " + nLen + " bytes.");
+		}
+		return bytes;
+	}
+	
 	private static boolean isElementLenValid(int type, long elementLen) {
 		if(type == ARRAY8 || type == BIN8) {
 			if((elementLen >= MIN_BIN8_LEN) && (elementLen <= MAX_BIN8_LEN)) {
@@ -672,7 +678,7 @@ public class EQCType {
 		// Parse EQCBits
 		ByteBuffer buff = ByteBuffer.allocate(EQCBITS_BUFFER_LEN);
 		while ((((type = is.read()) != EOF) && ((byte) type & EQCBITS) != 0)) {
-			if(buff.array().length == EQCBITS_BUFFER_LEN) {
+			if(buff.remaining() == 0) {
 				throw new IllegalStateException("The EQCBits' length is exceed the max length " + EQCBITS_BUFFER_LEN + " bytes");
 			}
 			buff.put((byte) type);
@@ -695,6 +701,10 @@ public class EQCType {
 	
 	public static ID parseID(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
 		return new ID(parseEQCBits(is));
+	}
+	
+	public static Value parseValue(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
+		return new Value(parseEQCBits(is));
 	}
 
 	public static boolean isInputStreamEnd(ByteArrayInputStream is) {
@@ -926,7 +936,7 @@ public class EQCType {
 		}
 	}
 
-	public static void assertNotBigger(ID amount0, ID amount1) throws IllegalStateException {
+	public static void assertNotBigger(BigInteger amount0, BigInteger amount1) throws IllegalStateException {
 		Objects.requireNonNull(amount0);
 		Objects.requireNonNull(amount1);
 		if(amount0.compareTo(amount1) > 0) {

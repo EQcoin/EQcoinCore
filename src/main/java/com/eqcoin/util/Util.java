@@ -62,6 +62,7 @@ import java.security.spec.ECPrivateKeySpec;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -80,6 +81,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
 import org.apache.commons.net.ntp.TimeStamp;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.crypto.digests.RIPEMD128Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import com.eqcoin.avro.O;
@@ -87,21 +89,24 @@ import com.eqcoin.blockchain.changelog.Filter;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHiveRoot;
+import com.eqcoin.blockchain.lock.EQCLock;
+import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.EQCPublickey;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
 import com.eqcoin.blockchain.passport.SmartContractPassport.LanguageType;
 import com.eqcoin.blockchain.passport.SmartContractPassport.State;
 import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
 import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
-import com.eqcoin.blockchain.transaction.EQCPublickey;
+import com.eqcoin.blockchain.transaction.TransferTxOut;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
-import com.eqcoin.blockchain.transaction.TxOut;
+import com.eqcoin.blockchain.transaction.Value;
+import com.eqcoin.blockchain.transaction.ZeroZionCoinbaseTransaction;
+import com.eqcoin.blockchain.transaction.ZionTxOut;
 import com.eqcoin.blockchain.transaction.ZionCoinbaseTransaction;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.EQCPublicKey;
@@ -132,17 +137,17 @@ public final class Util {
 	/*
 	 * Singularity - EQC's basic unit of measure. 1 EQC = 10000 singularity
 	 */
-	public final static long ABC = 10000;
+	public final static BigInteger ABC = BigInteger.valueOf(10000);
 	
 	public final static byte[] MAGIC_HASH = new BigInteger("200189AC5AFA3CF07356C09C311B01619BC5513AF0792434F2F9CBB7E1473F39711981A4D8AB36CA2BEF35673EA7BF12F0673F6040659832E558FAEFBE4075E5", 16).toByteArray();
 
 	public final static byte[] SINGULARITY_HASH = {};
 
-	public final static long MAX_EQC = 210000000000L * ABC;
+	public final static BigInteger MAX_EQC = BigInteger.valueOf(210000000000L).multiply(ABC);
 	
-	public final static ID MAX_EQcoin = ID.valueOf(Util.MAX_EQC);
+	public final static ID MAX_EQcoin = new ID(Util.MAX_EQC);
 
-	public final static long MIN_EQC = 51L * ABC;
+	public final static Value MIN_EQC = new Value(BigInteger.valueOf(51).multiply(ABC));
 	
 //	public final static long SINGULARITY_TOTAL_SUPPLY = 16800000 * ABC;
 
@@ -150,22 +155,22 @@ public final class Util {
 //	
 //	public final static long EQCOIN_FOUNDATION_TOTAL_SUPPLY = 168000000000L * ABC;
 
-	public final static long BLOCK_INTERVAL = 10000;//600000;
+	public final static BigInteger BASIC_BLOCK_INTERVAL = BigInteger.valueOf(600000);
 
-	public final static long TARGET_INTERVAL = 10000;
+	public final static BigInteger TARGET_BLOCK_INTERVAL = BigInteger.valueOf(10000);
 
-	public final static long MINER_COINBASE_REWARD = 1 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
+//	public final static long MINER_COINBASE_REWARD = 1 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
 	
 //	public final static long EQZIP_COINBASE_REWARD = 4 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
 	
-	public final static long EQC_FEDERATION_COINBASE_REWARD = 19 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
+//	public final static long EQC_FEDERATION_COINBASE_REWARD = 19 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
 	
-	public final static long COINBASE_REWARD = MINER_COINBASE_REWARD + EQC_FEDERATION_COINBASE_REWARD;
+	public final static BigInteger BASIC_COINBASE_REWARD = BigInteger.valueOf(1200).multiply(ABC);//MINER_COINBASE_REWARD + EQC_FEDERATION_COINBASE_REWARD;
 
-	// Here exists one bug when change the block_interval the Max_coinbase_height also changed
-	public final static long MAX_COINBASE_HEIGHT = MAX_EQC / COINBASE_REWARD;
+	// Here exists one bug when change the block_interval the Max_coinbase_height also changed need change it to determine according to if max supply - total supply = 0
+//	public final static long MAX_COINBASE_HEIGHT = MAX_EQC / BASIC_COINBASE_REWARD.longValue();
 
-	public final static int TXFEE_RATE = 10;
+//	public final static int TXFEE_RATE = 10;
 	
 	public final static byte DEFAULT_TXFEE_RATE = 10;
 
@@ -185,7 +190,7 @@ public final class Util {
 	
 	public final static int F01 = 401;
 	
-	public final static int THOUSANDPLUS = 101;//1001;
+	public final static int THOUSANDPLUS = 1001;
 
 	public final static int HUNDRED_THOUSAND = 100000;
 
@@ -218,7 +223,7 @@ public final class Util {
 	/**
 	 * In Windows due to haven't the permission to access the Program File folder so have to save it to C but in Linux can access the CURRENT_PATH
 	 */
-	public static String PATH = CURRENT_PATH + File.separator + "EQchains";// System.getProperty("user.dir") + File.separator +
+	public static String PATH = CURRENT_PATH + File.separator + "EQcoin";// System.getProperty("user.dir") + File.separator +
 																	// "EQCOIN";
 //	static {
 //		PATH = System.getProperty("user.dir") + "/EQCOIN";
@@ -226,9 +231,9 @@ public final class Util {
 	
 	public static final String MAGIC_PATH = ".\\src\\main\\QuidditchHelixFlashForward";
 
-	public static final String KEYSTORE_PATH = PATH + File.separator + "EQchains.keystore";
+	public static final String KEYSTORE_PATH = PATH + File.separator + "EQcoin.keystore";
 
-	public static final String KEYSTORE_PATH_BAK = PATH + File.separator + "EQchains.keystore.bak";
+	public static final String KEYSTORE_PATH_BAK = PATH + File.separator + "EQcoin.keystore.bak";
 
 	public static final String LOG_PATH = PATH + File.separator + "log.txt";
 
@@ -243,39 +248,50 @@ public final class Util {
 	public final static String H2_PATH = DB_PATH + File.separator + "H2";
 	
 	public final static String ROCKSDB_PATH = DB_PATH + File.separator + "ROCKSDB";
+	
+	public final static String H2_DATABASE_NAME = H2_PATH + File.separator + "EQcoin";
 
-	public final static String H2_DATABASE_NAME = H2_PATH + File.separator + "EQC";
-
-	/*  @see 压缩公钥&签名长度规范
-		EC长度 压缩公钥长度(bytes)  签名长度(bytes)
-		P256 		33 				70、71、72
-		P521 		67 			  137、138、139
+	/**  
+	 * Compressed publickey and ASN.1 DER signature's length specification
+	 *	ECC curve compressed publickey length(bytes)  signature length(bytes)
+	 *	   P256 							33 												70、71、72
+	 *	   P521 							67 			  								137、138、139
 	 */
-	public final static int P256_PUBLICKEY_MIN_LEN = 32;
-	
-	public final static int P256_PUBLICKEY_MAX_LEN = 36;
-	
-	public final static int P521_PUBLICKEY_MIN_LEN = 64;
-	
-	public final static int P521_PUBLICKEY_MAX_LEN = 70;
+//	public final static int P256_PUBLICKEY_MIN_LEN = 32;
+//	
+//	public final static int P256_PUBLICKEY_MAX_LEN = 36;
+//	
+//	public final static int P521_PUBLICKEY_MIN_LEN = 64;
+//	
+//	public final static int P521_PUBLICKEY_MAX_LEN = 70;
 	
 	public final static int P256_PUBLICKEY_LEN = 33;
 	
 	public final static int P521_PUBLICKEY_LEN = 67;
 	
-	public final static int P256_BASIC_SIGNATURE_LEN = 73;
+	public final static BigInteger P256_MAX_SIGNATURE_LEN = BigInteger.valueOf(73);
 
-	public final static int P521_BASIC_SIGNATURE_LEN = 140;
-
-	public final static int P256_BASIC_PUBLICKEY_LEN = 34;
-
-	public final static int P521_BASIC_PUBLICKEY_LEN = 68;
+	public final static BigInteger P521_MAX_SIGNATURE_LEN = BigInteger.valueOf(140);
 	
-	public final static int BASIC_SERIAL_NUMBER_LEN = 5;
+	public final static BigInteger P256_POINT_LEN = BigInteger.valueOf(32);
+
+	public final static BigInteger P521_POINT_LEN = BigInteger.valueOf(66);
+	
+	public final static BigInteger P256_SIGNATURE_LEN = BigInteger.valueOf(64);
+
+	public final static BigInteger P521_SIGNATURE_LEN = BigInteger.valueOf(132);
+
+//	public final static int P256_BASIC_PUBLICKEY_LEN = 34;
+//
+//	public final static int P521_BASIC_PUBLICKEY_LEN = 68;
+	
+	public final static int MAX_SERIAL_NUMBER_LEN = 5;
+	
+	public final static BigInteger MAX_TXFEE_LEN = BigInteger.valueOf(6);
 	
 	public final static int BASIC_VALUE_NUMBER_LEN = 8;
 
-	public final static int INIT_ADDRESS_SERIAL_NUMBER = 1;
+	public final static int INIT_ADDRESS_SERIAL_NUMBER = 0;
 
 	public final static ID DEFAULT_PROTOCOL_VERSION = ID.ZERO;
 	
@@ -320,15 +336,27 @@ public final class Util {
 	
 	public static final int TRANSACTION_NETWORK_PORT = 9977;
 	
-	public static final String SINGULARITY_A = "2Gw36sN18ZXSmywAPXrBmbYexwqC4tB2ULeePQdpq3DrJ8BamQ";
+	public static final String SINGULARITY_A = "2gVXCVhzQBGVkhDZtUHt6hBM7UEs3wopNnLLA1q5Bjbs1DKEkY";
 	
-	public static final String SINGULARITY_B = "2Mrzyyn1WZGLkow1fgScSM1L6v3KZzj5vzd1mbd5VNJPvPZJXk";
+	public static final String SINGULARITY_B = "2J9DMRSrUD9gZWWLEfKbwwv9GFED4szodSyFrfcpNinX8Ke9SW";
 	
-	public static final String SINGULARITY_C = "25vn1Se3mfdG5dVjozoNegHPM9dH5psabNfKGFG2DD8qStnyqH";
+	public static final String SINGULARITY_C = "22diDLSo59iEa2ySEYXm3W5rGQj1ofB14BL6hNSUCApo9sC3EQU";
 	
 	public static final int MAX_COUNTER = 3;
 	
 	public static final String SHA3_512 = "SHA3-512";
+	
+	public static final int SHA3_256_LEN = 32;
+	
+	public static final int SHA3_512_LEN = 64;
+	// 2020-04-1 Here need do more job to calculate the detailed value
+	public static final BigInteger ASSET_PASSPORT_PROOF_SPACE_COST = BigInteger.valueOf(51);
+	
+	public static final BigInteger T1_LOCK_PROOF_SPACE_COST = BigInteger.valueOf(50);
+	
+	public static final BigInteger T2_LOCK_PROOF_SPACE_COST = BigInteger.valueOf(82);
+	
+	public static boolean IsDeleteTransactionInPool = false;
 	
 //	public static ID [] FIBONACCI = {
 //			new ID(1597),
@@ -444,11 +472,11 @@ public final class Util {
 				/* && Keystore.getInstance().getUserAccounts().size() > 0 Will Remove when Cold Wallet ready */) {
 //			Log.info("0");
 //			Test.testKeystore();
+			DB().saveEQCHiveTailHeight(ID.ZERO);
 			EQCHive eqcBlock = recoverySingularityStatus();
 //			EQCBlockChainH2.getInstance().saveEQCBlock(eqcBlock);
 //			Log.info("1");
 			DB().saveEQCHive(eqcBlock);
-			DB().saveEQCHiveTailHeight(ID.ZERO);
 //			Address address = eqcBlock.getTransactions().getAddressList().get(0);
 //			if(!EQCBlockChainH2.getInstance().isAddressExists(address)) {
 //				EQCBlockChainH2.getInstance().appendAddress(address, SerialNumber.ZERO);
@@ -624,7 +652,7 @@ public final class Util {
 			d = b.subtract(c).abs().multiply(new BigDecimal(PRIME101[(multiple - i)%HUNDREDPULS]), mc);
 
 			begin = begin.add(a).add(b).add(c).add(d);
-			Log.info("i: " + i + " " + begin.toPlainString());
+//			Log.info("i: " + i + " " + begin.toPlainString());
 			String[] abc = begin.toPlainString().split("\\.");
 			if (abc.length == 2) {
 //				Log.info("...");
@@ -685,6 +713,13 @@ public final class Util {
 		}
 //		return	bigIntegerTo128String(new BigInteger(1, bytes));
 		return	bigIntegerTo512String(new BigInteger(1, bytes));
+	}
+	
+	public static String bytesToHexString(final byte[] bytes) {
+		if (bytes == null) {
+			return null;
+		}
+		return	new BigInteger(1, bytes).toString(16);
 	}
 	
 //	public static BigInteger getDefaultTarget() {
@@ -856,7 +891,8 @@ public final class Util {
 	}
 
 	public static long bytesToLong(final byte[] bytes) {
-		return ByteBuffer.allocate(8).put(bytes, 0, bytes.length).flip().getLong();
+		return new BigInteger(1, bytes).longValue();
+//		return ByteBuffer.allocate(8).put(bytes, 0, bytes.length).flip().getLong();
 	}
 
 	public static boolean createDir(final String dir) {
@@ -1232,7 +1268,7 @@ public final class Util {
 		public final static int T2_PUBLICKEY_LEN = 67;
 
 		public enum LockType {
-			T1, T2, INVALID;
+			T1, T2;
 			public static LockType get(int ordinal) {
 				LockType lockType = null;
 				switch (ordinal) {
@@ -1242,17 +1278,8 @@ public final class Util {
 				case 1:
 					lockType = LockType.T2;
 					break;
-				default:
-					lockType = LockType.INVALID;
-					break;
 				}
 				return lockType;
-			}
-			public boolean isSanity() {
-				if((this.ordinal() < T1.ordinal()) || (this.ordinal() > INVALID.ordinal()) || (this.ordinal() == INVALID.ordinal())) {
-					return false;
-				}
-				return true;
 			}
 			public byte[] getEQCBits() {
 				return EQCType.intToEQCBits(this.ordinal());
@@ -1276,10 +1303,10 @@ public final class Util {
 			else if(type == LockType.T2) {
 				publickey_hash = EQCCHA_MULTIPLE_DUAL(publicKey, HUNDREDPULS, true, true);
 			}
-			return _generateAddress(publickey_hash, type);
+			return _generateLock(publickey_hash, type);
 		}
 		
-		private static String _generateAddress(byte[] publickey_hash, LockType type) {
+		private static String _generateLock(byte[] publickey_hash, LockType type) {
 			byte[] type_publickey_hash = null;
 			byte[] CRC32C = null;
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -1328,10 +1355,27 @@ public final class Util {
 			return Base58.encode(new byte[] { (byte) type.ordinal() }) + Base58.encode(os.toByteArray());
 		}
 		
+		public static boolean verifyEQCLockAndPublickey(EQCLock eqcLock, byte[] compressedPublickey) {
+			byte[] publickey_hash = null;
+			try {
+				if(eqcLock.getLockType() == LockType.T1) {
+					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, ELEVEN, false, true);
+				}
+				else if(eqcLock.getLockType() == LockType.T2) {
+					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, HUNDREDPULS, true, true);
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				Log.Error(e.getMessage());
+			}
+			return Arrays.equals(publickey_hash, eqcLock.getLockHash());
+		}
+		
 		public static boolean verifyLockAndPublickey(String address, byte[] compressedPublickey) {
 			byte[] hidden_address = null;
 			byte[] publickey_hash = null;
-			LockType lockType = getAddressType(address);
+			LockType lockType = getLockType(address);
 			try {
 				if(lockType == LockType.T1) {
 					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, ELEVEN, false, true);
@@ -1348,24 +1392,18 @@ public final class Util {
 			return Arrays.equals(publickey_hash, Arrays.copyOf(hidden_address, hidden_address.length - CRC32C_LEN));
 		}
 		
-		public static byte[] addressToAI(String address) {
+		public static byte[] readableLockToAI(String address) throws Exception {
 			byte[] bytes = null;
 			ByteArrayOutputStream os = null;
-			try {
-				os = new ByteArrayOutputStream();
-				os.write(Base58.decode(address.substring(0, 1)));
-				bytes = Base58.decode(address.substring(1));
-				os.write(bytes, 0, bytes.length - CRC32C_LEN);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
+			os = new ByteArrayOutputStream();
+			os.write(Base58.decode(address.substring(0, 1)));
+			bytes = Base58.decode(address.substring(1));
+			os.write(bytes, 0, bytes.length - CRC32C_LEN);
 			return os.toByteArray();
 		}
 		
 		public static byte[] publickeyToAI(byte[] compressedPublickey) throws IOException {
-			LockType lockType = getAddressType(compressedPublickey);
+			LockType lockType = getLockType(compressedPublickey);
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			if(lockType == LockType.T1) {
 				os.write(lockType.ordinal());
@@ -1378,7 +1416,19 @@ public final class Util {
 			return os.toByteArray();
 		}
 
-		public static String AIToAddress(byte[] bytes) throws NoSuchFieldException {
+		public static byte[] publickeyHashToAI(LockType lockType, byte[] publickeyHash) throws IOException {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			os.write(lockType.ordinal());
+			os.write(publickeyHash);
+			return os.toByteArray();
+		}
+		
+		public static String EQCLockToReadableLock(EQCLock eqcLock) throws NoSuchFieldException {
+			Objects.requireNonNull(eqcLock);
+			return _generateLock(eqcLock.getLockHash(), eqcLock.getLockType());
+		}
+		
+		public static String AIToReadableLock(byte[] bytes) throws NoSuchFieldException {
 			EQCType.assertNotNull(bytes);
 			LockType lockType = LockType.T1;
 			if (bytes[0] == 0) {
@@ -1393,19 +1443,18 @@ public final class Util {
 				throw new UnsupportedOperationException("Unsupport type: " + bytes[0]);
 			}
 			
-			return _generateAddress(Arrays.copyOfRange(bytes, 1, bytes.length), lockType);
+			return _generateLock(Arrays.copyOfRange(bytes, 1, bytes.length), lockType);
 		}
 		
 		// 2020-02-23 need review this
-		public static boolean isAddressFormatValid(String address) {
+		public static boolean isReadableLockSanity(String readableLock) {
 			byte[] bytes = null;
 			String addressContent = null, subString = null;
 			char[] addressChar = null;
-			try {
-				if(address.length() < MIN_ADDRESS_LEN || address.length() > MAX_ADDRESS_LEN) {
+				if(readableLock.length() < MIN_ADDRESS_LEN || readableLock.length() > MAX_ADDRESS_LEN) {
 					return false;
 				}
-				addressChar = address.toCharArray();
+				addressChar = readableLock.toCharArray();
 				if(addressChar[0] != '1' && addressChar[0] != '2') {
 					return false;
 				}
@@ -1420,11 +1469,6 @@ public final class Util {
 //				if(!addressContent.equals(subString)) {
 //					return false;
 //				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
 			
 			return true;
 		}
@@ -1435,7 +1479,7 @@ public final class Util {
 			byte[] CRC32C = null;
 			byte[] CRC32CC = null;
 			byte[] type_publickey_hash = null;
-			LockType lockType = getAddressType(address);
+			LockType lockType = getLockType(address);
 			
 			try {
 				bytes = Base58.decode(address.substring(1));
@@ -1614,18 +1658,22 @@ public final class Util {
 			return trim;
 		}
 		
-		public static LockType getAddressType(byte[] publickey) {
-			LockType lockType = LockType.INVALID;
-			if(publickey.length >= P256_PUBLICKEY_MIN_LEN && publickey.length <= P256_PUBLICKEY_MAX_LEN) {
+		// 2020-04-01 Here exists bug need change another algorithm for example compare the publickey range? Maybe doesn't need do this because of the length is fixed
+		public static LockType getLockType(byte[] publickey) {
+			LockType lockType = null;
+			if(publickey.length == P256_PUBLICKEY_LEN) {
 				lockType = LockType.T1;
 			}
-			else if(publickey.length >= P521_PUBLICKEY_MIN_LEN && publickey.length <= P521_PUBLICKEY_MAX_LEN) {
+			else if(publickey.length == P521_PUBLICKEY_LEN) {
 				lockType = LockType.T2;
+			}
+			else {
+				throw new IllegalStateException("Invalid publickey length:" + publickey.length);
 			}
 			return lockType;
 		}
 
-		public static LockType getAddressType(String address) {
+		public static LockType getLockType(String address) {
 			byte type = 0;
 			LockType lockType = LockType.T1;
 			try {
@@ -1640,33 +1688,42 @@ public final class Util {
 			} else if (type == 1) {
 				lockType = LockType.T2;
 			} 
+			else {
+				throw new IllegalStateException("Invalid lock type: " + lockType);
+			}
 			return lockType;
 		}
-
-		/**
-		 * @author Xun Wang
-		 * @date Feb 1, 2019
-		 * @email 10509759@qq.com
-		 */
+		
+		public static LockType getLockTypeFromAI(byte[] aiLock) {
+			byte type = 0;
+			LockType lockType = null;
+			type = aiLock[0];
+			if (type == 0) {
+				lockType = LockType.T1;
+			} else if (type == 1) {
+				lockType = LockType.T2;
+			} else {
+				throw new IllegalStateException("Invalid lock type: " + type);
+			}
+			return lockType;
+		}
 		
 	}
 
-	public static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(Lock minerLock,
+	public static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(EQCLockMate minerLock,
 			ChangeLog changeLog) {
 		TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
-		TxOut eqcFederalTxOut = new TxOut();
-		TxOut minerTxOut = new TxOut();
+		TransferTxOut eqcFederalTxOut = new TransferTxOut();
+		TransferTxOut minerTxOut = new TransferTxOut();
 		try {
-			Lock eqcFederalLock = new Lock();
-			eqcFederalLock.setId(ID.ZERO);
-			eqcFederalTxOut.setLock(eqcFederalLock);
-			minerTxOut.setLock(minerLock);
+			minerTxOut.setPassportId(ID.ZERO);
 			
-			eqcFederalTxOut.setValue(Util.EQC_FEDERATION_COINBASE_REWARD);
-			minerTxOut.setValue(Util.MINER_COINBASE_REWARD);
+			Value minerCoinbaseReward = getCurrentMinerCoinbaseReward(getCurrentCoinbaseReward(changeLog));
+			eqcFederalTxOut.setValue(getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
+			minerTxOut.setValue(minerCoinbaseReward);
 
-			transaction.addTxOut(eqcFederalTxOut);
-			transaction.addTxOut(minerTxOut);
+			transaction.setEqCoinFederalTxOut(eqcFederalTxOut);
+			transaction.setEqCoinMinerTxOut(minerTxOut);
 			transaction.setNonce(changeLog.getHeight().getNextID());
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
@@ -1674,22 +1731,21 @@ public final class Util {
 		return transaction;
 	}
 	
-	public static ZionCoinbaseTransaction generateZionCoinbaseTransaction(Lock minerLock,
+	public static ZionCoinbaseTransaction generateZionCoinbaseTransaction(EQCLock minerLock,
 			ChangeLog changeLog) {
 		ZionCoinbaseTransaction transaction = new ZionCoinbaseTransaction();
-		TxOut eqcFederalTxOut = new TxOut();
-		TxOut minerTxOut = new TxOut();
+		TransferTxOut eqcFederalTxOut = new TransferTxOut();
+		ZionTxOut minerTxOut = new ZionTxOut();
 		try {
-			Lock eqcFederalLock = new Lock();
-			eqcFederalLock.setId(ID.ZERO);
-			eqcFederalTxOut.setLock(eqcFederalLock);
+			eqcFederalTxOut.setPassportId(ID.ZERO);
 			minerTxOut.setLock(minerLock);
 			
-			eqcFederalTxOut.setValue(Util.EQC_FEDERATION_COINBASE_REWARD);
-			minerTxOut.setValue(Util.MINER_COINBASE_REWARD);
+			Value minerCoinbaseReward = getCurrentMinerCoinbaseReward(getCurrentCoinbaseReward(changeLog));
+			eqcFederalTxOut.setValue(getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
+			minerTxOut.setValue(minerCoinbaseReward);
 
-			transaction.addTxOut(eqcFederalTxOut);
-			transaction.addTxOut(minerTxOut);
+			transaction.setEqCoinFederalTxOut(eqcFederalTxOut);
+			transaction.setEqCoinMinerTxOut(minerTxOut);
 			transaction.setNonce(changeLog.getHeight().getNextID());
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
@@ -1701,11 +1757,11 @@ public final class Util {
 		EQCHive eqcHive = null;
 		// @echo off
 		// If exists old status need clear it
-		for(int i=1; i<=2; ++i) {
+		for(int i=0; i<2; ++i) {
 			try {
-				Passport account = Util.DB().getPassport(ID.valueOf(i), Mode.GLOBAL);
+				Passport account = Util.DB().getPassport(new ID(i), Mode.GLOBAL);
 				if(account != null) {
-					Util.DB().deletePassport(ID.valueOf(i), Mode.GLOBAL);
+					Util.DB().deletePassport(new ID(i), Mode.GLOBAL);
 				}
 			}
 			catch (Exception e) {
@@ -1718,38 +1774,38 @@ public final class Util {
 
 		// Create EQC block
 		eqcHive = new EQCHive();
+		eqcHive.setChangeLog(changeLog);
 
 		// Create TransactionsHeader
 //		TransactionsHeader transactionsHeader = new TransactionsHeader();
 //		transactionsHeader.setSignaturesHash(null);
 //		eqcBlock.getTransactions().setTransactionsHeader(transactionsHeader);
 
-		// Create Transaction
-		TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
-
-		TxOut txOut = new TxOut();
-		txOut.getLock().setReadableLock(SINGULARITY_A);
-		txOut.setValue(EQC_FEDERATION_COINBASE_REWARD);
-		transaction.addTxOut(txOut);
-
-		txOut = new TxOut();
-		txOut.getLock().setReadableLock(SINGULARITY_B);
-		txOut.setValue(MINER_COINBASE_REWARD);
-		transaction.addTxOut(txOut);
+//		// Create Transaction
+//		ZeroZionCoinbaseTransaction zeroZionCoinbaseTransaction = new ZeroZionCoinbaseTransaction();
+//
+//		AITxOut txOut = new AITxOut();
+//		txOut.getLock().setReadableLock(SINGULARITY_A);
+//		Value minerCoinbaseReward = getCurrentMinerCoinbaseReward(getCurrentCoinbaseReward(changeLog));
+//		txOut.setValue(getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
+//		zeroZionCoinbaseTransaction.setEqCoinFederalTxOut(txOut);
+//
+//		txOut = new AITxOut();
+//		txOut.getLock().setReadableLock(SINGULARITY_B);
+//		txOut.setValue(minerCoinbaseReward);
+//		zeroZionCoinbaseTransaction.setEqCoinMinerTxOut(txOut);
+//		
+//		eqcHive.getEQcoinSeed().addCoinbaseTransaction(zeroZionCoinbaseTransaction);
 		
-		eqcHive.getEQcoinSeed().addCoinbaseTransaction(transaction, changeLog);
-		
-		// Set EQcoinSubchainHeader
-		eqcHive.getEQcoinSeed().getEQcoinSeedRoot().setTotalPassportNumbers(changeLog.getTotalPassportNumbers());
-		eqcHive.getEQcoinSeed().getEQcoinSeedRoot().setTotalTransactionNumbers(ID.valueOf(eqcHive.getEQcoinSeed().getNewTransactionList().size()));
+		eqcHive.plantingEQCHive();
 		
 		// Add new address in address list
 //		if (!eqcBlock.getTransactions().isAddressExists(address.getAddress())) {
 //			eqcBlock.getTransactions().getAddressList().addElement(address);
 //		}
 
-		changeLog.buildPassportMerkleTreeBase();
-		changeLog.generatePassportMerkleTreeRoot();
+//		changeLog.buildProofBase();
+//		changeLog.generateProofRoot();
 
 //		// Create Index
 //		Index index = new Index();
@@ -1771,7 +1827,7 @@ public final class Util {
 		header.setHeight(ID.ZERO);
 		header.setTimestamp(new ID(0));
 		header.setNonce(ID.ZERO);
-		header.setEQCoinSeedHash(eqcHive.getEQcoinSeed().getHash());
+		header.setEQCoinSeedHash(eqcHive.getEQcoinSeed().getProofRoot());
 		eqcHive.setEqcHeader(header);
 		
 		while(!header.isDifficultyValid()) {
@@ -1779,23 +1835,29 @@ public final class Util {
 		}
 		
 //		eqcBlock.setIndex(index);
-		
-		changeLog.merge();
-		changeLog.takeSnapshot();
-		changeLog.clear();
+		changeLog.updateGlobalState();
 		Log.info(eqcHive.toString());
 		return eqcHive;
 	}
 
-	public static ID cypherTotalSupply(ID height) {
-		if (height.compareTo(getMaxCoinbaseHeight(height)) < 0) {
-			return new ID((COINBASE_REWARD) * (height.getNextID().longValue()));
-		} else {
-			return new ID(MAX_EQC);
+	public static Value cypherTotalSupply(ChangeLog changeLog) throws Exception {
+		if(changeLog.getHeight().equals(ID.ZERO)) {
+			return new Value(BASIC_COINBASE_REWARD);
+		}
+		else {
+			EQCHive eqcHive = DB().getEQCHive(changeLog.getHeight().getPreviousID(), true);
+			Value totalSupply = eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getTotalSupply();
+			if(totalSupply.compareTo(MAX_EQC) < 0) {
+				return totalSupply.add(getCurrentCoinbaseReward(changeLog));
+			}
+			else {
+				return totalSupply;
+			}
 		}
 	}
 
-	public static byte[] cypherTarget(ID height) throws Exception {
+	public static byte[] cypherTarget(ID height, ChangeLog changeLog) throws Exception {
+		// Here need dore more job change Util.DB() to changelog
 		byte[] target = null;
 		BigInteger oldDifficulty;
 		BigInteger newDifficulty;
@@ -1819,11 +1881,13 @@ public final class Util {
 									/ 9);
 			oldDifficulty = Util
 					.targetBytesToBigInteger(Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTarget());
+			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO, false);
+			BigInteger current_block_interval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval()).multiply(BigInteger.TEN);
 			newDifficulty = oldDifficulty
 					.multiply(BigInteger
 							.valueOf((Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTimestamp().longValue()
 									- Util.DB().getEQCHive(serialNumber_begin, true).getEqcHeader().getTimestamp().longValue())))
-					.divide(BigInteger.valueOf(9 * Util.BLOCK_INTERVAL));
+					.divide(BigInteger.valueOf(9).multiply(current_block_interval));
 			// Compare if old difficulty divide new difficulty is bigger than MAX_DIFFICULTY_MULTIPLE
 			if(oldDifficulty.divide(newDifficulty).compareTo(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE)) > 0) {
 				Log.info("Due to old difficulty divide new difficulty(" + Util.bigIntegerTo512String(newDifficulty) +") = " + oldDifficulty.divide(newDifficulty).toString() + " is bigger than MAX_DIFFICULTY_MULTIPLE so here just divide MAX_DIFFICULTY_MULTIPLE");
@@ -1840,89 +1904,6 @@ public final class Util {
 		}
 		return target;
 	}
-
-	
-
-//	public static EQCPublickey getPublicKey(ID serialNumber, EQCHive eqcBlock) throws ClassNotFoundException, SQLException {
-//		EQCPublickey publicKey = null;
-//		publicKey = EQCBlockChainH2.getInstance().getPublicKey(serialNumber);
-//		if (publicKey == null) {
-//			Vector<EQCPublickey> publicKeyList = eqcBlock.getEQcoinSeed().getNewCompressedPublickeyList();
-//			for (EQCPublickey publicKey2 : publicKeyList) {
-//				if (publicKey2.equals(serialNumber)) {
-//					publicKey = publicKey2;
-//					break;
-//				}
-//			}
-//		}
-//		return publicKey;
-//	}
-
-	public static String getAddress(ID id, EQCHive eqcBlock) throws ClassNotFoundException, SQLException, NoSuchFieldException, IllegalStateException, IOException {
-		Lock lock = null;
-		// Here exists one bug need do more job
-//		key = EQCBlockChainH2.getInstance().getPassport(id).getKey();
-//		if (key == null) {
-//			Vector<Lock> passportList = eqcBlock.getEQcoinSubchain().getNewPassportList();
-//			for (Lock passport2 : passportList) {
-//				if (passport2.equals(id)) {
-//					key = passport2;
-//					break;
-//				}
-//			}
-//		}
-		return (lock == null) ? null : lock.getReadableLock();
-	}
-
-//	public static long getBillingFee(Transaction transaction, TXFEE_RATE rate, SerialNumber height){
-//		int qos = 0;
-//		switch (rate) {
-//		case POSTPONE0:
-//			qos = 6;
-//			break;
-//		case POSTPONE20:
-//			qos = 4;
-//			break;
-//		case POSTPONE40:
-//			qos = 2;
-//			break;
-//		case POSTPONE60:
-//			qos = 1;
-//			break;
-//		default:
-//			qos = 4;
-//			break;
-//		}
-//
-//		long txNumbersIn24 = EQCBlockChainH2.getInstance()
-//				.getTransactionNumbersIn24hours(transaction.getTxIn().getAddress(), height);
-//		Log.info("txNumbersIn24: " + txNumbersIn24);
-//		return (txNumbersIn24 % 10 + 1) * (transaction.getMaxBillingSize() / TXFEE_UNIT) * qos;
-//	}
-	
-//	public static TXFEE_RATE getQOS(Transaction transaction, long billingFee, SerialNumber height) {
-//		TXFEE_RATE txfee_rate = null;
-//		int qos = 1;
-//		long txNumbersIn24 = EQCBlockChainH2.getInstance()
-//				.getTransactionNumbersIn24hours(transaction.getTxIn().getAddress(), height);
-//		Log.info("txNumbersIn24: " + txNumbersIn24);
-//		qos = (int) (billingFee / ((txNumbersIn24 % 10 + 1) * (transaction.getMaxBillingSize() / TXFEE_UNIT)));
-//		switch (qos) {
-//		case 1000:
-//			txfee_rate = TXFEE_RATE.POSTPONE0;
-//			break;
-//		case 100:
-//			txfee_rate = TXFEE_RATE.POSTPONE20;
-//			break;
-//		case 10:
-//			txfee_rate = TXFEE_RATE.POSTPONE40;
-//			break;
-//		case 1:
-//			txfee_rate = TXFEE_RATE.POSTPONE60;
-//			break;
-//		}
-//		return txfee_rate;
-//	}
 
 	public static byte[] getMerkleTreeRoot(Vector<byte[]> bytes, boolean isHashing) throws NoSuchAlgorithmException {
 		MerkleTree merkleTree = new MerkleTree(bytes, isHashing);
@@ -1952,14 +1933,6 @@ public final class Util {
 		} else {
 			return false;
 		}
-	}
-
-	@Deprecated
-	public static long getBalance(String address) throws Exception {
-		Lock strAddress = new Lock();
-		strAddress.setReadableLock(address);
-		strAddress.setId(EQCBlockChainH2.getInstance().getPassport(strAddress.getAddressAI()).getId());
-		return EQCBlockChainH2.getInstance().getBalance(strAddress);
 	}
 
 	public static String getIP() {
@@ -2067,10 +2040,10 @@ public final class Util {
 		return boolIsNetworkAvailable;
 	}
 	
-	public static byte[] getBlockHeaderHash(Transaction transaction) throws Exception {
-		return EQCBlockChainH2.getInstance().getEQCHeaderHash(
-				EQCBlockChainH2.getInstance().getTxInHeight(transaction.getTxIn().getLock()));
-	}
+//	public static byte[] getBlockHeaderHash(Transaction transaction) throws Exception {
+//		return EQCBlockChainH2.getInstance().getEQCHeaderHash(
+//				EQCBlockChainH2.getInstance().getTxInHeight(transaction.getTxIn().getLock()));
+//	}
 	
 	public static byte[] CRC32C(byte[] bytes) {
 		CRC32C crc32c = new CRC32C();
@@ -2160,10 +2133,16 @@ public final class Util {
 		// Here can use new algorithm to calculate the max coinbase height just use the MaxSupport-TotalSupply
 		// so the name need changed to is have unmining coin
 		ID maxCoinbaseHeight = null;
-		if(PROTOCOL_VERSION.equals(DEFAULT_PROTOCOL_VERSION)) {
-			maxCoinbaseHeight = new ID(MAX_EQC / COINBASE_REWARD);
-		}
+//		if(PROTOCOL_VERSION.equals(DEFAULT_PROTOCOL_VERSION)) {
+//			maxCoinbaseHeight = new ID(MAX_EQC / COINBASE_REWARD);
+//		}
 		return maxCoinbaseHeight;
+	}
+	
+	public static Value getCurrentSupply() {
+		Value currentSupply = Value.ZERO;
+		
+		return currentSupply;
 	}
 	
 	public static boolean regex(String regex, String value) {
@@ -2233,8 +2212,8 @@ public final class Util {
 //		Log.info("Begin Recovery Account's status from height: " + height);
 //		for (; base >= checkPointHeight; --base) {
 //			Log.info("Try to recovery No. " + base + "'s Account status");
-//			changeLog = new ChangeLog(ID.valueOf(base), new Filter(Mode.VALID));
-//			if (Util.DB().getEQCHive(ID.valueOf(base), true).isValid(changeLog)) {
+//			changeLog = new ChangeLog(new ID(base), new Filter(Mode.VALID));
+//			if (Util.DB().getEQCHive(new ID(base), true).isValid(changeLog)) {
 //				Log.info("No. " + base + " verify passed");
 //				// Through merge recovery all relevant Account
 //				changeLog.merge();
@@ -2253,31 +2232,31 @@ public final class Util {
 //		}
 //
 //		// Due to base height's Account status saved in the Account table so here just deleteAccountSnapshotFrom base
-//		EQCBlockChainH2.getInstance().deletePassportSnapshotFrom(ID.valueOf(base), true);
+//		EQCBlockChainH2.getInstance().deletePassportSnapshotFrom(new ID(base), true);
 //		
 //		// Delete extra Account
 //		EQcoinSeedPassport eQcoinSubchainAccount2 = (EQcoinSeedPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 //		EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQCHive(Util.DB().getEQCBlockTailHeight(), true).getEQcoinSeed().getEQcoinSeedRoot();
 //		for (long i=eQcoinSubchainAccount2.getTotalPassportNumbers().getNextID().longValue(); i<=eQcoinSubchainAccount.getTotalPassportNumbers().longValue(); ++i) {
-//			Util.DB().deletePassport(ID.valueOf(i), Mode.GLOBAL);
+//			Util.DB().deletePassport(new ID(i), Mode.GLOBAL);
 //		}
 //		
 //		// Delete extra EQCHive
 //		for(long i=base; i<=Util.DB().getEQCBlockTailHeight().longValue(); ++i) {
-//			Util.DB().deleteEQCHive(ID.valueOf(i));
+//			Util.DB().deleteEQCHive(new ID(i));
 //		}
 //		
-//		Util.DB().saveEQCBlockTailHeight(ID.valueOf(base));
+//		Util.DB().saveEQCBlockTailHeight(new ID(base));
 //		Log.info("Recovery to new tail: " + base);
 ////		long i = base;
 ////		for (; i <= height.longValue(); ++i) {
-////			changeLog = new AccountsMerkleTree(ID.valueOf(i), new Filter(Mode.VALID));
-////			if (Util.DB().getEQCBlock(ID.valueOf(i), false).isValid(changeLog)) {
+////			changeLog = new AccountsMerkleTree(new ID(i), new Filter(Mode.VALID));
+////			if (Util.DB().getEQCBlock(new ID(i), false).isValid(changeLog)) {
 ////				Log.info("No. " + base + " verify passed");
 ////				changeLog.takeSnapshot();
 ////				changeLog.merge();
 ////				changeLog.clear();
-////				Util.DB().saveEQCBlockTailHeight(ID.valueOf(i));
+////				Util.DB().saveEQCBlockTailHeight(new ID(i));
 ////			} else {
 ////				break;
 ////			}
@@ -2285,7 +2264,7 @@ public final class Util {
 ////		if (i < height.longValue()) {
 ////			for (i += 1; i <= height.longValue(); ++i) {
 ////				Log.info("Begin delete No. " + i + " Hive");
-////				Util.DB().deleteEQCBlock(ID.valueOf(i));
+////				Util.DB().deleteEQCBlock(new ID(i));
 ////			}
 ////		}
 	}
@@ -2304,16 +2283,16 @@ public final class Util {
 		ChangeLog changeLog = null;
 		EQCHive eqcHive = null;
 		for(; base<=tail.longValue(); ++base) {
-			eqcHive = Util.DB().getEQCHive(ID.valueOf(base), false);
+			eqcHive = Util.DB().getEQCHive(new ID(base), false);
 			if(eqcHive != null) {
-				changeLog = new ChangeLog(ID.valueOf(base), new Filter(Mode.VALID));
+				changeLog = new ChangeLog(new ID(base), new Filter(Mode.VALID));
 				if(eqcHive.isValid()) {
 					changeLog.takeSnapshot();
 					changeLog.merge();
 					changeLog.clear();
 					Log.info("No. " + base + " verify passed");
 					Log.info("Current tail: " + base);
-//					Util.DB().saveEQCBlockTailHeight(ID.valueOf(base));
+//					Util.DB().saveEQCBlockTailHeight(new ID(base));
 				}
 				else {
 					Log.info("No. " + base + " verify failed");
@@ -2326,7 +2305,7 @@ public final class Util {
 			}
 		}
 //		for(long i=base; i<=tail.longValue(); ++i) {
-//			Util.DB().deleteEQCBlock(ID.valueOf(i));
+//			Util.DB().deleteEQCBlock(new ID(i));
 //			Log.info("Successful delete extra EQCHive No. " + i);
 //		}
 		
@@ -2339,7 +2318,7 @@ public final class Util {
 //		Passport account = null;
 //		ID id = null;
 //		for(long i=1; i<=eQcoinSubchainHeader.getTotalPassportNumbers().longValue(); ++i) {
-//			id = ID.valueOf(i);
+//			id = new ID(i);
 //			account = Util.DB().getPassport(id, Mode.GLOBAL);
 //			Objects.requireNonNull(account);
 //			if(account.getUpdateHeight().compareTo(height) > 0) {
@@ -2376,4 +2355,34 @@ public final class Util {
 		return new O(ByteBuffer.wrap(bytes));
 	}
 
+	public static Value getCurrentCoinbaseReward(ChangeLog changeLog) throws Exception {
+		Value currentCoinbaseReward = Value.ZERO;
+		BigInteger currentBlockInterval = BASIC_BLOCK_INTERVAL;
+		if (changeLog.getHeight().compareTo(ID.ZERO) > 0) {
+			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO,
+					false);
+			currentBlockInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
+					.multiply(TARGET_BLOCK_INTERVAL);
+		}
+		currentCoinbaseReward = new Value(
+				BASIC_COINBASE_REWARD.multiply(currentBlockInterval).divide(BASIC_BLOCK_INTERVAL));
+		return currentCoinbaseReward;
+	}
+	
+	public static Value getCurrentMinerCoinbaseReward(Value currentCoinbaseReward) {
+		return new Value(currentCoinbaseReward.multiply(BigInteger.valueOf(5)).divide(BigInteger.valueOf(100)));
+	}
+	
+	public static Value getValue(double d) {
+		long loneValue = (long) (d * ABC.longValue());
+		return new Value(BigInteger.valueOf(loneValue));
+	}
+	
+	public static BigInteger getCurrentBlockInterval() throws Exception {
+		BigInteger currentBlockInterval = BigInteger.ZERO;
+		EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) DB().getPassport(ID.ZERO, Mode.GLOBAL);
+		currentBlockInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval()).multiply(TARGET_BLOCK_INTERVAL);
+		return currentBlockInterval;
+	}
+	
 }

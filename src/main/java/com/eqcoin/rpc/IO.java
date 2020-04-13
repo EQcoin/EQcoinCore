@@ -57,7 +57,6 @@ public abstract class IO<T> extends EQCSerializable {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		parseBody(is);
 	}
 
 	protected void parse(T type) throws Exception {
@@ -69,7 +68,7 @@ public abstract class IO<T> extends EQCSerializable {
 			throw new IllegalStateException("Invalid IO type");
 		}
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parseBody(is);
+		parse(is);
 		EQCType.assertNoRedundantData(is);
 	}
 	
@@ -92,9 +91,7 @@ public abstract class IO<T> extends EQCSerializable {
 //	}
 
 	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(getBodyBytes());
-		return os.toByteArray();
+		return null;
 	}
 	
 	/* (non-Javadoc)

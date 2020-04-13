@@ -53,6 +53,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Vector;
 
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.crypto.EQCPublicKey;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Log;
@@ -125,7 +126,7 @@ public class Keystore {
 			account.setPrivateKey(Util.AESEncrypt(((ECPrivateKey)privKey).getS().toByteArray(), password));
 			account.setPublicKey(Util.AESEncrypt(eqcPublicKey.getCompressedPublicKeyEncoded(), password));
 			account.setReadableLock(Util.LockTool.generateAddress(eqcPublicKey.getCompressedPublicKeyEncoded(), lockType));
-			account.setBalance(0);
+			account.setBalance(Value.ZERO);
 //			Log.info("x1");
 		} catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
 			// TODO Auto-generated catch block

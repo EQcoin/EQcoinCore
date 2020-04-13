@@ -87,7 +87,7 @@ public class IPList<T> extends IO<T> {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		ipList = EQCType.parseArray(is, IP.class);
+		ipList = EQCType.parseArray(is, new IP());
 	}
 
 	/* (non-Javadoc)

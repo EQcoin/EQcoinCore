@@ -33,6 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.serialization.EQCInheritable;
 import com.eqcoin.serialization.EQCTypable;
@@ -51,6 +52,7 @@ public abstract class EQCSeedRoot implements EQCTypable, EQCInheritable {
 	 * Calculate this according to newTransactionList ARRAY's length
 	 */
 	protected ID totalTransactionNumbers;
+	protected ChangeLog changeLog;
 	
 	public EQCSeedRoot() {
 		totalTransactionNumbers = ID.ZERO;
@@ -110,17 +112,17 @@ public abstract class EQCSeedRoot implements EQCTypable, EQCInheritable {
 	}
 
 	@Override
-	public boolean isSanity() {
-		if(totalTransactionNumbers == null || !totalTransactionNumbers.isSanity()) {
-			return false;
-		}
-		return true;
+	public boolean isSanity() throws Exception {
+		return (totalTransactionNumbers != null && totalTransactionNumbers.isSanity());
 	}
 
 	@Override
 	public boolean isValid() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		if(!totalTransactionNumbers.equals(changeLog.getStatistics().getTotalTransactionNumbers())) {
+			Log.Error("TotalTransactionNumbers is invalid expected: " + totalTransactionNumbers + " but actual: " + changeLog.getStatistics().getTotalTransactionNumbers());
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -154,6 +156,13 @@ public abstract class EQCSeedRoot implements EQCTypable, EQCInheritable {
 		return "\"EQCSeedRoot\":" + "{\n"
 				+ "\"TotalTransactionNumbers\":" + "\"" + totalTransactionNumbers + "\""
 				+ "\n" + "}";
+	}
+
+	/**
+	 * @param changeLog the changeLog to set
+	 */
+	public void setChangeLog(ChangeLog changeLog) {
+		this.changeLog = changeLog;
 	}
 	
 }

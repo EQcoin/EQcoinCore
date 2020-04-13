@@ -32,8 +32,6 @@ package com.eqcoin.serialization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.passport.Lock.LockShape;
-
 /**
  * @author Xun Wang
  * @date Oct 4, 2018

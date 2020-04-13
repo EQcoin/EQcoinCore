@@ -46,8 +46,7 @@ import javax.print.attribute.Size2DSyntax;
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Statistics;
-import com.eqcoin.blockchain.passport.Lock;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.seed.EQCSeed;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
@@ -56,8 +55,8 @@ import com.eqcoin.blockchain.transaction.TransferOPTransaction;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.TxIn;
-import com.eqcoin.blockchain.transaction.TxOut;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
+import com.eqcoin.blockchain.transaction.ZionTxOut;
+import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -107,12 +106,14 @@ public class EQCHive implements EQCTypable {
 		eQcoinSeed = new EQcoinSeed();
 	}
 
-	public EQCHive(ID currentBlockHeight, byte[] previousBlockHeaderHash) throws Exception {
+	public EQCHive(ID currentBlockHeight, byte[] previousBlockHeaderHash, ChangeLog changeLog) throws Exception {
 		init();
+		this.changeLog = changeLog;
+		eQcoinSeed.setChangeLog(changeLog);
 		// Create EQC block header
 		eqcHiveRoot.setPreHash(previousBlockHeaderHash);
 		eqcHiveRoot.setHeight(currentBlockHeight);
-		eqcHiveRoot.setTarget(Util.cypherTarget(currentBlockHeight));
+		eqcHiveRoot.setTarget(Util.cypherTarget(currentBlockHeight, changeLog));
 		eqcHiveRoot.setTimestamp(new ID(System.currentTimeMillis()));
 		eqcHiveRoot.setNonce(ID.ZERO);
 	}
@@ -156,7 +157,7 @@ public class EQCHive implements EQCTypable {
 		 "}";
 	}
 
-	public void plantingEQCHive(ChangeLog changeLog) throws Exception {
+	public void plantingEQCHive() throws Exception {
 		/**
 		 * Heal Protocol If height equal to a specific height then update the EQcoin Federal's
 		 * Lock to the new Lock the more information you can reference to
@@ -168,41 +169,15 @@ public class EQCHive implements EQCTypable {
 		pendingTransactionList.addAll(Util.DB().getTransactionListInPool());
 		Log.info("Current have " + pendingTransactionList.size() + " pending Transactions.");
 				
-		// Here need sort all transactions from transaction pool
-	
 		/**
 		 * Begin handle EQcoinSeed
 		 */
-		eQcoinSeed.plantingTransaction(pendingTransactionList, changeLog);
-		
-		// Build LockMerkleTree and generate Root
-		changeLog.buildLockMerkleTreeBase();
-		changeLog.generateLockMerkleTreeRoot();
-
-		// Build PassportMerkleTree and generate Root
-		changeLog.buildPassportMerkleTreeBase();
-		changeLog.generatePassportMerkleTreeRoot();
-		
-		eQcoinSeed.getEQcoinSeedRoot().setLockMerkelTreeRoot(changeLog.getLockMerkleTreeRoot());
-		eQcoinSeed.getEQcoinSeedRoot().setPassportMerkelTreeRoot(changeLog.getPassportMerkleTreeRoot());
+		eQcoinSeed.plantingTransaction(pendingTransactionList);
 		
 		// Set EQCHeader's Root's hash
-		eqcHiveRoot.setEQCoinSeedHash(eQcoinSeed.getHash());
+		eqcHiveRoot.setEQCoinSeedHash(eQcoinSeed.getProofRoot());
 
 	}
-
-//	public boolean isMeetPreconditions(Object... objects) throws Exception {
-//		TransferOperationTransaction operationTransaction = (TransferOperationTransaction) objects[0];
-//		ChangeLog changeLog = (ChangeLog) objects[1];
-//		if (operationTransaction.getOperation() instanceof UpdateLockOperation) {
-//			if (!operationTransaction.getOperation().isMeetPreconditions(changeLog)) {
-//				return false;
-//			}
-//		} else {
-//			return false;
-//		}
-//		return true;
-//	}
 
 	/**
 	 * Deprecated use public boolean isValid(AccountsMerkleTree changeLog)
@@ -392,35 +367,6 @@ public class EQCHive implements EQCTypable {
 		return true;
 	}
 
-//	public byte[] getTransactionsMerkelTreeRoot() {
-//		Vector<byte[]> transactionsMerkelTreeRootList = new Vector<>();
-//		byte[] bytes = null;
-//		transactionsMerkelTreeRootList.add(transactions.getNewTransactionListMerkelTreeRoot());
-//
-//		if ((signatures != null) && (bytes = signatures.getSignaturesMerkelTreeRoot()) != null) {
-//			transactionsMerkelTreeRootList.add(bytes);
-//		}
-////		else {
-////			transactionsMerkelTreeRootList.add(Util.NULL_HASH);
-////		}
-//
-//		if ((bytes = transactions.getNewPassportListMerkelTreeRoot()) != null) {
-//			transactionsMerkelTreeRootList.add(bytes);
-//		}
-////		else {
-////			transactionsMerkelTreeRootList.add(Util.NULL_HASH);
-////		}
-//
-//		if ((bytes = transactions.getNewCompressedPublickeyListMerkelTreeRoot()) != null) {
-//			transactionsMerkelTreeRootList.add(bytes);
-//		}
-////		else {
-////			transactionsMerkelTreeRootList.add(Util.NULL_HASH);
-////		}
-//		return Util.EQCCHA_MULTIPLE_DUAL(Util.getMerkleTreeRoot(transactionsMerkelTreeRootList), Util.ONE, false,
-//				false);
-//	}
-
 	/**
 	 * Auditing the EQCHive
 	 * <p>
@@ -457,8 +403,8 @@ public class EQCHive implements EQCTypable {
 			}
 
 			// Build AccountsMerkleTree and generate Root and Statistics
-			changeLog.buildPassportMerkleTreeBase();
-			changeLog.generatePassportMerkleTreeRoot();
+			changeLog.buildProofBase();
+			changeLog.generateProofRoot();
 
 			// Verify Root
 //		// Check total supply
@@ -507,7 +453,7 @@ public class EQCHive implements EQCTypable {
 //				return false;
 //			}
 			// Verify EQCHeader
-			if (!eqcHiveRoot.isValid(changeLog, eQcoinSeed.getHash())) {
+			if (!eqcHiveRoot.isValid(changeLog, eQcoinSeed.getProofRoot())) {
 				Log.Error("EQCHeader is invalid!");
 				return false;
 			}
@@ -549,6 +495,7 @@ public class EQCHive implements EQCTypable {
 	 */
 	public void setChangeLog(ChangeLog changeLog) {
 		this.changeLog = changeLog;
+		eQcoinSeed.setChangeLog(changeLog);
 	}
 	
 }

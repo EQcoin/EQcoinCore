@@ -33,6 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import com.eqcoin.avro.O;
+import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Util;
@@ -43,9 +44,10 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class Balance<T> extends IO<T> {
-	private ID balance;
+	private Value balance;
 	
 	public Balance() {
+		balance = new Value();
 	}
 	
 	public Balance(T t) throws Exception {
@@ -56,14 +58,8 @@ public class Balance<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCTypable#isSanity()
 	 */
 	@Override
-	public boolean isSanity() {
-		if(balance == null) {
-			return false;
-		}
-		if(!balance.isSanity()) {
-			return false;
-		}
-		return true;
+	public boolean isSanity() throws Exception {
+		return ((balance != null) && (balance.isSanity()));
 	}
 
 	/* (non-Javadoc)
@@ -76,47 +72,28 @@ public class Balance<T> extends IO<T> {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#parseHeader(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
 	 * @see com.eqchains.serialization.EQCInheritable#parseBody(java.io.ByteArrayInputStream)
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		balance = new ID(EQCType.parseEQCBits(is));
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#getHeaderBytes()
-	 */
-	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#getBodyBytes()
-	 */
-	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(balance.getEQCBits());
-		return null;
-	}
-
-	public void withdraw(ID amount) {
-		balance = balance.subtract(amount);
+		balance = new Value(EQCType.parseEQCBits(is));
 	}
 	
-	public void deposit(ID amount) {
-		balance = balance.add(amount);
+	/* (non-Javadoc)
+	 * @see com.eqcoin.rpc.IO#getBytes()
+	 */
+	@Override
+	public byte[] getBytes() throws Exception {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		os.write(balance.getEQCBits());
+		return os.toByteArray();
+	}
+
+	/**
+	 * @return the balance
+	 */
+	public Value getBalance() {
+		return balance;
 	}
 	
 }

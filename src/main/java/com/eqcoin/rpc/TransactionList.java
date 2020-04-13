@@ -6,6 +6,8 @@ import java.util.Vector;
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.serialization.EQCType;
+import com.eqcoin.util.Util;
+import com.eqcoin.util.Util.LockTool.LockType;
 
 public class TransactionList<T> extends IO<T> {
 	private Vector<Transaction> transactionList;
@@ -41,7 +43,7 @@ public class TransactionList<T> extends IO<T> {
 
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		transactionList = EQCType.parseArray(is, Transaction.class);
+		transactionList = EQCType.parseArray(is, new Transaction(Util.DB()));
 	}
 
 	@Override

@@ -124,19 +124,20 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 	 * @see com.eqchains.avro.TransactionNetwork#getID(com.eqchains.avro.IO)
 	 */
 	@Override
+	// 2020-04-05 Here need do more job
 	public O getID(O readableAddress) {
 		O id = null;
-		Passport account = null;
-		try {
-			account = Util.DB().getPassport(LockTool.addressToAI(EQCType.bytesToASCIISting(readableAddress.getO().array())), Mode.GLOBAL);
-			if(account != null) {
-				id = Util.bytes2O(account.getId().getEQCBits());
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+//		Passport account = null;
+//		try {
+//			account = Util.DB().getPassport(LockTool.readableLockToAI(EQCType.bytesToASCIISting(readableAddress.getO().array())), Mode.GLOBAL);
+//			if(account != null) {
+//				id = Util.bytes2O(account.getId().getEQCBits());
+//			}
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			Log.Error(e.getMessage());
+//		}
 		return id;
 	}
 
@@ -144,19 +145,20 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 	 * @see com.eqchains.avro.TransactionNetwork#getAccount(com.eqchains.avro.IO)
 	 */
 	@Override
+	// 2020-04-05 Here need do more job
 	public O getAccount(O a) {
 		O io = null;
-		Passport account = null;
-		try {
-			account = Util.DB().getPassport(a.o.array(), Mode.GLOBAL);
-			if(account != null) {
-				io = Util.bytes2O(account.getBytes());
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+//		Passport account = null;
+//		try {
+//			account = Util.DB().getPassport(a.o.array(), Mode.GLOBAL);
+//			if(account != null) {
+//				io = Util.bytes2O(account.getBytes());
+//			}
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			Log.Error(e.getMessage());
+//		}
 		return io;
 	}
 

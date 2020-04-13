@@ -220,7 +220,7 @@ public class SyncBlockService extends EQCService {
 					// Network error all miner node and singularity node can't connect just sleep then try again
 					Log.Error(
 							"Network error all miner node and singularity node can't connect just sleep then try again");
-					sleeping(Util.BLOCK_INTERVAL);
+					sleeping(Util.getCurrentBlockInterval().longValue());
 					return;
 				}
 			}
@@ -246,7 +246,7 @@ public class SyncBlockService extends EQCService {
 				maxTail = MinerNetworkClient.getFastestServer(minerIpList);
 				if (maxTail == null) {
 					Log.info("MaxTail can't connect now just sleep then try find again");
-					sleeping(Util.BLOCK_INTERVAL);
+					sleeping(Util.getCurrentBlockInterval().longValue());
 					return;
 				}
 			}
@@ -264,14 +264,19 @@ public class SyncBlockService extends EQCService {
 				} else {
 					// Full node just sleep then try to find&sync again
 					Log.info("Full node just sleep then try to find&sync again");
-					sleeping(Util.BLOCK_INTERVAL);
+					sleeping(Util.getCurrentBlockInterval().longValue());
 				}
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch bloc
 			e.printStackTrace();
 			Log.Error(name + e.getMessage());
-			sleeping(Util.BLOCK_INTERVAL / 60);
+			try {
+				sleeping(Util.getCurrentBlockInterval().longValue() / 60);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+				Log.Error(e1.getMessage());
+			}
 		}
 	}
 
@@ -350,8 +355,8 @@ public class SyncBlockService extends EQCService {
 					// Try to find local chain's which height match with max tail chain
 					Log.info("Try to find local chain's which height match with max tail chain");
 					for (; base >= eQcoinSubchainAccount.getCheckPointHeight().longValue(); --base) {
-						if (Arrays.equals(Util.DB().getEQCHeaderHash(ID.valueOf(base)),
-								SyncblockNetworkClient.getEQCHeaderHash(ID.valueOf(base), syncHiveState.getIp()))) {
+						if (Arrays.equals(Util.DB().getEQCHeaderHash(new ID(base)),
+								SyncblockNetworkClient.getEQCHeaderHash(new ID(base), syncHiveState.getIp()))) {
 							Log.info("Current max tail chain's local base height is: " + base);
 							isValidChain = true;
 							break;
@@ -364,7 +369,7 @@ public class SyncBlockService extends EQCService {
 						// Changed to check if Checkpoint transaction is valid.
 //						for (long i = base + 1; i <= maxTailInfo.getHeight().longValue(); ++i) {
 //							Log.info("Begin verify if No." + i + "'s EQCHeader's difficulty is valid");
-//							if (SyncblockNetworkClient.getEQCHeader(ID.valueOf(i), syncHiveState.getIp())
+//							if (SyncblockNetworkClient.getEQCHeader(new ID(i), syncHiveState.getIp())
 //									.isDifficultyValid()) {
 //								Log.info("No." + i + "'s EQCHeader's difficulty is valid");
 //							} else {
@@ -385,48 +390,48 @@ public class SyncBlockService extends EQCService {
 						if (base < localTail.longValue()) {
 							Log.info("Begin delete EQCHive from " + (base + 1) + " to " + localTail.longValue());
 							for(long i=(base+1); i<=localTail.longValue(); ++i) {
-								Util.DB().deleteEQCHive(ID.valueOf(i));
+								Util.DB().deleteEQCHive(new ID(i));
 							}
 						} else {
 							Log.info("Base " + base + " equal to local tail " + localTail.longValue() + " do nothing");
 						}
 
-						if (ID.valueOf(base).compareTo(Util.DB().getEQCHiveTailHeight()) < 0) {
+						if (new ID(base).compareTo(Util.DB().getEQCHiveTailHeight()) < 0) {
 							Log.info("Base " + base + " equal to local tail " + localTail.longValue() + " beginning recovery and remove Account snapshot");
 							// Recovery base height Accounts table's status
-							Util.recoveryAccountsStatusTo(ID.valueOf(base));
+							Util.recoveryAccountsStatusTo(new ID(base));
 							// Remove Snapshot
-							Util.DB().deletePassportSnapshotFrom(ID.valueOf(base + 1), true);
+							Util.DB().deletePassportSnapshotFrom(new ID(base + 1), true);
 						}
 					
 						// Remove extra Account here need remove accounts after base
 						ID originalAccountNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
-						EQcoinSeedRoot eQcoinSubchainHeader = Util.DB().getEQCHive(ID.valueOf(base), true)
+						EQcoinSeedRoot eQcoinSubchainHeader = Util.DB().getEQCHive(new ID(base), true)
 								.getEQcoinSeed().getEQcoinSeedRoot();
 						if (eQcoinSubchainHeader.getTotalPassportNumbers().compareTo(originalAccountNumbers) < 0) {
 							Log.info("Begin delete extra Account from "
 									+ eQcoinSubchainHeader.getTotalPassportNumbers().getNextID() + " to "
 									+ originalAccountNumbers);
 							for(long i=eQcoinSubchainHeader.getTotalPassportNumbers().getNextID().longValue(); i<=originalAccountNumbers.longValue(); ++i) {
-								Util.DB().deletePassport(ID.valueOf(i), Mode.GLOBAL);
+								Util.DB().deletePassport(new ID(i), Mode.GLOBAL);
 							}
 						} else {
 							Log.info(
 									"Base height's TotalAccountNumbers " + eQcoinSubchainHeader.getTotalPassportNumbers()
 											+ " equal to local tail " + originalAccountNumbers + " do nothing");
 						}
-						Util.DB().saveEQCHiveTailHeight(ID.valueOf(base));
+						Util.DB().saveEQCHiveTailHeight(new ID(base));
 
 						// Begin sync to tail
 						EQCHive maxTailHive = null;
 						for (long i = base + 1; i <= maxTailInfo.getHeight().longValue(); ++i) {
 							Log.info("Begin sync No. " + i + " block from " + syncHiveState.getIp());
-							maxTailHive = SyncblockNetworkClient.getBlock(ID.valueOf(i), syncHiveState.getIp());
+							maxTailHive = SyncblockNetworkClient.getBlock(new ID(i), syncHiveState.getIp());
 							if (maxTailHive == null) {
 								Log.Error("During sync block error occur just  goto find again");
 								break;
 							}
-							changeLog = new ChangeLog(ID.valueOf(i), new Filter(Mode.VALID));
+							changeLog = new ChangeLog(new ID(i), new Filter(Mode.VALID));
 							if (maxTailHive.isValid()) {
 								Log.info("Verify No. " + i + " hive passed");
 								Util.DB().saveEQCHive(maxTailHive);
@@ -436,7 +441,7 @@ public class SyncBlockService extends EQCService {
 							} else {
 								Log.Error("Valid blockchain failed just goto sleep");
 								changeLog.clear();
-								sleeping(Util.BLOCK_INTERVAL);
+								sleeping(Util.getCurrentBlockInterval().longValue());
 								return;
 							}
 						}
@@ -463,7 +468,12 @@ public class SyncBlockService extends EQCService {
 			if(e instanceof IOException) {
 				Util.updateDisconnectIPStatus(syncHiveState.getIp());
 			}
-			sleeping(Util.BLOCK_INTERVAL);
+			try {
+				sleeping(Util.getCurrentBlockInterval().longValue());
+			} catch (Exception e1) {
+				e1.printStackTrace();
+				Log.Error(e1.getMessage());
+			}
 		}
 	}
 
@@ -500,7 +510,12 @@ public class SyncBlockService extends EQCService {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				Log.Error(e.getMessage());
-				sleeping(Util.BLOCK_INTERVAL);
+				try {
+					sleeping(Util.getCurrentBlockInterval().longValue());
+				} catch (Exception e1) {
+					e1.printStackTrace();
+					Log.Error(e1.getMessage());
+				}
 			}
 		}
 	}

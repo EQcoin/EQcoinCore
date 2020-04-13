@@ -34,14 +34,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.AssetPassport;
-import com.eqcoin.blockchain.passport.Lock;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
 import com.eqcoin.blockchain.transaction.operation.Operation.OP;
-import com.eqcoin.blockchain.transaction.operation.UpdateLockOP;
+import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
@@ -53,7 +53,6 @@ import com.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class ZionOPTransaction extends ZionTransaction {
-	private Operation operation;
 
 	public ZionOPTransaction() {
 		super();
@@ -65,106 +64,27 @@ public class ZionOPTransaction extends ZionTransaction {
 		super(bytes);
 	}
 
-	/**
-	 * @return the operation
-	 */
-	public Operation getOperation() {
-		return operation;
-	}
-
-	/**
-	 * @param operation the operation to set
-	 */
-	public void setOperation(Operation operation) {
-		this.operation = operation;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqzip.eqcoin.blockchain.Transaction#getMaxBillingSize()
-	 */
-	@Override
-	public int getMaxBillingLength() {
-		int size = 0;
-
-		// TransferTransaction size
-		size += super.getMaxBillingLength();
-
-		// Operations size
-		size += operation.getBin().length;
-
-		return size;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqzip.eqcoin.blockchain.Transaction#getBillingSize()
-	 */
-	@Override
-	public int getBillingSize() throws Exception {
-		int size = 0;
-		// TransferTransaction size
-		size += super.getBillingSize();
-
-		// Operations size
-		size += operation.getBin().length;
-		return super.getBillingSize();
+	public ZionOPTransaction(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
 
 	@Override
 	public boolean isValid()
 			throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!operation.isMeetPreconditions()) {
-			Log.Error("Operation " + operation + " doesn't meet preconditions.");
-			return false;
-		}
-		if(!operation.isValid()) {
-			Log.Error("Operation " + operation + " isn't valid.");
-			return false;
-		}
 		if(!super.isValid()) {
 			return false;
 		}
+		if(!isOperationListValid()) {
+			return false;
+		}
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((operation == null) ? 0 : operation.hashCode());
-		return result;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		ZionOPTransaction other = (ZionOPTransaction) obj;
-		if (operation == null) {
-			if (other.operation != null)
-				return false;
-		} else if (!operation.equals(other.operation))
-			return false;
-		return true;
-	}
-	
 	public String toInnerJson() {
 		return
 		"\"ZionOPTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n"
-				+ operation.toInnerJson() + ",\n"
+				+ "\"OperationList\":" + "\n{\n" + "\"Size\":" + "\"" + operationList.size() + "\"" + ",\n"
+				+ "\"List\":" + "\n" + getOperationListString() + "\n},\n"
 				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
 				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
@@ -185,17 +105,8 @@ public class ZionOPTransaction extends ZionTransaction {
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#isDerivedSanity(com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
 	@Override
-	public boolean isDerivedSanity() {
-		if(!super.isDerivedSanity()) {
-			return false;
-		}
-		if(operation == null) {
-			return false;
-		}
-		if (!(operation instanceof UpdateLockOP)) {
-			return false;
-		}
-		if (!operation.isSanity()) {
+	public boolean isDerivedSanity() throws Exception {
+		if(!super.isDerivedSanity() && !isOperationListSanity()) {
 			return false;
 		}
 		
@@ -205,7 +116,7 @@ public class ZionOPTransaction extends ZionTransaction {
 	@Override
 	protected void derivedPlanting() throws Exception {
 		super.derivedPlanting();
-		operation.execute();
+		plantingOperationList();
 	}
 
 	public byte[] getBodyBytes() throws Exception {
@@ -213,7 +124,7 @@ public class ZionOPTransaction extends ZionTransaction {
 		try {
 			// Serialization Super body
 			os.write(super.getBodyBytes());
-			os.write(operation.getBytes());
+			os.write(EQCType.eqcSerializableListToArray(operationList));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -226,7 +137,7 @@ public class ZionOPTransaction extends ZionTransaction {
 		// Parse Super body
 		super.parseBody(is);
 		// Parse Operation
-		operation = Operation.parseOperation(is);
+		operationList = EQCType.parseArray(is, new Operation(this));
 	}
 
 	/* (non-Javadoc)
@@ -235,7 +146,24 @@ public class ZionOPTransaction extends ZionTransaction {
 	@Override
 	protected void derivedTxOutPlanting() throws Exception {
 		super.derivedTxOutPlanting();
-		operation.execute();
+		plantingOperationList();
 	}
+
+//	// Here exists one bug still doesn't know how to fix it
+//	/* (non-Javadoc)
+//	 * @see com.eqcoin.blockchain.transaction.ZionTransaction#getProofLength()
+//	 */
+//	@Override
+//	protected Value getProofLength() throws Exception  {
+//		Value value = null;
+////		try {
+//			value = new Value(EQCType.eqcSerializableListToArray(operationList).length);
+//			value = super.getProofLength().add(value);
+////		} catch (Exception e) {
+////			// TODO Auto-generated catch block
+////			e.printStackTrace();
+////		}
+//		return value;
+//	}
 	
 }

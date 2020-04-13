@@ -29,6 +29,7 @@
  */
 package com.eqcoin.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.text.SimpleDateFormat;
@@ -55,28 +56,25 @@ public final class Log {
 	private Log() {}
 
 	private static void instance() {
-		if (log == null) {
-			synchronized (Log.class) {
-				if (log == null) {
+		File file = new File(Util.LOG_PATH);
+		if (!file.exists() || log == null) {
 //					System.out.close();
-					log = Logger.getLogger(MethodHandles.lookup().lookupClass().getSimpleName());
-					log.setLevel(Level.ALL);
-					log.setUseParentHandlers(false);
-					try {
-						fileHandler = new FileHandler(Util.LOG_PATH, true);
-						fileHandler.setFormatter(new EQCFormatter());
-						log.addHandler(fileHandler);
-						consoleHandler = new ConsoleHandler();
-						consoleHandler.setFormatter(new EQCFormatter());
-						log.addHandler(consoleHandler);
-					} catch (SecurityException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+			log = Logger.getLogger(MethodHandles.lookup().lookupClass().getSimpleName());
+			log.setLevel(Level.ALL);
+			log.setUseParentHandlers(false);
+			try {
+				fileHandler = new FileHandler(Util.LOG_PATH, true);
+				fileHandler.setFormatter(new EQCFormatter());
+				log.addHandler(fileHandler);
+				consoleHandler = new ConsoleHandler();
+				consoleHandler.setFormatter(new EQCFormatter());
+				log.addHandler(consoleHandler);
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}

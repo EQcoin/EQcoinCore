@@ -33,8 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.eqcoin.blockchain.passport.Lock;
-import com.eqcoin.blockchain.passport.Lock.LockShape;
+import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -48,12 +47,12 @@ import com.eqcoin.util.Util;
  */
 public class TxIn extends Tx {
 	
-	public TxIn(byte[] bytes, Lock.LockShape lockShape) throws Exception {
-		super(bytes, lockShape);
+	public TxIn(byte[] bytes) throws Exception {
+		super(bytes);
 	}
 	
-	public TxIn(ByteArrayInputStream is, Lock.LockShape lockShape) throws Exception {
-		super(is, lockShape);
+	public TxIn(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
 	
 	public TxIn() {
@@ -75,8 +74,8 @@ public class TxIn extends Tx {
 		return 
 		"\"TxIn\":" + 
 		"\n{" +
-			lock.toInnerJson() + ",\n" +
-			"\"Value\":" + "\"" +  Long.toString(value) + "\"" + "\n" +
+		"\"PassportId\":" + passportId + ",\n" +
+		"\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
 		"}";
 	}
 	

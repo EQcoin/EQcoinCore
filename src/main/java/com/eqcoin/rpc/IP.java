@@ -43,6 +43,8 @@ import com.eqcoin.serialization.EQCType;
  */
 public class IP extends EQCSerializable {
 	private String ip;
+	
+	public IP() {}
 
 	public IP(String ip) {
 		this.ip = ip;
@@ -56,6 +58,14 @@ public class IP extends EQCSerializable {
 		super(is);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
+		return (T) new IP(is);
+	}
+
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#parseBody(java.io.ByteArrayInputStream)
 	 */

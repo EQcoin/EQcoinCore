@@ -30,6 +30,7 @@
 package com.eqcoin;
 
 import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,7 +42,8 @@ import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
-import com.eqcoin.blockchain.transaction.TxOut;
+import com.eqcoin.blockchain.transaction.Value;
+import com.eqcoin.blockchain.transaction.ZionTxOut;
 import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.keystore.Keystore;
@@ -64,6 +66,8 @@ import com.eqcoin.service.state.EQCServiceState;
 import com.eqcoin.service.state.NewHiveState;
 import com.eqcoin.service.state.EQCServiceState.State;
 import com.eqcoin.test.Test;
+import com.eqcoin.util.Base58;
+import com.eqcoin.util.Base580;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -81,6 +85,24 @@ public class Singularity {
 	 */
 	public static void main(String[] args) {
 		Thread.currentThread().setPriority(10);
+		try {
+//			byte[] bytes = new byte[]{1,1,1,1};
+//			long value = Util.bytesToLong(bytes);
+//			Log.info("" + value);
+//			com.eqcoin.keystore.UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(1);
+//			Test.testKeystore();
+//			Log.info(LockTool.AIToReadableLock(Keystore.getInstance().getUserAccounts().get(0).getAddressAI()));
+//			byte[] bytes = LockTool.readableLockToAI(LockTool.AIToReadableLock(Keystore.getInstance().getUserAccounts().get(0).getAddressAI()));
+//			int i;
+//			Util.init();
+//			Util.IsDeleteTransactionInPool = false;
+//			MinerService.getInstance().start();
+//			MinerService.getInstance().miningOneHive();
+//			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
+//			Log.info(eQcoinRootPassport.toString());
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
+		}
 //		EQCBlockChainH2.getInstance().saveEQCBlockTailHeight(new ID(BigInteger.valueOf(0)));
 //		EQCBlockChainRocksDB.getInstance().saveEQCBlockTailHeight(new ID(BigInteger.valueOf(0)));
 //		MinerService.getInstance().start();
@@ -153,8 +175,32 @@ public class Singularity {
 //			Util.init();
 //			for(int i=2; i<10000; ++i)
 //			EQCBlockChainH2.getInstance().test(ID.valueOf(7));
-			long i = Integer.MAX_VALUE + 1;
-			Log.info(""+Util.MAX_NONCE);
+//			Value value = Value.ZERO;
+//			value = value.add(BigInteger.TEN);
+//			Log.info(value.divide(BigInteger.valueOf(4)).toString());
+//			BigInteger bigInteger = BigInteger.ZERO;
+//			bigInteger.add(BigInteger.ONE);
+//			String content1="\u0E1A";
+//			Log.info(content1);
+//			Log.info(bigInteger.toString());
+			byte[] bytes = Util.getSecureRandomBytes();
+			Log.info(Base580.encode(Util.EQCCHA_MULTIPLE_DUAL(bytes, Util.ONE, false, true)));
+			Log.info("" + Base580.encode(Util.EQCCHA_MULTIPLE_DUAL(bytes, Util.ONE, false, true)).length());
+			Log.info(Base580.encode(bytes));
+			Log.info("" + Base580.encode(bytes).length());
+//			Log.info(new String(Base64.getEncoder().encode(bytes)));
+//			Log.info("" + Base64.getEncoder().encode(bytes).length);
+//			long i = Integer.MAX_VALUE + 1;
+//			Log.info(""+Util.MAX_NONCE);
+//			try {
+//				i = 1/0;
+//			} catch (Exception e) {
+//				Log.Error(e.getMessage());
+//				throw e;
+//			} 
+//			finally {
+//				Log.info("finallyA");
+//			}
 //			EQCBlockChainH2 .getInstance().test1(ID.valueOf(747));
 //			Log.info("Hash counter: " + Test.testHashCounter(1000000000d, 2^256));
 //			Test.testMultiExtendTime();
@@ -192,10 +238,11 @@ public class Singularity {
 //			Log.info("" + Util.cypherTotalSupply(ID.THREE));
 //			Log.info(SyncblockNetworkClient.getBlock(ID.valueOf(410), Util.SINGULARITY_IP).toString());
 //			SyncBlockService.getInstance().setMode(MODE.FULL);
-//			Util.DB().saveEQCBlockTailHeight(ID.ZERO);
+//			Util.DB().saveEQCHiveTailHeight(ID.ZERO);
 //			ID id = Util.DB().getEQCBlockTailHeight();
 //			SyncBlockService.getInstance().start();
-//			MinerService.getInstance().start();
+//			Log.info( Util.DB().getEQCHiveTailHeight().toString());
+//			Test.testKeystore();
 //			Thread.sleep(5000);
 //			MinerService.getInstance().stopMining();
 //			MinerService.getInstance().startMining();
@@ -253,7 +300,6 @@ public class Singularity {
 //					Log.Error(e.getMessage());
 //				}
 //			}
-//			Test.testKeystore();
 //			SyncBlockService.getInstance().start();
 //			SyncBlockService.getInstance().offerState(new EQCServiceState(State.SERVER));
 //			Test.sendTransaction();
