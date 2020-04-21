@@ -33,16 +33,18 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.security.NoSuchAlgorithmException;
+
 import org.junit.jupiter.api.Test;
 
 import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.LockTool;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.util.Base58;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -52,9 +54,14 @@ import com.eqcoin.util.Util.LockTool.LockType;
 public class LockTest {
 	 @Test
 	    void verifyAddressCRC32C() {
-		   String readableAddress = Keystore.getInstance().getUserAccounts().get(0).getReadableLock();
+		   String readableAddress = Keystore.getInstance().getUserProfiles().get(0).getReadableLock();
 		   Log.info(readableAddress);
-	        assertTrue(LockTool.verifyAddressCRC32C(readableAddress));
+	        try {
+				assertTrue(LockTool.verifyAddressCRC32C(readableAddress));
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	    }
 	   
 	   @Test
@@ -73,19 +80,30 @@ public class LockTest {
 	   
 	   @Test
 	   void generateAddress() {
-		   byte[] publickey =  Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(1).getPublicKey(), "abc");
-		   String address = LockTool.generateAddress(publickey, LockType.T1);
+		   byte[] publickey =  Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(1).getPublicKey(), "abc");
+		   String address = null;
+		try {
+			address = LockTool.generateLock(publickey, LockType.T1);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		   Log.info(address);
-		   assertTrue(LockTool.verifyLockAndPublickey(Keystore.getInstance().getUserAccounts().get(1).getReadableLock(), publickey));
-		   assertTrue(LockTool.verifyLockAndPublickey(address, publickey));
+		   try {
+			assertTrue(LockTool.verifyLockAndPublickey(Keystore.getInstance().getUserProfiles().get(1).getReadableLock(), publickey));
+			assertTrue(LockTool.verifyLockAndPublickey(address, publickey));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	   }
 	   
 	   @Test
 	   void verifyAI2Address() {
 //		   EQCLock lock = new EQCLock();
-//		   lock.cloneFromReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+//		   lock.cloneFromReadableLock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 //		   try {
-//			assertEquals(Keystore.getInstance().getUserAccounts().get(0).getReadableLock(), lock.getReadableLock());
+//			assertEquals(Keystore.getInstance().getUserProfiles().get(0).getReadableLock(), lock.getReadableLock());
 //		} catch (Exception e) {
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();

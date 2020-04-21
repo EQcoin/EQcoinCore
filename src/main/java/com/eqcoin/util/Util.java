@@ -92,6 +92,7 @@ import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.lock.EQCPublickey;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
@@ -108,8 +109,7 @@ import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.ZeroZionCoinbaseTransaction;
 import com.eqcoin.blockchain.transaction.ZionTxOut;
 import com.eqcoin.blockchain.transaction.ZionCoinbaseTransaction;
-import com.eqcoin.configuration.Configuration;
-import com.eqcoin.crypto.EQCPublicKey;
+import com.eqcoin.crypto.EQCECCPublicKey;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.keystore.Keystore.ECCTYPE;
@@ -125,7 +125,6 @@ import com.eqcoin.rpc.client.MinerNetworkClient;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.test.Test;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -179,6 +178,8 @@ public final class Util {
 	public final static int ONE = 1;
 
 	public final static int TWO = 2;
+	
+	public final static int THREE = 3;
 	
 	public final static int ELEVEN = 11;
 
@@ -235,7 +236,7 @@ public final class Util {
 
 	public static final String KEYSTORE_PATH_BAK = PATH + File.separator + "EQcoin.keystore.bak";
 
-	public static final String LOG_PATH = PATH + File.separator + "log.txt";
+	public static final String LOG_PATH = PATH + File.separator + "log.%u.%g.txt";
 
 	public final static String AVRO_PATH = PATH + File.separator + "AVRO";
 
@@ -251,6 +252,8 @@ public final class Util {
 	
 	public final static String H2_DATABASE_NAME = H2_PATH + File.separator + "EQcoin";
 
+	public final static String H2_DATABASE_FULL_NAME = H2_PATH + File.separator + "EQcoin.mv";
+	
 	/**  
 	 * Compressed publickey and ASN.1 DER signature's length specification
 	 *	ECC curve compressed publickey length(bytes)  signature length(bytes)
@@ -336,15 +339,17 @@ public final class Util {
 	
 	public static final int TRANSACTION_NETWORK_PORT = 9977;
 	
-	public static final String SINGULARITY_A = "2gVXCVhzQBGVkhDZtUHt6hBM7UEs3wopNnLLA1q5Bjbs1DKEkY";
+	public static final String SINGULARITY_A = "2X3u58daVVmaz7sfLVLtwCBG4XtAgKrnR6frUanGPN1NPG2Fm2DSh2SCo4fBxKr5dCuXWiq3PV9MQXTM1FAHpoGfBzPyLy";
 	
-	public static final String SINGULARITY_B = "2J9DMRSrUD9gZWWLEfKbwwv9GFED4szodSyFrfcpNinX8Ke9SW";
+	public static final String SINGULARITY_B= "27hDUN9QAZ5KF1j2uJsHupqCZ9CDq2n4TUMzvExZcnxznrfGvi122ajY34acoArxPjCm18jrTnraeHnJoDwr4Rg7WZL7MZ";
 	
-	public static final String SINGULARITY_C = "22diDLSo59iEa2ySEYXm3W5rGQj1ofB14BL6hNSUCApo9sC3EQU";
+	public static final String SINGULARITY_C= "2B9B2urjG5Y1vEb82RncAnH4wCQcpPyHntZPJWhCvSQFbPZCgAHqEWS4JMCsjaKxWoYTnMQuFtxtCXBZtCfmsR42sCyAxJ";
 	
 	public static final int MAX_COUNTER = 3;
 	
 	public static final String SHA3_512 = "SHA3-512";
+	
+	public static final String SHA3_256 = "SHA3-256";
 	
 	public static final int SHA3_256_LEN = 32;
 	
@@ -357,6 +362,15 @@ public final class Util {
 	public static final BigInteger T2_LOCK_PROOF_SPACE_COST = BigInteger.valueOf(82);
 	
 	public static boolean IsDeleteTransactionInPool = false;
+	
+//	static {
+	// 2020-04-19 If use this way initialize will break log output into console still don't konw how to slove it
+//		SINGULARITY_A = (Keystore.getInstance().getUserProfiles() == null)?null:Keystore.getInstance().getUserProfiles().get(0).getReadableLock();
+//		
+//		SINGULARITY_B = (Keystore.getInstance().getUserProfiles() == null)?null:Keystore.getInstance().getUserProfiles().get(1).getReadableLock();
+//		
+//		SINGULARITY_C = (Keystore.getInstance().getUserProfiles() == null)?null:Keystore.getInstance().getUserProfiles().get(2).getReadableLock();
+//	}
 	
 //	public static ID [] FIBONACCI = {
 //			new ID(1597),
@@ -450,45 +464,14 @@ public final class Util {
 		System.err.close();
 	    System.setErr(System.out);
 		createDir(PATH);
-//		createDir(AVRO_PATH);
 		createDir(DB_PATH);
 		createDir(HIVE_PATH);
 		createDir(H2_PATH);
-		createDir(ROCKSDB_PATH);
-//		Test.testKeystore(); // Test stub
-//		File file = new File(ROCKSDB_PATH + File.separator + "LOCK");
-//		if(file.exists()) {
-//			if(file.delete()) {
-//				Log.info("Lock delete");
-//			}
-//			else {
-//				Log.info("Lock undelete");
-//			}
-//		}
-//		else {
-//			Log.info("Lock doesn't exists");
-//		}
-		if (!Configuration.getInstance().isInitSingularityBlock()
+		if (DB().getEQCHiveTailHeight() == null
 				/* && Keystore.getInstance().getUserAccounts().size() > 0 Will Remove when Cold Wallet ready */) {
-//			Log.info("0");
-//			Test.testKeystore();
-			DB().saveEQCHiveTailHeight(ID.ZERO);
 			EQCHive eqcBlock = recoverySingularityStatus();
-//			EQCBlockChainH2.getInstance().saveEQCBlock(eqcBlock);
-//			Log.info("1");
+			Log.info(eqcBlock.toString());
 			DB().saveEQCHive(eqcBlock);
-//			Address address = eqcBlock.getTransactions().getAddressList().get(0);
-//			if(!EQCBlockChainH2.getInstance().isAddressExists(address)) {
-//				EQCBlockChainH2.getInstance().appendAddress(address, SerialNumber.ZERO);
-//			}
-//			EQCBlockChainH2.getInstance().addAllTransactions(eqcBlock);// .addTransaction(eqcBlock.getTransactions().getTransactionList().get(0),
-																		// SerialNumber.ZERO, 0);
-//			EQCBlockChainH2.getInstance().saveEQCBlockTailHeight(new ID(BigInteger.ZERO));
-//			Log.info("2");
-//			EQCBlockChainRocksDB.getInstance().saveEQCBlockTailHeight(ID.ZERO);
-//			Log.info("3");
-			Configuration.getInstance().updateIsInitSingularityBlock(true);
-//			Log.info("4");
 		}
 		cookie = new Cookie();
 //		Util.IP = getIP();
@@ -621,7 +604,7 @@ public final class Util {
 		byte[] result = null;
 
 		BigDecimal begin = new BigDecimal(new BigInteger(1, data));
-		MathContext mc = new MathContext(Util.THOUSANDPLUS, RoundingMode.HALF_EVEN);
+		MathContext mc = new MathContext(Util.HUNDREDPULS, RoundingMode.HALF_EVEN);
 		BigDecimal a = null, b = null, c = null, d = null;
 		int bufferLen = ((data.length+1)*2+417) * multiple;
 		ByteBuffer byteBuffer = ByteBuffer.allocate(bufferLen);
@@ -894,13 +877,22 @@ public final class Util {
 		return new BigInteger(1, bytes).longValue();
 //		return ByteBuffer.allocate(8).put(bytes, 0, bytes.length).flip().getLong();
 	}
+	
+	public static boolean isFileExists(final String pathname) {
+		boolean isExists = false;
+		File file =  new File(pathname);
+		if(file.length() > 0) {
+			isExists = true;
+		}
+		return isExists;
+	}
 
 	public static boolean createDir(final String dir) {
 		boolean boolIsSuccessful = true;
 		File file = new File(dir);
 		if (!file.isDirectory()) {
 			boolIsSuccessful = file.mkdir();
-			Log.info("Create directory " + dir + boolIsSuccessful);
+			Log.info("Create directory " + dir + " " + boolIsSuccessful);
 		} else {
 			if (file.isDirectory()) {
 				Log.info(dir + " already exists.");
@@ -1066,11 +1058,17 @@ public final class Util {
 
 	public static String dumpBytesLittleEndianHex(byte[] bytes) {
 		StringBuilder sb = new StringBuilder();
+		String hex = null;
+		int j = 0;
 		for (int i = 0; i < bytes.length; ++i) {
 			if (i % 8 == 0) {
-				sb.append(" ");
+				sb.append(" " + j++ + ":");
 			}
-			sb.append(Integer.toHexString(bytes[i] & 0xFF));
+			hex = Integer.toHexString(bytes[i] & 0xFF);
+			if(hex.length() == 1) {
+				hex = "0" + hex;
+			}
+			sb.append(hex);
 		}
 		return sb.toString();
 	}
@@ -1205,7 +1203,7 @@ public final class Util {
 			} else if (lockType == LockType.T2) {
 				eccType = ECCTYPE.P521;
 			}
-			EQCPublicKey eqPublicKey = new EQCPublicKey(eccType);
+			EQCECCPublicKey eqPublicKey = new EQCECCPublicKey(eccType);
 			// Create EQPublicKey according to java Publickey
 			eqPublicKey.setECPoint(compressedPublickey);
 			Log.info(Util.dumpBytesBigEndianBinary(eqPublicKey.getEncoded()));
@@ -1258,465 +1256,14 @@ public final class Util {
 		return sign;
 	}
 
-	/**
-	 * @author Xun Wang
-	 * @date Sep 24, 2018
-	 * @email 10509759@qq.com
-	 */
-	public static class LockTool {
-		public final static int T1_PUBLICKEY_LEN = 33;
-		public final static int T2_PUBLICKEY_LEN = 67;
-
-		public enum LockType {
-			T1, T2;
-			public static LockType get(int ordinal) {
-				LockType lockType = null;
-				switch (ordinal) {
-				case 0:
-					lockType = LockType.T1;
-					break;
-				case 1:
-					lockType = LockType.T2;
-					break;
-				}
-				return lockType;
-			}
-			public byte[] getEQCBits() {
-				return EQCType.intToEQCBits(this.ordinal());
-			}
-		}
-
-		private LockTool() {
-		}
-	
-		/**
-		 * @param bytes compressed PublicKey. Each input will be extended 100 times
-		 *              using EQCCHA_MULTIPLE
-		 * @param type  EQC Address’ type
-		 * @return EQC address
-		 */
-		public static String generateAddress(byte[] publicKey, LockType type) {
-			byte[] publickey_hash = null;
-			if(type == LockType.T1) {
-				publickey_hash = EQCCHA_MULTIPLE_DUAL(publicKey, ELEVEN, false, true);
-			}
-			else if(type == LockType.T2) {
-				publickey_hash = EQCCHA_MULTIPLE_DUAL(publicKey, HUNDREDPULS, true, true);
-			}
-			return _generateLock(publickey_hash, type);
-		}
-		
-		private static String _generateLock(byte[] publickey_hash, LockType type) {
-			byte[] type_publickey_hash = null;
-			byte[] CRC32C = null;
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			
-			// Calculate (type + PublickeyHash)'s CRC32C
-			try {
-				os.write(type.ordinal());
-//				Log.info("AddressType: " + type.ordinal());
-				os.write(publickey_hash);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
-			try {
-				type_publickey_hash = os.toByteArray();
-				CRC32C = CRC32C(type_publickey_hash);
-				os = new ByteArrayOutputStream();
-				os.write(CRC32C);
-				os.write(type.ordinal());
-				os.write(CRC32C);
-				os.write(publickey_hash);
-				os.write(CRC32C);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
-			byte[] crc32c = null;
-			if(type == LockType.T1) {
-				crc32c = CRC32C(multipleExtend(os.toByteArray(), ELEVEN));
-			}
-			else if(type == LockType.T2) {
-				crc32c = CRC32C(multipleExtend(os.toByteArray(), HUNDREDPULS));
-			}
-			// Generate address Base58(type) + Base58((HASH + (type + HASH)'s CRC32C))
-			try {
-				os = new ByteArrayOutputStream();
-				os.write(publickey_hash);
-				os.write(crc32c);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			return Base58.encode(new byte[] { (byte) type.ordinal() }) + Base58.encode(os.toByteArray());
-		}
-		
-		public static boolean verifyEQCLockAndPublickey(EQCLock eqcLock, byte[] compressedPublickey) {
-			byte[] publickey_hash = null;
-			try {
-				if(eqcLock.getLockType() == LockType.T1) {
-					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, ELEVEN, false, true);
-				}
-				else if(eqcLock.getLockType() == LockType.T2) {
-					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, HUNDREDPULS, true, true);
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
-			return Arrays.equals(publickey_hash, eqcLock.getLockHash());
-		}
-		
-		public static boolean verifyLockAndPublickey(String address, byte[] compressedPublickey) {
-			byte[] hidden_address = null;
-			byte[] publickey_hash = null;
-			LockType lockType = getLockType(address);
-			try {
-				if(lockType == LockType.T1) {
-					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, ELEVEN, false, true);
-				}
-				else if(lockType == LockType.T2) {
-					publickey_hash = EQCCHA_MULTIPLE_DUAL(compressedPublickey, HUNDREDPULS, true, true);
-				}
-				hidden_address = Base58.decode(address.substring(1));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
-			return Arrays.equals(publickey_hash, Arrays.copyOf(hidden_address, hidden_address.length - CRC32C_LEN));
-		}
-		
-		public static byte[] readableLockToAI(String address) throws Exception {
-			byte[] bytes = null;
-			ByteArrayOutputStream os = null;
-			os = new ByteArrayOutputStream();
-			os.write(Base58.decode(address.substring(0, 1)));
-			bytes = Base58.decode(address.substring(1));
-			os.write(bytes, 0, bytes.length - CRC32C_LEN);
-			return os.toByteArray();
-		}
-		
-		public static byte[] publickeyToAI(byte[] compressedPublickey) throws IOException {
-			LockType lockType = getLockType(compressedPublickey);
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			if(lockType == LockType.T1) {
-				os.write(lockType.ordinal());
-				os.write(EQCCHA_MULTIPLE_DUAL(compressedPublickey, ELEVEN, false, true));
-			}
-			else if(lockType == LockType.T2) {
-				os.write(lockType.ordinal());
-				os.write(EQCCHA_MULTIPLE_DUAL(compressedPublickey, HUNDREDPULS, true, true));
-			}
-			return os.toByteArray();
-		}
-
-		public static byte[] publickeyHashToAI(LockType lockType, byte[] publickeyHash) throws IOException {
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			os.write(lockType.ordinal());
-			os.write(publickeyHash);
-			return os.toByteArray();
-		}
-		
-		public static String EQCLockToReadableLock(EQCLock eqcLock) throws NoSuchFieldException {
-			Objects.requireNonNull(eqcLock);
-			return _generateLock(eqcLock.getLockHash(), eqcLock.getLockType());
-		}
-		
-		public static String AIToReadableLock(byte[] bytes) throws NoSuchFieldException {
-			EQCType.assertNotNull(bytes);
-			LockType lockType = LockType.T1;
-			if (bytes[0] == 0) {
-				lockType = LockType.T1;
-			} else if (bytes[0] == 1) {
-				lockType = LockType.T2;
-			} 
-//			else if (bytes[0] == 2) {
-//				lockType = AddressType.T3;
-//			}
-			else {
-				throw new UnsupportedOperationException("Unsupport type: " + bytes[0]);
-			}
-			
-			return _generateLock(Arrays.copyOfRange(bytes, 1, bytes.length), lockType);
-		}
-		
-		// 2020-02-23 need review this
-		public static boolean isReadableLockSanity(String readableLock) {
-			byte[] bytes = null;
-			String addressContent = null, subString = null;
-			char[] addressChar = null;
-				if(readableLock.length() < MIN_ADDRESS_LEN || readableLock.length() > MAX_ADDRESS_LEN) {
-					return false;
-				}
-				addressChar = readableLock.toCharArray();
-				if(addressChar[0] != '1' && addressChar[0] != '2') {
-					return false;
-				}
-				for(char alphabet : addressChar) {
-					if(!Base58.isBase58Char(alphabet)) {
-						return false;
-					}
-				}
-//				subString = address.substring(1);
-//				bytes = Base58.decode(subString);
-//				addressContent = Base58.encode(bytes);
-//				if(!addressContent.equals(subString)) {
-//					return false;
-//				}
-			
-			return true;
-		}
-		
-		public static boolean verifyAddressCRC32C(String address) {
-			byte[] bytes = null;
-			byte[] crc32c = new byte[CRC32C_LEN];
-			byte[] CRC32C = null;
-			byte[] CRC32CC = null;
-			byte[] type_publickey_hash = null;
-			LockType lockType = getLockType(address);
-			
-			try {
-				bytes = Base58.decode(address.substring(1));
-				System.arraycopy(bytes, bytes.length - CRC32C_LEN, crc32c, 0, CRC32C_LEN);
-				ByteArrayOutputStream os = new ByteArrayOutputStream();
-				os.write(Base58.decode(address.substring(0, 1)));
-				os.write(bytes, 0, bytes.length - CRC32C_LEN);
-				try {
-					type_publickey_hash = os.toByteArray();
-					CRC32CC = CRC32C(type_publickey_hash);
-					os = new ByteArrayOutputStream();
-					os.write(CRC32CC);
-					os.write(Base58.decode(address.substring(0, 1)));
-					os.write(CRC32CC);
-					os.write(bytes, 0, bytes.length - CRC32C_LEN);
-					os.write(CRC32CC);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				if(lockType == LockType.T1) {
-					CRC32C = CRC32C(multipleExtend(os.toByteArray(), ELEVEN));
-				}
-				else if(lockType == LockType.T2) {
-					CRC32C = CRC32C(multipleExtend(os.toByteArray(), HUNDREDPULS));
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
-			return Arrays.equals(crc32c, CRC32C);
-		}
-		
-//		/**
-//		 * @param bytes compressed PublicKey. Each input will be extended 100 times
-//		 *              using EQCCHA_MULTIPLE
-//		 * @param type  EQC Address’ type
-//		 * @return EQC address
-//		 */
-//		@Deprecated 
-//		public static String generateAddress(byte[] publicKey, AddressType type) {
-//			byte[] bytes = EQCCHA_MULTIPLE(publicKey, Util.HUNDRED, true);
-//			ByteArrayOutputStream os = new ByteArrayOutputStream();
-//			// Calculate (type | trim(HASH))'s CRC8ITU
-//			os.write(type.ordinal());
-//			Log.info("AddressType: " + type.ordinal());
-//			try {
-//				os.write(trim(bytes));
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//				Log.Error(e.getMessage());
-//			}
-//			byte crc = CRC8ITU.update(os.toByteArray());
-//			// Generate address Base58(type) + Base58((trim(HASH) + (type | trim(HASH))'s
-//			// CRC8ITU))
-//			os = new ByteArrayOutputStream();
-//			try {
-//				os.write(trim(bytes));
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			os.write(crc);
-//			return Base58.encode(new byte[] { (byte) type.ordinal() }) + Base58.encode(os.toByteArray());
-//		}
-//		
-//		@Deprecated 
-//		public static boolean verifyAddress(String address, byte[] publickey) {
-//			byte[] bytes = null;
-//			byte crc = 0;
-//			byte CRC = 0;
-//			byte[] publicKey_hash = trim(EQCCHA_MULTIPLE(publickey, HUNDRED, true));
-//			try {
-//				bytes = Base58.decode(address.substring(1));
-//				crc = bytes[bytes.length - 1];
-//				ByteArrayOutputStream os = new ByteArrayOutputStream();
-//				os.write(Base58.decode(address.substring(0, 1)));
-//				os.write(bytes, 0, bytes.length - 1);
-//				CRC = CRC8ITU.update(os.toByteArray());
-//			} catch (Exception e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//				Log.Error(e.getMessage());
-//			}
-//			return (crc == CRC) && Arrays.equals(publicKey_hash, Arrays.copyOf(bytes, bytes.length - 1));
-//		}
-//		
-//		@Deprecated 
-//		public static byte[] addressToAI(String address) {
-//			byte[] bytes = null;
-//			ByteArrayOutputStream os = null;
-//			try {
-//				os = new ByteArrayOutputStream();
-//				os.write(Base58.decode(address.substring(0, 1)));
-//				bytes = Base58.decode(address.substring(1));
-//				os.write(bytes, 0, bytes.length - 1);
-//			} catch (Exception e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//				Log.Error(e.getMessage());
-//			}
-//			return os.toByteArray();
-//		}
-//
-//		@Deprecated 
-//		public static String AIToAddress(byte[] bytes) {
-//			AddressType lockType = AddressType.T1;
-//			if (bytes[0] == 1) {
-//				lockType = AddressType.T1;
-//			} else if (bytes[0] == 2) {
-//				lockType = AddressType.T2;
-//			} else if (bytes[0] == 3) {
-//				lockType = AddressType.T3;
-//			}
-//			ByteArrayOutputStream os = new ByteArrayOutputStream();
-//			// Calculate (type | trim(HASH))'s CRC8ITU
-//			os.write(lockType.ordinal());
-//			try {
-//				os.write(Arrays.copyOfRange(bytes, 1, bytes.length));
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//				Log.Error(e.getMessage());
-//			}
-//			byte crc = CRC8ITU.update(os.toByteArray());
-//			// Generate address Base58(type) + Base58((trim(HASH) + (type | trim(HASH))'s
-//			// CRC8ITU))
-//			os = new ByteArrayOutputStream();
-//			try {
-//				os.write(Arrays.copyOfRange(bytes, 1, bytes.length));
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			os.write(crc);
-//			return Base58.encode(new byte[] { (byte) lockType.ordinal() }) + Base58.encode(os.toByteArray());
-//		}
-//		
-//		@Deprecated 
-//		public static boolean verifyAddress(String address) {
-//			byte[] bytes = null;
-//			byte crc = 0;
-//			byte CRC = 0;
-//			try {
-//				bytes = Base58.decode(address.substring(1));
-//				crc = bytes[bytes.length - 1];
-//				ByteArrayOutputStream os = new ByteArrayOutputStream();
-//				os.write(Base58.decode(address.substring(0, 1)));
-//				os.write(bytes, 0, bytes.length - 1);
-//				CRC = CRC8ITU.update(os.toByteArray());
-//			} catch (Exception e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//				Log.Error(e.getMessage());
-//			}
-//			return (crc == CRC);
-//		}
-
-		public static byte[] trim(final byte[] bytes) {
-			int i = 0;
-			for (; i < bytes.length; ++i) {
-				if (bytes[i] != 0) {
-					break;
-				}
-			}
-			int j = bytes.length - 1;
-			for (; j > 0; --j) {
-				if (bytes[j] != 0) {
-					break;
-				}
-			}
-			byte[] trim = new byte[j - i + 1];
-			System.arraycopy(bytes, i, trim, 0, trim.length);
-			return trim;
-		}
-		
-		// 2020-04-01 Here exists bug need change another algorithm for example compare the publickey range? Maybe doesn't need do this because of the length is fixed
-		public static LockType getLockType(byte[] publickey) {
-			LockType lockType = null;
-			if(publickey.length == P256_PUBLICKEY_LEN) {
-				lockType = LockType.T1;
-			}
-			else if(publickey.length == P521_PUBLICKEY_LEN) {
-				lockType = LockType.T2;
-			}
-			else {
-				throw new IllegalStateException("Invalid publickey length:" + publickey.length);
-			}
-			return lockType;
-		}
-
-		public static LockType getLockType(String address) {
-			byte type = 0;
-			LockType lockType = LockType.T1;
-			try {
-				type = Base58.decodeToBigInteger(address.substring(0, 1)).byteValue();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				Log.Error(e.getMessage());
-			}
-			if (type == 0) {
-				lockType = LockType.T1;
-			} else if (type == 1) {
-				lockType = LockType.T2;
-			} 
-			else {
-				throw new IllegalStateException("Invalid lock type: " + lockType);
-			}
-			return lockType;
-		}
-		
-		public static LockType getLockTypeFromAI(byte[] aiLock) {
-			byte type = 0;
-			LockType lockType = null;
-			type = aiLock[0];
-			if (type == 0) {
-				lockType = LockType.T1;
-			} else if (type == 1) {
-				lockType = LockType.T2;
-			} else {
-				throw new IllegalStateException("Invalid lock type: " + type);
-			}
-			return lockType;
-		}
-		
-	}
-
-	public static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(EQCLockMate minerLock,
+	public static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(ID minerPassportId,
 			ChangeLog changeLog) {
 		TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
 		TransferTxOut eqcFederalTxOut = new TransferTxOut();
 		TransferTxOut minerTxOut = new TransferTxOut();
 		try {
-			minerTxOut.setPassportId(ID.ZERO);
+			eqcFederalTxOut.setPassportId(ID.ZERO);
+			minerTxOut.setPassportId(minerPassportId);
 			
 			Value minerCoinbaseReward = getCurrentMinerCoinbaseReward(getCurrentCoinbaseReward(changeLog));
 			eqcFederalTxOut.setValue(getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
@@ -1754,14 +1301,17 @@ public final class Util {
 	}
 
 	public static EQCHive recoverySingularityStatus() throws Exception {
+		Log.info("Begin recoverySingularityStatus");
 		EQCHive eqcHive = null;
 		// @echo off
 		// If exists old status need clear it
+		Util.DB().saveEQCHiveTailHeight(ID.ZERO);
 		for(int i=0; i<2; ++i) {
 			try {
 				Passport account = Util.DB().getPassport(new ID(i), Mode.GLOBAL);
 				if(account != null) {
 					Util.DB().deletePassport(new ID(i), Mode.GLOBAL);
+					Util.DB().deleteLock(new ID(i), Mode.GLOBAL);
 				}
 			}
 			catch (Exception e) {
@@ -1845,7 +1395,7 @@ public final class Util {
 			return new Value(BASIC_COINBASE_REWARD);
 		}
 		else {
-			EQCHive eqcHive = DB().getEQCHive(changeLog.getHeight().getPreviousID(), true);
+			EQCHive eqcHive = new EQCHive(DB().getEQCHive(changeLog.getHeight().getPreviousID()));
 			Value totalSupply = eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getTotalSupply();
 			if(totalSupply.compareTo(MAX_EQC) < 0) {
 				return totalSupply.add(getCurrentCoinbaseReward(changeLog));
@@ -1868,25 +1418,25 @@ public final class Util {
 		ID serialNumber_begin = new ID(height.subtract(BigInteger.valueOf(10)));
 		if (height.longValue() % 10 != 0) {
 //			Log.info(serialNumber_end.toString());
-			target = Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTarget();//EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
+			target = Util.DB().getEQCHiveRoot(serialNumber_end).getTarget();//EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
 //			Log.info(Util.bigIntegerTo128String(Util.targetBytesToBigInteger(target)));
 		} else {
 			Log.info(
 					"Old target: "
 							+ Util.bigIntegerTo512String(Util.targetBytesToBigInteger(
-									Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTarget()))
+									Util.DB().getEQCHiveRoot(serialNumber_end).getTarget()))
 							+ "\r\naverge time: "
-							+ (Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTimestamp().longValue()
-									- Util.DB().getEQCHive(serialNumber_begin, true).getEqcHeader().getTimestamp().longValue())
+							+ (Util.DB().getEQCHiveRoot(serialNumber_end).getTimestamp().longValue()
+									- Util.DB().getEQCHiveRoot(serialNumber_begin).getTimestamp().longValue())
 									/ 9);
 			oldDifficulty = Util
-					.targetBytesToBigInteger(Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTarget());
+					.targetBytesToBigInteger(Util.DB().getEQCHiveRoot(serialNumber_end).getTarget());
 			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO, false);
 			BigInteger current_block_interval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval()).multiply(BigInteger.TEN);
 			newDifficulty = oldDifficulty
 					.multiply(BigInteger
-							.valueOf((Util.DB().getEQCHive(serialNumber_end, true).getEqcHeader().getTimestamp().longValue()
-									- Util.DB().getEQCHive(serialNumber_begin, true).getEqcHeader().getTimestamp().longValue())))
+							.valueOf((Util.DB().getEQCHiveRoot(serialNumber_end).getTimestamp().longValue()
+									- Util.DB().getEQCHiveRoot(serialNumber_begin).getTimestamp().longValue())))
 					.divide(BigInteger.valueOf(9).multiply(current_block_interval));
 			// Compare if old difficulty divide new difficulty is bigger than MAX_DIFFICULTY_MULTIPLE
 			if(oldDifficulty.divide(newDifficulty).compareTo(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE)) > 0) {
@@ -2283,7 +1833,7 @@ public final class Util {
 		ChangeLog changeLog = null;
 		EQCHive eqcHive = null;
 		for(; base<=tail.longValue(); ++base) {
-			eqcHive = Util.DB().getEQCHive(new ID(base), false);
+			eqcHive = new EQCHive(Util.DB().getEQCHive(new ID(base)));
 			if(eqcHive != null) {
 				changeLog = new ChangeLog(new ID(base), new Filter(Mode.VALID));
 				if(eqcHive.isValid()) {

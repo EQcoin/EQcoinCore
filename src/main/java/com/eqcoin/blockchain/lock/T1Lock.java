@@ -32,11 +32,10 @@ package com.eqcoin.blockchain.lock;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -45,8 +44,29 @@ import com.eqcoin.util.Util.LockTool.LockType;
  */
 public class T1Lock extends EQCLock {
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
+		lockType = LockType.T1;
+	}
+
 	public T1Lock() {
 		super();
+	}
+	
+	public T1Lock(String readableLock) throws Exception {
+		if (!LockTool.isReadableLockSanity(readableLock)) {
+			throw new IllegalStateException("Readable lock isn't sanity: " + readableLock);
+		}
+		byte[] aiLock = LockTool.readableLockToAI(readableLock);
+		lockType = LockType.get(aiLock[0]);
+		if (lockType != LockType.T1) {
+			throw new IllegalStateException("Invalid lock type expected T1 but actually: " + lockType);
+		}
+		lockCode = new byte[Util.SHA3_256_LEN];
+		System.arraycopy(aiLock, 1, lockCode, 0, aiLock.length - 1);
 	}
 
 	public T1Lock(byte[] bytes) throws Exception {
@@ -62,17 +82,16 @@ public class T1Lock extends EQCLock {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		lockHash = EQCType.parseNBytes(is, Util.SHA3_256_LEN);
+		lockCode = EQCType.parseNBytes(is, Util.SHA3_256_LEN);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(lockHash);
-		return os.toByteArray();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(lockCode);
+		return os;
 	}
 	
 	public Value getProofLength() {
@@ -84,13 +103,13 @@ public class T1Lock extends EQCLock {
 	 */
 	@Override
 	public boolean isSanity() {
-		return (lockType != null && lockType == LockType.T1 && lockHash != null && lockHash.length == Util.SHA3_256_LEN);
+		return (lockType != null && lockType == LockType.T1 && lockCode != null && lockCode.length == Util.SHA3_256_LEN);
 	}
 	
 	public String toInnerJson() {
 		return "\"T1Lock\":" + "{\n" 
 				+ "\"LockType\":" + lockType + ",\n"
-				+ "\"PublickeyHash\":" + "\"" + Util.getHexString(lockHash) + "\""
+				+ "\"PublickeyHash\":" + "\"" + Util.getHexString(lockCode) + "\""
 				+ "\n" + "}";
 	}
 	

@@ -96,7 +96,7 @@ public class MaxNonce<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCInheritable#getHeaderBytes()
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -105,10 +105,9 @@ public class MaxNonce<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCInheritable#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(nonce.getEQCBits());
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

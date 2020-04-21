@@ -163,34 +163,6 @@ public class ZionTransaction extends TransferTransaction {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseHeader(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		parseSoloAndTransactionType(is);
-		parseNonce(is);
-		parseTxIn(is);
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#getHeaderBytes()
-	 */
-	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			serializeSoloAndTransactionTypeBytes(os);
-			serializeNonce(os);
-			serializeTxInBytes(os);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
-	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseDerivedBody(java.io.ByteArrayInputStream)
 	 */
 	@Override

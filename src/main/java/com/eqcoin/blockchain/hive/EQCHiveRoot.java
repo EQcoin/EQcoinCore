@@ -41,6 +41,7 @@ import javax.print.attribute.standard.RequestingUserName;
 
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -52,7 +53,7 @@ import com.eqcoin.util.Util;
  * @date 9-12-2018
  * @email 10509759@qq.com
  */
-public class EQCHiveRoot implements EQCTypable {
+public class EQCHiveRoot extends EQCSerializable {
 	/*
 	 * previous Hive hash |  target  | EQcoinSeed hash | 	 Height 	 |     timestamp 	 |       nonce  
    			 64 bytes	     4 bytes     64 bytes  lengthen(>=1bytes) lengthen(>=6bytes)  lengthen(<=4bytes)   
@@ -64,7 +65,7 @@ public class EQCHiveRoot implements EQCTypable {
 	private ID timestamp;
 	private ID nonce;
 	// The EQCHeader's size is lengthen
-	private final int min_size = 139;
+	private final int min_size = 139; // Here exists bug need do more job to fix this
 	private final static int MIN_TIMESTAMP_LEN = 6;
 	private final static int MAX_NONCE_LEN = 8;
 	private final static int TARGET_LEN = 4;
@@ -74,15 +75,21 @@ public class EQCHiveRoot implements EQCTypable {
 	 * @throws Exception 
 	 */
 	public EQCHiveRoot(byte[] bytes) throws Exception {
-		parseEQCHeader(bytes);
+		super(bytes);
 	}
-
-	private void parseEQCHeader(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
+	
+	public EQCHiveRoot(ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
 		preHash = new byte[Util.HASH_LEN];
 		target = new byte[TARGET_LEN];
 		eqCoinSeedHash = new byte[Util.HASH_LEN];
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		try {
 			// Parse PreHash
 			preHash = EQCType.parseNBytes(is, Util.HASH_LEN);
@@ -96,14 +103,13 @@ public class EQCHiveRoot implements EQCTypable {
 			timestamp = new ID(EQCType.parseEQCBits(is));
 			// Parse Nonce
 			nonce = new ID(EQCType.parseEQCBits(is));
-			EQCType.assertNoRedundantData(is);
 		} catch (IOException | NoSuchFieldException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			Log.Error("During parseEQCHeader error occur: " + e.getMessage());
+			Log.Error("During parse EQCHiveRoot error occur: " + e.getMessage());
 		}
 	}
-	
+
 //	public static boolean isValid(byte[] bytes) {
 //		byte validCount = 0;
 //		byte[] preHash = new byte[Util.HASH_LEN];
@@ -330,11 +336,11 @@ public class EQCHiveRoot implements EQCTypable {
 			Log.Error("eqCoinSeedHash is invalid.");
 			return false;
 		}
-		if(height.getPreviousID().compareTo(Util.DB().getEQCHive(changeLog.getHeight().getPreviousID(), true).getEqcHeader().getHeight()) != 0) {
+		if(height.getPreviousID().compareTo(Util.DB().getEQCHiveRoot(height).getHeight()) != 0) {
 			Log.Error("Height should be the previous EQCBlock's next Height.");
 			return false;
 		}
-		if(timestamp.compareTo(Util.DB().getEQCHive(changeLog.getHeight().getPreviousID(), true).getEqcHeader().getTimestamp()) <= 0) {
+		if(timestamp.compareTo(Util.DB().getEQCHiveRoot(changeLog.getHeight().getPreviousID()).getTimestamp()) <= 0) {
 			Log.Error("Timestamp should bigger than previous EQCBlock's timestamp.");
 			return false;
 		}

@@ -56,62 +56,49 @@ public final class Log {
 	private Log() {}
 
 	private static void instance() {
-		File file = new File(Util.LOG_PATH);
-		if (!file.exists() || log == null) {
-//					System.out.close();
-			log = Logger.getLogger(MethodHandles.lookup().lookupClass().getSimpleName());
-			log.setLevel(Level.ALL);
-			log.setUseParentHandlers(false);
+		if (log == null) {
 			try {
-				fileHandler = new FileHandler(Util.LOG_PATH, true);
+				log = Logger.getLogger(MethodHandles.lookup().lookupClass().getSimpleName());
+				log.setLevel(Level.ALL);
+				log.setUseParentHandlers(false);
+				fileHandler = new FileHandler(Util.LOG_PATH, Util.ONE_MB, 1000, true);
 				fileHandler.setFormatter(new EQCFormatter());
 				log.addHandler(fileHandler);
 				consoleHandler = new ConsoleHandler();
 				consoleHandler.setFormatter(new EQCFormatter());
 				log.addHandler(consoleHandler);
-			} catch (SecurityException e) {
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+				System.err.println(e.getMessage());
+			} 
 		}
 	}
 
 	public static void info(String info) {
 		if (DEBUG) {
 			instance();
-//			System.out.println(info);
 			log.info(info);
 			// flush buffer immediately otherwise the log data in the buffer maybe missing
-			if(fileHandler != null) {
-				fileHandler.flush();
-			}
+			fileHandler.flush();
 		}
 	}
 	
 	public static void Error(String error) {
 		if (DEBUG) {
 			instance();
-//			System.out.println(error);
 			log.info("[ERROR]" + error);
 			// flush buffer immediately otherwise the log data in the buffer maybe missing
-			if(fileHandler != null) {
-				fileHandler.flush();
-			}
+			fileHandler.flush();
 		}
 	}
 	
 	public static void Warn(String warn) {
 		if (DEBUG) {
 			instance();
-//			System.out.println(warn);
 			log.info("[WARN]" + warn);
 			// flush buffer immediately otherwise the log data in the buffer maybe missing
-			if(fileHandler != null) {
-				fileHandler.flush();
-			}
+			fileHandler.flush();
 		}
 	}
 	

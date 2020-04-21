@@ -30,6 +30,7 @@
 package com.eqcoin;
 
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,7 +45,6 @@ import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.TransferCoinbaseTransaction;
 import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.ZionTxOut;
-import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -71,7 +71,6 @@ import com.eqcoin.util.Base580;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
 import com.eqcoin.util.Util.MODE;
 
 /**
@@ -83,6 +82,12 @@ public class Singularity {
 	/**
 	 * @param args
 	 */
+	/**
+	 * @param args
+	 */
+	/**
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		Thread.currentThread().setPriority(10);
 		try {
@@ -91,17 +96,41 @@ public class Singularity {
 //			Log.info("" + value);
 //			com.eqcoin.keystore.UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(1);
 //			Test.testKeystore();
+//			Test.testDisplayUserProfiles();
+//			Keystore.getInstance().getUserAccounts();
 //			Log.info(LockTool.AIToReadableLock(Keystore.getInstance().getUserAccounts().get(0).getAddressAI()));
 //			byte[] bytes = LockTool.readableLockToAI(LockTool.AIToReadableLock(Keystore.getInstance().getUserAccounts().get(0).getAddressAI()));
 //			int i;
-//			Util.init();
-//			Util.IsDeleteTransactionInPool = false;
-//			MinerService.getInstance().start();
-//			MinerService.getInstance().miningOneHive();
+//			EQCHive eqcHive = Util.recoverySingularityStatus();
+//			int i = 0;
+//			EQCHive eqcHive2 = new EQCHive(Util.DB().getEQCHive(ID.TWO, false).getBytes());
+//			Log.info(eqcHive2.toString());
+//			i = i+1;
+//			BigInteger a = BigInteger.valueOf(2).pow(129).subtract(BigInteger.valueOf(4096));
+//			BigInteger b = BigInteger.valueOf(2).pow(128);
+//			Log.info("a: " + a.toByteArray().length);
+//			Log.info("b: " + b.toByteArray().length);
+//			Log.info(""+a.subtract(b).toByteArray().length);
+//			Test.dumpPassport(3);
+//			Test.dumpLock(3);
+			Util.init();
+			Util.IsDeleteTransactionInPool = true;
+			MinerService.getInstance().start();
+//			for(int i=0; i<10; ++i)
+			MinerService.getInstance().miningOneHive();
 //			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
 //			Log.info(eQcoinRootPassport.toString());
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
+		}
+		finally {
+			try {
+				Util.DB().close();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				Log.Error(e.getMessage());
+			}
 		}
 //		EQCBlockChainH2.getInstance().saveEQCBlockTailHeight(new ID(BigInteger.valueOf(0)));
 //		EQCBlockChainRocksDB.getInstance().saveEQCBlockTailHeight(new ID(BigInteger.valueOf(0)));
@@ -183,11 +212,11 @@ public class Singularity {
 //			String content1="\u0E1A";
 //			Log.info(content1);
 //			Log.info(bigInteger.toString());
-			byte[] bytes = Util.getSecureRandomBytes();
-			Log.info(Base580.encode(Util.EQCCHA_MULTIPLE_DUAL(bytes, Util.ONE, false, true)));
-			Log.info("" + Base580.encode(Util.EQCCHA_MULTIPLE_DUAL(bytes, Util.ONE, false, true)).length());
-			Log.info(Base580.encode(bytes));
-			Log.info("" + Base580.encode(bytes).length());
+//			byte[] bytes = Util.getSecureRandomBytes();
+//			Log.info(Base580.encode(Util.EQCCHA_MULTIPLE_DUAL(bytes, Util.ONE, false, true)));
+//			Log.info("" + Base580.encode(Util.EQCCHA_MULTIPLE_DUAL(bytes, Util.ONE, false, true)).length());
+//			Log.info(Base580.encode(bytes));
+//			Log.info("" + Base580.encode(bytes).length());
 //			Log.info(new String(Base64.getEncoder().encode(bytes)));
 //			Log.info("" + Base64.getEncoder().encode(bytes).length);
 //			long i = Integer.MAX_VALUE + 1;

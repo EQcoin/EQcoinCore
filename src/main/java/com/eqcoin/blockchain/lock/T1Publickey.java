@@ -40,17 +40,13 @@ import com.eqcoin.util.Util;
  * @date Apr 10, 2020
  * @email 10509759@qq.com
  */
-@Deprecated
 public class T1Publickey extends EQCPublickey {
 	
 	public T1Publickey() {
 	}
 
 	public T1Publickey(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parse(is);
-		EQCType.assertNoRedundantData(is);
+		super(bytes);
 	}
 	
 	public T1Publickey(ByteArrayInputStream is) throws Exception {

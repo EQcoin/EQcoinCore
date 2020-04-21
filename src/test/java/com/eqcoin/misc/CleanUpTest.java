@@ -32,8 +32,6 @@ package com.eqcoin.misc;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
-
-import com.eqcoin.configuration.Configuration;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.util.Util;
 
@@ -58,7 +56,6 @@ public class CleanUpTest {
 	@Test
 	public void initSingularity() {
 		try {
-			Configuration.getInstance().updateIsInitSingularityBlock(false);
 			Util.init();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

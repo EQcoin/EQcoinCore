@@ -299,7 +299,7 @@ public class SyncBlockService extends EQCService {
 								+ " just discard it");
 						return;
 					} else {
-						EQCHive localTailHive = Util.DB().getEQCHive(Util.DB().getEQCHiveTailHeight(), true);
+						EQCHive localTailHive = new EQCHive( Util.DB().getEQCHive(Util.DB().getEQCHiveTailHeight()));
 						if (syncHiveState.getEqcHive().getHeight().isNextID(localTailHive.getHeight())) {
 							if (Arrays.equals(syncHiveState.getEqcHive().getEqcHeader().getPreHash(),
 									localTailHive.getHash())) {
@@ -347,7 +347,7 @@ public class SyncBlockService extends EQCService {
 				localTail = Util.DB().getEQCHiveTailHeight();
 				Log.info("LocalTail: " + localTail);
 				EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
-				EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQCHive(localTail, true).getEQcoinSeed().getEQcoinSeedRoot();
+				EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(localTail);
 				long base = localTail.longValue();
 				// Check if it is valid chain
 				if (maxTailInfo.getHeight().compareTo(localTail) > 0 && maxTailInfo.getCheckPointHeight()
@@ -406,8 +406,7 @@ public class SyncBlockService extends EQCService {
 					
 						// Remove extra Account here need remove accounts after base
 						ID originalAccountNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
-						EQcoinSeedRoot eQcoinSubchainHeader = Util.DB().getEQCHive(new ID(base), true)
-								.getEQcoinSeed().getEQcoinSeedRoot();
+						EQcoinSeedRoot eQcoinSubchainHeader = Util.DB().getEQcoinSeedRoot(new ID(base));
 						if (eQcoinSubchainHeader.getTotalPassportNumbers().compareTo(originalAccountNumbers) < 0) {
 							Log.info("Begin delete extra Account from "
 									+ eQcoinSubchainHeader.getTotalPassportNumbers().getNextID() + " to "

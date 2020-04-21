@@ -35,6 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -46,15 +49,17 @@ import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.LockTool;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.keystore.Keystore;
-import com.eqcoin.keystore.UserAccount;
+import com.eqcoin.keystore.UserProfile;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
+
+import jdk.nashorn.internal.objects.Global;
 
 
 /**
@@ -133,7 +138,7 @@ public class MiscTest {
 			Log.info("" + id);
 			 for(int i=1; i<=id.intValue(); ++i) {
 			   ChangeLog changeLog = new ChangeLog(new ID(i), new Filter(Mode.MINING));
-			   EQCHive eqcBlock = Util.DB().getEQCHive(new ID(i), false);
+			   EQCHive eqcBlock = new EQCHive(Util.DB().getEQCHive(new ID(i)));
 //			   Log.info(eqcBlock.toString());
 				assertTrue(eqcBlock.isValid());
 				changeLog.clear();
@@ -147,10 +152,16 @@ public class MiscTest {
 	   
 	   @Test
 	   void verifyPublickey2Address() {
-		   UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(0);
+		   UserProfile userAccount = Keystore.getInstance().getUserProfiles().get(0);
 		   byte[] publickey = Util.AESDecrypt(userAccount.getPublicKey(), "abc");
 		   Log.info("" + publickey.length);
-		   String readableAddress = LockTool.generateAddress(publickey, LockTool.getLockType(publickey));
+		   String readableAddress = null;
+		try {
+			readableAddress = LockTool.generateLock(publickey, LockTool.getLockType(publickey));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		   assertEquals(readableAddress, userAccount.getReadableLock());
 	   }
 	   
@@ -204,4 +215,62 @@ public class MiscTest {
 					e.printStackTrace();
 				}
 	   }
+	   
+	   @Test
+	   void compressSignature() {
+		   byte[] bytes = Util.SHA3_256(Util.getSecureRandomBytes());
+			java.math.BigInteger max = java.math.BigInteger.TWO.pow(128).subtract(java.math.BigInteger.ONE);
+			BigInteger middle = BigInteger.TWO.pow(64).subtract(BigInteger.ONE);
+			byte[] bytess = new byte[]{(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff};
+			java.math.BigInteger aBigInteger = new java.math.BigInteger(1, bytes);
+			java.math.BigInteger devider = new java.math.BigInteger(1, bytess);
+			java.math.BigInteger result = aBigInteger.divide(max);
+			java.math.BigInteger mod = aBigInteger.subtract(max.multiply(result));
+			if(result.compareTo(middle) > 0) {
+				Log.info("fr: " + result.subtract(middle) + " Len: " + result.subtract(middle).toByteArray().length);
+			}
+			if(mod.compareTo(middle) > 0) {
+				Log.info("fm: " + mod.subtract(middle) + " Len: " + mod.subtract(middle).toByteArray().length);
+			}
+			if(aBigInteger.equals(result.multiply(devider).add(mod))) {
+				Log.info("tr");
+			}
+			Log.info("" + result.toByteArray().length + " result: " + result + " mod: " + mod + " " + mod.toByteArray().length);
+	   }
+	   
+	   @Test
+	   void multipleExtendMixTest() {
+		   // MathContext mc = new MathContext(Util.HUNDREDPULS, RoundingMode.HALF_EVEN);
+		   byte[] hash = new byte[67];
+		   for(int  i=0; i<hash.length; ++i) {
+			   hash[i] = (byte) 0xff;
+		   }
+		   Log.info(Util.bytesToHexString(Util.multipleExtendMix(hash, Util.TWO)));
+		   Log.info(Util.dumpBytesLittleEndianHex(Util.multipleExtendMix(hash, Util.TWO)));
+		   double time0 = System.currentTimeMillis();
+		   for(int i=0; i<1000000; ++i) {
+			   Util.multipleExtendMix(hash, Util.TWO);
+		   }
+		   time0 = System.currentTimeMillis() - time0;
+		   Log.info("Total time: " + time0 + " average time: " + time0/1000000);
+		   // [2020-04-20 21:51:03:003][com.eqcoin.misc.MiscTest.multipleExtendMixTest 252]Total time: 36108.0 average time: 0.036108
+	   }
+	   
+	   @Test
+	   void multipleExtendTest() {
+		   byte[] hash = new byte[67];
+		   for(int  i=0; i<hash.length; ++i) {
+			   hash[i] = (byte) 0xff;
+		   }
+		   Log.info(Util.bytesToHexString(Util.multipleExtend(hash, Util.THREE)));
+		   Log.info(Util.dumpBytesLittleEndianHex(Util.multipleExtend(hash, Util.THREE)));
+		   double time0 = System.currentTimeMillis();
+		   for(int i=0; i<1000000; ++i) {
+			   Util.multipleExtend(hash, Util.THREE);
+		   }
+		   time0 = System.currentTimeMillis() - time0;
+		   Log.info("Total time: " + time0 + " average time: " + time0/1000000);
+		   // [2020-04-20 21:54:34:034][com.eqcoin.misc.MiscTest.multipleExtendTest 269]Total time: 82.0 average time: 8.2E-5
+	   }
+	   
 }

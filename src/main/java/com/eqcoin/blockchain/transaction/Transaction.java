@@ -53,6 +53,7 @@ import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.lock.EQCLockMate;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Passport;
@@ -62,8 +63,9 @@ import com.eqcoin.blockchain.transaction.Transaction.TRANSACTION_PRIORITY;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.Operation;
 import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
-import com.eqcoin.blockchain.transaction.operation.UpdateEQCPublickeyOP;
-import com.eqcoin.crypto.EQCPublicKey;
+import com.eqcoin.crypto.EQCECCPublicKey;
+import com.eqcoin.crypto.RecoverySECP256R1Publickey;
+import com.eqcoin.crypto.RecoverySECP521R1Publickey;
 import com.eqcoin.keystore.Keystore.ECCTYPE;
 import com.eqcoin.persistence.EQCBlockChain;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -77,8 +79,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -89,27 +89,27 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	/**
 	 * Header
 	 */
-	protected ID solo;
 	protected TransactionType transactionType;
 	/**
 	 * Body
 	 */
-	protected ID nonce;
 	protected TxIn txIn;
+	protected ID nonce;
 	protected EQCWitness eqcWitness;
-	protected Vector<Operation> operationList;
-	public final static ID SOLO = ID.ZERO;
+	protected Operation operation;
 	
 	/**
 	 * Transaction relevant helper variable
 	 */
-	protected EQCBlockChain eqcBlockChain;
 	protected ChangeLog changeLog;
 	protected Passport txInPassport;
 	protected EQCLockMate txInLockMate;
 	protected TransactionShape transactionShape;
 	protected Value txFeeRate;
 	protected LockType lockType;
+	
+	// Flag bits
+	private final int FLAG_BITS = 256;
 	
 	public enum TransactionType {
 		ZEROZIONCOINBASE, ZIONCOINBASE, TRANSFERCOINBASE, ZION, ZIONOP, TRANSFER, TRANSFEROP, MODERATEOP;
@@ -150,7 +150,7 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	}
 	
 	public enum TransactionShape {
-		SIGN, SEED;
+		SIGN, RPC, SEED;
 		public static TransactionShape get(int ordinal) {
 			TransactionShape transactionShape = null;
 			switch (ordinal) {
@@ -158,6 +158,9 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 				transactionShape = TransactionShape.SIGN;
 				break;
 			case 1:
+				transactionShape = TransactionShape.RPC;
+				break;
+			case 2:
 				transactionShape = TransactionShape.SEED;
 				break;
 			}
@@ -199,6 +202,8 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 			case 5:
 				transaction_priority = TRANSACTION_PRIORITY.VIP;
 				break;
+			default:
+				throw new IllegalStateException("Invalid TRANSACTION_PRIORITY: " + transaction_priority);
 			}
 			return transaction_priority;
 		}
@@ -208,33 +213,16 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	public void init(ChangeLog changeLog) throws Exception {
 		this.changeLog = changeLog;
 		txFeeRate = changeLog.getTxFeeRate();
-//		// Here need do more job to make sure the lockType is synchronized
-//		Passport passport = changeLog.getFilter().getPassport(txIn.getLock().getId(), false);
-//		Lock lock = changeLog.getFilter().getLock(passport.getLockID(), true);
-//		lockType = lock.getLockType();
 	}
 	
 	protected void init() {
-		solo = SOLO;
-		eqcWitness = new EQCWitness();
 		transactionShape = TransactionShape.SEED;
-		txInLockMate = new EQCLockMate();
 	}
 	
 	public Transaction() {
 		super();
 	}
 	
-	public Transaction(EQCBlockChain eqcBlockChain) {
-		super();
-		this.eqcBlockChain = eqcBlockChain;
-	}
-	
-	public Transaction(LockType lockType) {
-		super();
-		this.lockType = lockType;
-	}
-
 	public Transaction(byte[] bytes) throws Exception {
 		super(bytes);
 	}
@@ -369,7 +357,7 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 		Value txFee = null;
 		TRANSACTION_PRIORITY priority = getPriority() ;
 		if (priority == TRANSACTION_PRIORITY.VIP) {
-			txFee = txIn.getValue();
+			txFee = txIn.getValue().subtract(BigInteger.valueOf(FLAG_BITS));
 		} else {
 			txFee = getBillingLength().multiply(txFeeRate).multiply(BigInteger.valueOf(priority.getPriorityRate()));
 		}
@@ -385,7 +373,7 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 		if (txIn.getValue().compareTo(getMaxTxFeeLimit()) > 0) {
 			rate = TRANSACTION_PRIORITY.VIP.getPriorityRate();
 		} else {
-			rate = txIn.value.intValue();
+			rate = (txIn.value.intValue()>=4)?(txIn.value.intValue()-4):txIn.value.intValue();
 		}
 		return TRANSACTION_PRIORITY.get(rate);
 	}
@@ -400,26 +388,39 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 		return rate;
 	}
 
-	public boolean isBaseValid() {
+	public boolean isBaseValid() throws Exception {
+		// Check if TxIn's passport id is less than previous EQCHive's total passport numbers
+		if(txIn.getPassportId().compareTo(changeLog.getPreviousTotalPassportNumbers()) >= 0) {
+			return false;
+		}
+		
 		// Check if Nonce is correct
 		if (!nonce.isNextID(txInPassport.getNonce())) {
 			Log.Error("Nonce doesn't correct, current: " + nonce + " expect: " + txInPassport.getNonce().getNextID());
 			return false;
 		}
 
+		// Try to recovery publickey from signature
 		if (txInLockMate.getEqcPublickey().isNULL()) {
-			// Here need do more job need do this in the detailed derived subclass 
-//			if (compressedPublickey.isNULL()) {
-//				return false;
-//			}
-//			// Verify Publickey
-//			if (!LockTool.verifyLockAndPublickey(txInLockMate.getReadableLock(),
-//					compressedPublickey.getPublickey())) {
-//				Log.Error("Verify Publickey failed");
-//				return false;
-//			}
+			byte[] publickey = null;
+			if(lockType == LockType.T1) {
+				publickey = RecoverySECP256R1Publickey.getInstance().recoveryPublickey(this);
+			}
+			else if(lockType == LockType.T2) {
+				publickey = RecoverySECP521R1Publickey.getInstance().recoveryPublickey(this);
+			}
+			if(publickey == null) {
+				Log.Error("TxIn id: " + txIn.getPassportId() + " relevant lock's publickey recovery failed");
+				return false;
+			}
+			else {
+				Log.info("TxIn id: " + txIn.getPassportId() + " relevant lock's publickey doesn't exists and recovery successful: " + Util.bytesToHexString(publickey));
+			}
+			txInLockMate.getEqcPublickey().setNew();
+			txInLockMate.getEqcPublickey().setPublickey(publickey);
 		}
 		
+		// Here exists one bug need do more job
 		// Check balance from current Passport
 		if (txIn.getValue().add(Util.MIN_EQC).compareTo(txInPassport.getBalance()) > 0) {
 			Log.Error("Balance isn't enough");
@@ -493,24 +494,11 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	
 	public static TransactionType parseTransactionType(ByteArrayInputStream is) throws Exception {
 		TransactionType transactionType = null;
-		byte[] data = null;
-		ID solo = null;
-		
 		is.mark(0);
-		if ((data = EQCType.parseEQCBits(is)) != null) {
-			solo = EQCType.eqcBitsToID(data);
-		}
-		if (solo.equals(SOLO)) {
-			if ((data = EQCType.parseEQCBits(is)) != null) {
-				transactionType = TransactionType.get(EQCType.eqcBitsToInt(data));
-			}
-		} else {
-			transactionType = TransactionType.TRANSFER;
-		}
+		transactionType = TransactionType.get(EQCType.parseID(is).intValue());
 		is.reset();
-		
 		if (transactionType == null) {
-			throw new NullPointerException("Bad transaction format.");
+			throw new NullPointerException("Bad transaction format");
 		}
 		return transactionType;
 	}
@@ -523,32 +511,6 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 		return eqcWitness != null && eqcWitness.isSanity();
 	}
 
-	public static Transaction parseTransaction(byte[] bytes) throws Exception {
-		if (bytes == null) {
-			return null;
-		}
-		Transaction transaction = null;
-		TransactionType transactionType = parseTransactionType(bytes);
-		if (transactionType == TransactionType.TRANSFER) {
-			transaction = new TransferTransaction(bytes);
-		} else if (transactionType == TransactionType.TRANSFEROP) {
-			transaction = new TransferOPTransaction(bytes);
-		} else if (transactionType == TransactionType.ZION) {
-			transaction = new ZionTransaction(bytes);
-		} else if (transactionType == TransactionType.ZIONOP) {
-			transaction = new ZionOPTransaction(bytes);
-		} else if (transactionType == TransactionType.ZIONCOINBASE) {
-			transaction = new ZionCoinbaseTransaction(bytes);
-		} else if(transactionType == TransactionType.TRANSFERCOINBASE) {
-			transaction = new TransferCoinbaseTransaction(bytes);
-		}	else if(transactionType == TransactionType.MODERATEOP) {
-			transaction = new ModerateOPTransaction(bytes);
-		}	else if(transactionType == TransactionType.ZEROZIONCOINBASE) {
-			transaction = new ZeroZionCoinbaseTransaction(bytes);
-		}
-		return transaction;
-	}
-	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
 	 */
@@ -590,11 +552,14 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 			} else if (lockType == LockType.T2) {
 				eccType = ECCTYPE.P521;
 			}
-			EQCPublicKey eqcPublicKey = new EQCPublicKey(eccType);
+			EQCECCPublicKey eqcPublicKey = new EQCECCPublicKey(eccType);
 			// Create EQPublicKey according to compressed Publickey
-			eqcPublicKey.setECPoint(this.txInLockMate.getEqcPublickey().getPublickey());
+			eqcPublicKey.setECPoint(txInLockMate.getEqcPublickey().getPublickey());
 			signature.initVerify(eqcPublicKey);
 			transactionShape = TransactionShape.SIGN;
+//			Log.info("\nPublickey: " + Util.dumpBytesLittleEndianHex(txInLockMate.getEqcPublickey().getPublickey()));
+//			Log.info("\nMessageLen: " + getBytes().length + "\nMessageBytes: " + Util.dumpBytesLittleEndianHex(getBytes()));
+//			Log.info("\nMessage Hash: " + Util.dumpBytesLittleEndianHex(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes())));
 			signature.update(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes()));
 			isTransactionValid = signature.verify(eqcWitness.getDERSignature());
 		} catch (NoSuchAlgorithmException | NoSuchProviderException | SignatureException | IOException | InvalidKeyException e) {
@@ -609,17 +574,25 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	}
 
 	public void sign(Signature ecdsa) throws ClassNotFoundException, SQLException, Exception {
+		ecdsa.update(getSignBytesHash());
+		if(lockType == LockType.T1) {
+			eqcWitness = new T1Witness();
+		} else if(lockType == LockType.T2) {
+			eqcWitness = new T2Witness();
+		}
+		eqcWitness.setDERSignature(ecdsa.sign());
+	}
+	
+	public byte[] getSignBytesHash() throws Exception {
+		byte[] bytes = null;
 		try {
 			transactionShape = TransactionShape.SIGN;
-			ecdsa.update(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes()));
-			eqcWitness.setDERSignature(ecdsa.sign());
-		} catch (SignatureException | IOException e) {
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+			bytes = MessageDigest.getInstance(Util.SHA3_512).digest(getBytes());
+		} 
 		finally {
 			transactionShape = TransactionShape.SEED;
 		}
+		return bytes;
 	}
 
 //	/* (non-Javadoc)
@@ -681,7 +654,6 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 		txInPassport = changeLog.getFilter().getPassport(txIn.getPassportId(), true);
 		txInLockMate = changeLog.getFilter().getLock(txInPassport.getLockID(), true);
 		lockType = txInLockMate.getLock().getLockType();
-		txFeeRate = changeLog.getTxFeeRate();
 		if(txInPassport == null || txInLockMate == null) {
 			throw new IllegalStateException("TxIn's relevant Lock and Passport shouldn't null.");
 		}
@@ -715,12 +687,17 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	}
 	
 	protected void derivedPlanting() throws Exception {
+		// Update publickey if need
+		if(txInLockMate.getEqcPublickey().isNew()) {
+			changeLog.getFilter().saveLock(txInLockMate);
+		}
 		// Update current Transaction's relevant Account's AccountsMerkleTree's data
 		// Update current Transaction's TxIn Account's relevant Asset's Nonce&Balance
 		// Update current Transaction's TxIn Account's relevant Asset's Nonce
 		txInPassport.increaseNonce();
 		// Update current Transaction's TxIn Account's relevant Asset's Balance
 		txInPassport.withdraw(getBillingValue());
+		// Here exists one bug
 		txInPassport.setUpdateHeight(changeLog.getHeight());
 		changeLog.getFilter().savePassport(txInPassport);
 		// Deposit TxFee
@@ -749,7 +726,12 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	public void parseBody(ByteArrayInputStream is)
 			throws Exception {
 		parseDerivedBody(is);
-		eqcWitness = new EQCWitness(is);
+		if(lockType == LockType.T1) {
+			eqcWitness = new T1Witness(is);
+		}
+		else if(lockType == LockType.T2) {
+			eqcWitness = new T2Witness(is);
+		}
 	}
 	
 	protected void parseDerivedBody(ByteArrayInputStream is) throws Exception {
@@ -778,11 +760,7 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	}
 	
 	public boolean isBaseSanity() throws Exception {
-		if (solo == null || !solo.equals(SOLO) || transactionType == null || !isTransactionTypeSanity()
-				|| !isTxInSanity() || nonce == null || !nonce.isSanity() || !isEQCWitnessSanity()) {
-			return false;
-		}
-		return true;
+		return (transactionType != null && isTransactionTypeSanity() && isTxInSanity() && nonce != null && nonce.isSanity() && isEQCWitnessSanity());
 	}
 	
 	protected boolean isDerivedSanity() throws Exception {
@@ -794,85 +772,51 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	}
 	
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		parseSoloAndTransactionType(is);
-		parseNonce(is);
-		parseTxIn(is);
-	}
-	
-	protected void parseNonce(ByteArrayInputStream is) throws Exception {
-		// Parse nonce
-		nonce = new ID(EQCType.parseEQCBits(is));
-	}
-	
-	protected void parseSoloAndTransactionType(ByteArrayInputStream is) throws Exception {
-		// Parse Solo
-		solo = EQCType.parseID(is);
 		// Parse Transaction type
-		transactionType = TransactionType.get(EQCType.eqcBitsToInt(EQCType.parseEQCBits(is)));
-	}
-	
-	protected void parseTxIn(ByteArrayInputStream is) throws Exception {
+		transactionType = TransactionType.get(EQCType.parseID(is).intValue());
 		// Parse TxIn
 		txIn = new TxIn(is);
-		if(eqcBlockChain != null) {
-			Passport passport = eqcBlockChain.getPassport(txIn.getPassportId(), Mode.GLOBAL);
-			if(passport == null) {
-				throw new IllegalStateException("TxIn relevant passport doesn't exists");
+		if (txIn.getValue().compareTo(BigInteger.valueOf(FLAG_BITS)) >= 0) {
+			byte[] value = txIn.getValue().toByteArray();
+			byte flag = value[value.length - 1];
+			if (flag == 0) {
+				lockType = LockType.T1;
+			} else if (flag == 1) {
+				lockType = LockType.T2;
+			} else {
+				throw new IllegalStateException("Invalid lock type: " + flag);
 			}
-			EQCLock eqcLock = eqcBlockChain.getLock(passport.getId(), Mode.GLOBAL).getLock();
-			if(eqcLock == null) {
-				throw new IllegalStateException("TxIn relevant EQCLock doesn't exists");
+		} else {
+			if (txIn.getValue().compareTo(BigInteger.valueOf(8)) > 0) {
+				throw new IllegalStateException("Invalid TxIn value: " + txIn);
+			} else if (txIn.getValue().compareTo(BigInteger.valueOf(4)) >= 0) {
+				lockType = LockType.T2;
+			} else {
+				lockType = LockType.T1;
 			}
-			lockType = eqcLock.getLockType();
 		}
+		// Parse nonce
+		nonce = EQCType.parseID(is);
 	}
 	
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			serializeSoloAndTransactionTypeBytes(os);
-			serializeNonce(os);
-			serializeTxInBytes(os);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-	
-	protected void serializeNonce(ByteArrayOutputStream os) throws Exception {
-		// Serialization nonce
-		os.write(EQCType.bigIntegerToEQCBits(nonce));
-	}
-	
-	protected void serializeSoloAndTransactionTypeBytes(ByteArrayOutputStream os) throws Exception {
-		// Serialization Solo
-		os.write(solo.getEQCBits());
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		// Serialization Transaction type
 		os.write(transactionType.getEQCBits());
-	}
-	
-	protected void serializeTxInBytes(ByteArrayOutputStream os) throws Exception {
 		// Serialization TxIn
 		os.write(txIn.getBytes());
+		// Serialization nonce
+		os.write(EQCType.bigIntegerToEQCBits(nonce));
+		return os;
 	}
 	
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization derived body bytes
-			os.write(getDerivedBodyBytes());
-			if (transactionShape == TransactionShape.SEED) {
-				// Serialization Witness
-				os.write(eqcWitness.getBytes());
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization derived body bytes
+		os.write(getDerivedBodyBytes());
+		if (transactionShape == TransactionShape.SEED) {
+			// Serialization Witness
+			os.write(eqcWitness.getBytes());
 		}
-		return os.toByteArray();
+		return os;
 	}
 	
 	protected byte[] getDerivedBodyBytes() throws Exception {
@@ -938,75 +882,29 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	}
 
 	/**
-	 * @return the operationList
+	 * @return the operation
 	 */
-	public Vector<Operation> getOperationList() {
+	public Operation getOperation() {
 		if(!(this instanceof TransferOPTransaction || this instanceof ZionOPTransaction || this instanceof ModerateOPTransaction)) {
-			throw new IllegalStateException("Only OPTransaction support getOperationList but current transaction is: " + transactionType);
+			throw new IllegalStateException("Only OP Transaction support getOperation but current transaction is: " + transactionType);
 		}
-		return operationList;
+		return operation;
+	}
+	
+	public void setOperation(Operation operation) {
+		if(!(this instanceof TransferOPTransaction || this instanceof ZionOPTransaction || this instanceof ModerateOPTransaction)) {
+			throw new IllegalStateException("Only OP Transaction support getOperation but current transaction is: " + transactionType);
+		}
+		this.operation = operation;
 	}
 
-	protected boolean isOperationListSanity() {
-		if(operationList == null) {
-			return false;
-		}
-		if(operationList.size() == 1) {
-			if(!(operationList.get(0) instanceof UpdateEQCPublickeyOP)  && !(operationList.get(0) instanceof ChangeLockOP) ) {
-				return false;
-			}
-		}
-		else if(operationList.size() == 2) {
-			if(!(operationList.get(0) instanceof UpdateEQCPublickeyOP) && !(operationList.get(1) instanceof ChangeLockOP)) {
-				return false;
-			}
-		}
-		else {
-			throw new IllegalStateException("Operation list's size should exceed 2.");
-		}
-		return true;
-	}
+//	protected boolean plantingOperation() throws Exception {
+//		for(Operation operation:operation) {
+//			operation.planting();
+//		}
+//		return true;
+//	}
 	
-	protected boolean isOperationListValid() throws Exception {
-		for(Operation operation:operationList) {
-			if(!operation.isMeetPreconditions()) {
-				Log.Error("Operation " + operation + " doesn't meet preconditions.");
-				return false;
-			}
-			if(!operation.isValid()) {
-				Log.Error("Operation " + operation + " doesn't valid.");
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	protected boolean isIncludeUpdateEQCPublickeyOP() {
-		for(Operation operation:operationList) {
-			if(operation instanceof UpdateEQCPublickeyOP) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	protected boolean plantingOperationList() throws Exception {
-		for(Operation operation:operationList) {
-			operation.planting();
-		}
-		return true;
-	}
-	
-	protected String getOperationListString() {
-		String tx = "[\n";
-		for (int i = 0; i < operationList.size() - 1; ++i) {
-			tx += operationList.get(i) + ",\n";
-		}
-		tx += operationList.get(operationList.size() - 1);
-		tx += "\n]";
-		return tx;
-	}
-
 	/**
 	 * @param txFeeRate the txFeeRate to set
 	 */
@@ -1045,21 +943,26 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	public void setPriority(TRANSACTION_PRIORITY priority, Value txFee) throws Exception {
 		Objects.requireNonNull(priority);
 		if(priority == TRANSACTION_PRIORITY.VIP) {
+			Value maxTxFeeLimit = getMaxTxFeeLimit();
 			if(txFee.compareTo(getMaxTxFeeLimit()) <= 0) {
 				throw new IllegalStateException("When priority is VIP the txfee shouldn't less than max txfee limit");
+			}
+			txFee = txFee.subtract(maxTxFeeLimit);
+			if(txFee.compareTo(BigInteger.valueOf(32)) < 0) {
+				throw new IllegalStateException("When priority is VIP the txfee shouldn't less than 32");
+			}
+			if(lockType == LockType.T2) {
+				txFee = txFee.add(BigInteger.ONE);
 			}
 			txIn.setValue(txFee);
 		}
 		else {
-			txIn.setValue(new Value(priority.getPriorityRate()));
+			Value priorityValue = new Value(priority.getPriorityRate());
+			if(lockType == LockType.T2) {
+				priorityValue = priorityValue.add(BigInteger.valueOf(4));
+			}
+			txIn.setValue(priorityValue);
 		}
-	}
-
-	/**
-	 * @return the eqcBlockChain
-	 */
-	public EQCBlockChain getEqcBlockChain() {
-		return eqcBlockChain;
 	}
 
 	/**
@@ -1074,6 +977,13 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 	 */
 	public LockType getLockType() {
 		return lockType;
+	}
+
+	/**
+	 * @param txInLockMate the txInLockMate to set
+	 */
+	public void setTxInLockMate(EQCLockMate eqcLockMate) {
+		this.txInLockMate = eqcLockMate;
 	}
 	
 }

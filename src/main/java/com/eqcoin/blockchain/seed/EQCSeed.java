@@ -49,6 +49,7 @@ import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
 import com.eqcoin.blockchain.transaction.ZionTxOut;
 import com.eqcoin.blockchain.transaction.ZionTransaction;
 import com.eqcoin.serialization.EQCInheritable;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -59,14 +60,14 @@ import com.eqcoin.util.Util;
  * @date Jun 25, 2019
  * @email 10509759@qq.com
  */
-public abstract class EQCSeed implements EQCTypable, EQCInheritable {
+public abstract class EQCSeed extends EQCSerializable {
 	protected EQCSeedRoot eqcSeedRoot;
 	protected Vector<Transaction> newTransactionList;
 	// This is the new Transaction list's total size which should less than MAX_EQCHIVE_SIZE.
 	protected int newTransactionListLength;
 	protected ChangeLog changeLog;
 	
-	public void init() {
+	protected void init() {
 		newTransactionList = new Vector<>();
 	}
 	
@@ -75,39 +76,11 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	}
 	
 	public EQCSeed(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		init();
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parse(is);
-		EQCType.assertNoRedundantData(is);
+		super(bytes);
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-		parseHeader(is);
-		parseBody(is);
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCTypable#getBytes()
-	 */
-	@Override
-	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(getHeaderBytes());
-		os.write(getBodyBytes());
-		return os.toByteArray();
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCTypable#getBin()
-	 */
-	@Override
-	public byte[] getBin() throws Exception {
-		return EQCType.bytesToBIN(getBytes());
+	public EQCSeed(ByteArrayInputStream is) throws Exception {
+		super(is);
 	}
 
 	/* (non-Javadoc)
@@ -140,11 +113,13 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(eqcSeedRoot.getBytes());
+		return os;
 	}
-
+	
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse NewTransactionList
@@ -152,17 +127,9 @@ public abstract class EQCSeed implements EQCTypable, EQCInheritable {
 	}
 
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(eqcSeedRoot.getBytes());
-		return os.toByteArray();
-	}
-
-	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.eqcSerializableListToArray(newTransactionList));
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

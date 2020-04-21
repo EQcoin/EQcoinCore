@@ -53,7 +53,6 @@ import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.blockchain.transaction.ZionOPTransaction;
 import com.eqcoin.blockchain.transaction.ZionTransaction;
-import com.eqcoin.configuration.Configuration;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.persistence.EQCBlockChain;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -131,8 +130,7 @@ public class ChangeLog {
 			txFeeRate = new Value(Util.DEFAULT_TXFEE_RATE);
 		}
 		else {
-			previousEQCHive = Util.DB().getEQCHive(height.getPreviousID(), true);
-			eQcoinSeedRoot = previousEQCHive.getEQcoinSeed().getEQcoinSeedRoot();
+			eQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(height.getPreviousID());
 			// Here exists one bug prevous total supply also need retrieve from previous EQCHive
 			previousTotalLockNumbers = eQcoinSeedRoot.getTotalLockNumbers();
 			previousTotalPassportNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
@@ -364,8 +362,8 @@ public class ChangeLog {
 		return hash;
 	}
 	
-	public EQCHive getEQCHive(ID height, boolean isSegwit) throws Exception {
-		return Util.DB().getEQCHive(height, true);
+	public byte[] getEQCHive(ID height, boolean isSegwit) throws Exception {
+		return Util.DB().getEQCHive(height);
 	}
 	
 	public void takeSnapshot() throws Exception {
@@ -377,13 +375,6 @@ public class ChangeLog {
 	 */
 	public Filter getFilter() {
 		return filter;
-	}
-	
-	/**
-	 * @return the previousTotalAccountNumbers
-	 */
-	public ID getPreviousTotalAccountNumbers() {
-		return previousTotalPassportNumbers;
 	}
 	
 	public void updateGlobalState() throws Exception {

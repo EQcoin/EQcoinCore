@@ -57,7 +57,7 @@ import com.eqcoin.util.Util;
  * 1. BINxx: BINX, BIN8, BIN16, BIN24, BIN32.
  * <p>
  * BINxx stores a byte array whose length is up to 2^xx - 1 bytes. xx is the
- * maximum number of bits.
+ * maximum number of bits which store the byte array's length.
  * <p>
  * 2. EQCBits: EQCBits.
  * <p>
@@ -73,7 +73,7 @@ import com.eqcoin.util.Util;
  * Arrayxx: ArrayX, Array8, Array16, Array24, Array32.
  * <p>
  * Arrayxx stores a byte array including xxx elements whose length up to (2^xx)-1
- * bytes. xx is the maximum number of bits. 
+ * bytes. xx is the maximum number of bits which store the elements numbers. 
  * 
  * @author Xun Wang
  * @date 9-21-2018
@@ -82,14 +82,14 @@ import com.eqcoin.util.Util;
 public class EQCType {
 
 	/**
-	 * BINX stores a byte array whose length is from 9 to 255 bytes.
+	 * BINX stores a byte array whose length is from 1 to 247 bytes.
 	 * <p>
 	 * | XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX | is a 8-bit unsigned integer which represents the length of data.
 	 * <p>
 	 * <p>
-	 * ArrayX stores a byte array including xxx elements whose length from 9 to 255
+	 * ArrayX stores a byte array including xxx elements whose length from 1 to 247
 	 * bytes.
 	 * <p>
 	 * | XXXXXXXX | data |
@@ -97,8 +97,8 @@ public class EQCType {
 	 * | XXXXXXXX | is a 8-bit unsigned integer which represents the length of
 	 * elements.
 	 */
-	public final static long MIN_BINX_LEN = 9;
-	public final static long MAX_BINX_LEN = 255;
+	public final static long MIN_BINX_LEN = 1;
+	public final static long MAX_BINX_LEN = 247;
 	public final static int EOF = -1;
 
 	/**
@@ -112,50 +112,50 @@ public class EQCType {
 	/**
 	 * BIN8 stores a byte array whose length is from 1 to 8 bytes.
 	 * <p>
-	 * | 0x1 | XXXXXXXX | data |
+	 * | 0xF8 | XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX | is a 8-bit unsigned integer which represents the length of data.
 	 */
-	public final static byte BIN8 = 0x1;
+	public final static int BIN8 = 0xF8;
 	/*
 	 * Due to Java only have signed int so here use long represent unsigned int.
 	 */
-	public final static long MIN_BIN8_LEN = 1;
-	public final static long MAX_BIN8_LEN = 8;
+	public final static long MIN_BIN8_LEN = 248;
+	public final static long MAX_BIN8_LEN = 255;
 
 	/**
 	 * BIN16 stores a byte array whose length is from 2^8 to 2^16 - 1 bytes.
 	 * <p>
-	 * | 0x2 | XXXXXXXX | XXXXXXXX | data |
+	 * | 0xF9 | XXXXXXXX | XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX | XXXXXXXX | is a 16-bit unsigned integer which represents the
 	 * length of data.
 	 */
-	public final static byte BIN16 = 0x2;
+	public final static int BIN16 = 0xF9;
 	public final static long MIN_BIN16_LEN = (int) (Math.pow(2, 8));
 	public final static long MAX_BIN16_LEN = (int) (Math.pow(2, 16) - 1);
 
 	/**
 	 * BIN24 stores a byte array whose length is from 2^16 to 2^24 - 1 bytes.
 	 * <p>
-	 * | 0x3 | XXXXXXXX | XXXXXXXX | XXXXXXXX| data |
+	 * | 0xFA | XXXXXXXX | XXXXXXXX | XXXXXXXX| data |
 	 * <p>
 	 * | XXXXXXXX | XXXXXXXX | XXXXXXXX | is a 24-bit unsigned integer which
 	 * represents the length of data.
 	 */
-	public final static byte BIN24 = 0x3;
+	public final static int BIN24 = 0xFA;
 	public final static long MIN_BIN24_LEN = (int) (Math.pow(2, 16));
 	public final static long MAX_BIN24_LEN = (int) (Math.pow(2, 24) - 1);
 
 	/**
 	 * BIN32 stores a byte array whose length is from 2^24 to 2^32 - 1 bytes.
 	 * <P>
-	 * | 0x4 | XXXXXXXX | XXXXXXXX | XXXXXXXX | data |
+	 * | 0xFB | XXXXXXXX | XXXXXXXX | XXXXXXXX | data |
 	 * <P>
 	 * | XXXXXXXX| XXXXXXXX| XXXXXXXX | XXXXXXXX | is a 32-bit unsigned integer
 	 * which represents the length of data.
 	 */
-	public final static byte BIN32 = 0x4;
+	public final static int BIN32 = 0xFB;
 	public final static long MIN_BIN32_LEN = (int) (Math.pow(2, 24));
 	public final static long MAX_BIN32_LEN = (int) (Math.pow(2, 32) - 1);
 
@@ -163,11 +163,11 @@ public class EQCType {
 	 * Array8 stores a byte array including xxx elements whose length is from 1 to 8
 	 * bytes.
 	 * <p>
-	 * | 0x5 | XXXXXXXX | data |
+	 * | 0xFC | XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX | is a 8-bit unsigned integer which represents the length of array's element.
 	 */
-	public final static byte ARRAY8 = 0x5;
+	public final static int ARRAY8 = 0xFC;
 	public final static long MIN_ARRAY8_LEN = MIN_BIN8_LEN;
 	public final static long MAX_ARRAY8_LEN = MAX_BIN8_LEN;
 
@@ -175,12 +175,12 @@ public class EQCType {
 	 * Array16 stores a byte array including xxx elements whose length is from 2^8
 	 * to 2^16 - 1 bytes.
 	 * <p>
-	 * | 0x6 | XXXXXXXX | XXXXXXXX | data |
+	 * | 0xFD | XXXXXXXX | XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX | XXXXXXXX | is a 16-bit unsigned integer which represents the
 	 * length of array's element.
 	 */
-	public final static byte ARRAY16 = 0x6;
+	public final static int ARRAY16 = 0xFD;
 	public final static long MIN_ARRAY16_LEN = MIN_BIN16_LEN;
 	public final static long MAX_ARRAY16_LEN = MAX_BIN16_LEN;
 
@@ -188,12 +188,12 @@ public class EQCType {
 	 * Array24 stores a byte array including xxx elements whose length is from 2^16
 	 * to 2^24 - 1 bytes.
 	 * <p>
-	 * | 0x7 | EQCBits | XXXXXXXX | XXXXXXXX | XXXXXXXX | data |
+	 * | 0xFE | EQCBits | XXXXXXXX | XXXXXXXX | XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX | XXXXXXXX | XXXXXXXX | is a 24-bit unsigned integer which
 	 * represents the length of array's element.
 	 */
-	public final static byte ARRAY24 = 0x7;
+	public final static int ARRAY24 = 0xFE;
 	public final static long MIN_ARRAY24_LEN = MIN_BIN24_LEN;
 	public final static long MAX_ARRAY24_LEN = MAX_BIN24_LEN;
 
@@ -201,12 +201,12 @@ public class EQCType {
 	 * Array32 stores a byte array including xxx elements whose length is from 2^24
 	 * to 2^32 - 1 bytes.
 	 * <p>
-	 * | 0x8 | EQCBits | XXXXXXXX | XXXXXXXX| XXXXXXXX| XXXXXXXX | data |
+	 * | 0xFF | EQCBits | XXXXXXXX | XXXXXXXX| XXXXXXXX| XXXXXXXX | data |
 	 * <p>
 	 * | XXXXXXXX| XXXXXXXX| XXXXXXXX | XXXXXXXX | is a 32-bit unsigned integer
 	 * which represents the length of array's element.
 	 */
-	public final static byte ARRAY32 = 0x8;
+	public final static int ARRAY32 = 0xFF;
 	public final static long MIN_ARRAY32_LEN = MIN_BIN32_LEN;
 	public final static long MAX_ARRAY32_LEN = MAX_BIN32_LEN;
 
@@ -239,7 +239,7 @@ public class EQCType {
 			} else {
 				if (bytes.length < MIN_BINX_LEN || bytes.length > MAX_BINX_LEN) {
 					throw new IllegalStateException(
-							"Byte array's length shouldn't less than 9 or exceed 255. Len: " + bytes.length);
+							"Byte array's length shouldn't less than 1 or exceed 247. Len: " + bytes.length);
 				}
 //				os.write((byte) (BIN7 | (bytes.length & 0xFF)));
 				os.write(bytes.length & 0xFF);
@@ -278,7 +278,7 @@ public class EQCType {
 	}
 
 	public static boolean isBINX(final byte[] bytes) {
-		return (bytes.length == 1) && (bytes[0] >= MIN_BINX_LEN);
+		return (bytes.length == 1) && (bytes[0] >= MIN_BINX_LEN) && (bytes[0] <= MAX_BINX_LEN);
 	}
 
 	/**
@@ -293,40 +293,36 @@ public class EQCType {
 	}
 
 	public static boolean isBIN(final int type) {
-		byte foo = (byte) type;
-		return isBINX(type) || ((foo == BIN16) || (foo == BIN24) || (foo == BIN32) || (foo == BIN8));
+		return isBINX(type) || ((type == BIN16) || (type == BIN24) || (type == BIN32) || (type == BIN8));
 	}
 
 	public static boolean isArray(final int type) {
-		byte foo = (byte) type;
-		return (foo == ARRAY16) || (foo == ARRAY8) || (foo == ARRAY24) || (foo == ARRAY32) || isBINX(type);
+		return (type == ARRAY16) || (type == ARRAY8) || (type == ARRAY24) || (type == ARRAY32) || isBINX(type);
 	}
 
 	public static int getBINTypeLen(final int type) {
-		byte foo = (byte) type;
 		int len = 0;
-		if (foo == BIN16) {
+		if (type == BIN16) {
 			len = 2;
-		} else if (foo == BIN24) {
+		} else if (type == BIN24) {
 			len = 3;
-		} else if (foo == BIN32) {
+		} else if (type == BIN32) {
 			len = 4;
-		} else if (foo == BIN8) {
+		} else if (type == BIN8) {
 			len = 1;
 		}
 		return len;
 	}
 
 	public static int getArrayTypeLen(final int type) {
-		byte foo = (byte) type;
 		int len = 0;
-		if (foo == ARRAY16) {
+		if (type == ARRAY16) {
 			len = 2;
-		} else if (foo == ARRAY24) {
+		} else if (type == ARRAY24) {
 			len = 3;
-		} else if (foo == ARRAY32) {
+		} else if (type == ARRAY32) {
 			len = 4;
-		} else if (foo == ARRAY8) {
+		} else if (type == ARRAY8) {
 			len = 1;
 		}
 		return len;
@@ -377,41 +373,36 @@ public class EQCType {
 //		return os.toByteArray();
 //	}
 	
-	public static <T extends EQCSerializable> byte[] eqcSerializableListToArray(Vector<T> eqcSerializableList) throws Exception {
+	public static <T extends EQCSerializable> byte[] eqcSerializableListToArray(Vector<T> eqcSerializableList)
+			throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		byte[] bytes = null;
-		try {
-			// Stores a NULL placeholder for parsing data when there is corresponding Object
-			// is null.
-			if ((eqcSerializableList == null) || eqcSerializableList.size() == 0) {
-				os.write(NULL);
-			} else {
-				bytes = eqcSerializableListToBytes(eqcSerializableList);
-				if (eqcSerializableList.size() <= MAX_BIN8_LEN) {
-					os.write(ARRAY8);
-					os.write(Util.intToByte(eqcSerializableList.size()));
-					os.write(bytes);
-				} else if (eqcSerializableList.size() <= MAX_BINX_LEN) {
-					os.write(eqcSerializableList.size() & 0xFF);
-					os.write(bytes);
-				} else if (eqcSerializableList.size() <= MAX_BIN16_LEN) {
-					os.write(ARRAY16);
-					os.write(Util.intTo2Bytes(eqcSerializableList.size()));
-					os.write(bytes);
-				} else if (eqcSerializableList.size() <= MAX_BIN24_LEN) {
-					os.write(ARRAY24);
-					os.write(Util.intTo3Bytes(eqcSerializableList.size()));
-					os.write(bytes);
-				} else if (eqcSerializableList.size() <= MAX_BIN32_LEN) {
-					os.write(ARRAY32);
-					os.write(Util.intToBytes(eqcSerializableList.size()));
-					os.write(bytes);
-				}
+		// Stores a NULL placeholder for parsing data when there is corresponding Object
+		// is null.
+		if ((eqcSerializableList == null) || eqcSerializableList.size() == 0) {
+			os.write(NULL);
+		} else {
+			bytes = eqcSerializableListToBytes(eqcSerializableList);
+			if (eqcSerializableList.size() <= MAX_BINX_LEN) {
+				os.write(eqcSerializableList.size());
+				os.write(bytes);
+			} else if (eqcSerializableList.size() <= MAX_BIN8_LEN) {
+				os.write(ARRAY8);
+				os.write(Util.intToByte(eqcSerializableList.size()));
+				os.write(bytes);
+			} else if (eqcSerializableList.size() <= MAX_BIN16_LEN) {
+				os.write(ARRAY16);
+				os.write(Util.intTo2Bytes(eqcSerializableList.size()));
+				os.write(bytes);
+			} else if (eqcSerializableList.size() <= MAX_BIN24_LEN) {
+				os.write(ARRAY24);
+				os.write(Util.intTo3Bytes(eqcSerializableList.size()));
+				os.write(bytes);
+			} else if (eqcSerializableList.size() <= MAX_BIN32_LEN) {
+				os.write(ARRAY32);
+				os.write(Util.intToBytes(eqcSerializableList.size()));
+				os.write(bytes);
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
 		}
 		return os.toByteArray();
 	}
@@ -441,12 +432,12 @@ public class EQCType {
 			// data item.
 			if (bytes == null) {
 				os.write(NULL);
+			} else if (bytes.length <= MAX_BINX_LEN) {
+				os.write(bytesToBINX(bytes));
 			} else if (bytes.length <= MAX_BIN8_LEN) {
 				os.write(BIN8);
 				os.write(Util.intToByte(bytes.length));
 				os.write(bytes);
-			} else if (bytes.length <= MAX_BINX_LEN) {
-				os.write(bytesToBINX(bytes));
 			} else if (bytes.length <= MAX_BIN16_LEN) {
 				os.write(BIN16);
 				os.write(Util.intTo2Bytes(bytes.length));
@@ -576,7 +567,7 @@ public class EQCType {
 			elementLen = Util.bytesToInt(data);
 			// Check if elementLen is valid
 			if(!isElementLenValid(type, elementLen)) {
-				throw new IllegalStateException("Array's element length is invalid.");
+				throw new IllegalStateException("Array's element length is invalid type: " + type + " element length: " + elementLen);
 			}
 			// Read the content
 			for(long i=0; i<elementLen; ++i) {
@@ -647,7 +638,12 @@ public class EQCType {
 	}
 	
 	private static boolean isElementLenValid(int type, long elementLen) {
-		if(type == ARRAY8 || type == BIN8) {
+		if(type >= MIN_BINX_LEN && type <= MAX_BINX_LEN) {
+			if(elementLen >= MIN_BINX_LEN && elementLen <= MAX_BINX_LEN) {
+				return true;
+			}
+		}
+		else if(type == ARRAY8 || type == BIN8) {
 			if((elementLen >= MIN_BIN8_LEN) && (elementLen <= MAX_BIN8_LEN)) {
 				return true;
 			}
@@ -666,6 +662,9 @@ public class EQCType {
 			if((elementLen >= MIN_BIN32_LEN) && (elementLen <= MAX_BIN32_LEN)) {
 				return true;
 			}
+		}
+		else {
+			throw new IllegalStateException("Invalid element length: " + elementLen);
 		}
 		return false;
 	}
@@ -754,10 +753,10 @@ public class EQCType {
 
 	public static int getEQCTypeOverhead(int rawdataLength) {
 		int overHead = 0;
-		if (rawdataLength <= MAX_BIN8_LEN) {
-			overHead = 2;
-		} else if (rawdataLength >= MIN_BINX_LEN && rawdataLength <= MAX_BINX_LEN) {
+		if (rawdataLength <= MAX_BINX_LEN) {
 			overHead = 1;
+		} else if (rawdataLength <= MAX_BIN8_LEN) {
+			overHead = 2;
 		} else if (rawdataLength <= MAX_BIN16_LEN) {
 			overHead = 3;
 		} else if (rawdataLength <= MAX_BIN24_LEN) {

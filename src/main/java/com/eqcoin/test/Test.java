@@ -67,6 +67,9 @@ import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.lock.EQCLock;
+import com.eqcoin.blockchain.lock.LockTool;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
+import com.eqcoin.blockchain.lock.T2Lock;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.Passport;
@@ -80,10 +83,9 @@ import com.eqcoin.blockchain.transaction.TransferTxOut;
 import com.eqcoin.blockchain.transaction.Transaction.TRANSACTION_PRIORITY;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
 import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
-import com.eqcoin.configuration.Configuration;
-import com.eqcoin.crypto.EQCPublicKey;
+import com.eqcoin.crypto.EQCECCPublicKey;
 import com.eqcoin.keystore.Keystore;
-import com.eqcoin.keystore.UserAccount;
+import com.eqcoin.keystore.UserProfile;
 import com.eqcoin.keystore.Keystore.ECCTYPE;
 import com.eqcoin.persistence.EQCBlockChain;
 import com.eqcoin.persistence.EQCBlockChainH2;
@@ -101,8 +103,6 @@ import com.eqcoin.util.Base58;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -229,7 +229,7 @@ public class Test {
 			ECPublicKey ecPublicKey = (ECPublicKey) pubKey;
 			Log.info(pubKey.toString() + " public key's len: " + pubKey.getEncoded().length + " ec x: "
 					+ ecPublicKey.getW().getAffineX().toByteArray().length);
-			EQCPublicKey eqPublicKey = new EQCPublicKey(type);
+			EQCECCPublicKey eqPublicKey = new EQCECCPublicKey(type);
 			// Create EQPublicKey according to java pubkey
 			eqPublicKey.setECPoint((ECPublicKey) pubKey);
 			Log.info("Compress Public Key's len: " + eqPublicKey.getCompressedPublicKeyEncoded().length
@@ -290,12 +290,12 @@ public class Test {
 			Signature signature;
 			signature = Signature.getInstance("NONEwithECDSA", "SunEC");
 //			pubKey = new sun.security.ec.ECPublicKeyImpl(baSignature);
-			EQCPublicKey eqPublicKey = new EQCPublicKey(type);
+			EQCECCPublicKey eqPublicKey = new EQCECCPublicKey(type);
 			// Create EQPublicKey according to java pubkey
 			eqPublicKey.setECPoint((ECPublicKey) pubKey);
 			byte[] compressedPubkey = eqPublicKey.getCompressedPublicKeyEncoded();
 			Log.info("compressedPubkey: " + Util.dumpBytes(compressedPubkey, 10) + " len: " + compressedPubkey.length);// (compressedPubkey));
-			eqPublicKey = new EQCPublicKey(type);
+			eqPublicKey = new EQCECCPublicKey(type);
 			eqPublicKey.setECPoint(compressedPubkey);
 //			eqPublicKey.setECPoint(pubKey.getEncoded());
 			Log.info(Util.dumpBytesBigEndianBinary(pubKey.getEncoded()));
@@ -355,11 +355,11 @@ public class Test {
 	}
 
 	public static void testKeystore() {
-		UserAccount account;
+		UserProfile account;
 		Log.info("testKeystore");
 		for (int i = 0; i < 30; ++i) {
 			Log.info("i: " + i);
-			account = Keystore.getInstance().createUserAccount("nju2006", "abc", ECCTYPE.P521);
+			account = Keystore.getInstance().createUserProfile("nju2006", "abc", ECCTYPE.P521);
 //			if(account.getAddress().length() > 51 || account.getAddress().length() < 49) {
 			Log.info(account.getReadableLock() + " len: " + account.getReadableLock().length());
 //			}
@@ -368,10 +368,10 @@ public class Test {
 	}
 
 	public static void testAIToAddress() {
-		Log.info(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+		Log.info(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 		try {
-			Log.info(Util.LockTool.AIToReadableLock(Util.LockTool
-					.readableLockToAI(Keystore.getInstance().getUserAccounts().get(0).getReadableLock())));
+			Log.info(LockTool.AIToReadableLock(LockTool
+					.readableLockToAI(Keystore.getInstance().getUserProfiles().get(0).getReadableLock())));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -379,10 +379,10 @@ public class Test {
 	}
 
 	public static void testUserAccount() {
-		UserAccount account;
-		account = Keystore.getInstance().createUserAccount("nju2006", "abc", ECCTYPE.P521);
+		UserProfile account;
+		account = Keystore.getInstance().createUserProfile("nju2006", "abc", ECCTYPE.P521);
 		Log.info(account.toString());
-//		Log.info(Keystore.getInstance().getUserAccounts().get(0).toString());
+//		Log.info(Keystore.getInstance().getUserProfiles().get(0).toString());
 	}
 
 	public static void testBytesToBIN() {
@@ -507,7 +507,7 @@ public class Test {
 //		eqcBlock.getTransactions().setTransactionsHeader(transactionsHeader);
 //		Transaction transaction = new  Transaction();
 //		Address address = new Address();
-//		address.setAddress(Keystore.getInstance().getUserAccounts().get(0).getAddress());
+//		address.setAddress(Keystore.getInstance().getUserProfiles().get(0).getAddress());
 //		address.setSerialNumber(new SerialNumber(BigInteger.ZERO));
 //		TxOut txOut = new TxOut();
 //		txOut.setAddress(address);
@@ -539,7 +539,7 @@ public class Test {
 //		eqcBlock1.getTransactions().setTransactionsHeader(transactionsHeader1);
 //		Transaction transaction1 = new  Transaction();
 //		Address address1 = new Address();
-//		address1.setAddress(Keystore.getInstance().getUserAccounts().get(0).getAddress());
+//		address1.setAddress(Keystore.getInstance().getUserProfiles().get(0).getAddress());
 //		address1.setSerialNumber(new SerialNumber(BigInteger.ZERO));
 //		TxOut txOut1 = new TxOut();
 //		txOut1.setAddress(address1);
@@ -584,7 +584,7 @@ public class Test {
 ////					eqcBlock.getTransactions().setTransactionsHeader(transactionsHeader);
 ////					Transaction transaction = new  Transaction();
 ////					Address address = new Address();
-////					address.setAddress(Keystore.getInstance().getUserAccounts().get(0).getAddress());
+////					address.setAddress(Keystore.getInstance().getUserProfiles().get(0).getAddress());
 ////					address.setSerialNumber(new SerialNumber(BigInteger.ZERO));
 ////					TxOut txOut = new TxOut();
 ////					txOut.setAddress(address);
@@ -609,7 +609,7 @@ public class Test {
 //				eqcBlock.getTransactions().setTransactionsHeader(transactionsHeader);
 //				transaction = new  Transaction();
 //				address = new Address();
-//				address.setAddress(Keystore.getInstance().getUserAccounts().get(0).getAddress());
+//				address.setAddress(Keystore.getInstance().getUserProfiles().get(0).getAddress());
 //				address.setSerialNumber(new SerialNumber(BigInteger.ZERO));
 //				txOut = new TxOut();
 //				txOut.setAddress(address);
@@ -778,9 +778,9 @@ public class Test {
 		for (int i = 0; i < 2; ++i) {
 			EQCHive eqcBlock;
 			try {
-				eqcBlock = EQCBlockChainH2.getInstance().getEQCHive(new ID(BigInteger.valueOf(i)), true);
+				eqcBlock = new EQCHive(EQCBlockChainH2.getInstance().getEQCHive(new ID(BigInteger.valueOf(i)))); 
 				Log.info(eqcBlock.toString());
-			} catch (ClassNotFoundException | SQLException e) {
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -793,9 +793,9 @@ public class Test {
 		TxIn txIn = new TxIn();
 		txIn.setPassportId(ID.ZERO);
 		txIn.setValue(Util.getValue(25));
-		EQCLock key = new EQCLock();
+		EQCLock key = null;
 		try {
-			key.cloneFromReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+			key = new T2Lock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -843,7 +843,7 @@ public class Test {
 			PublicKey pubKey = kp.getPublic();
 			ECPublicKey ecPublicKey = (ECPublicKey) pubKey;
 			Log.info(Util.dumpBytes(ecPublicKey.getEncoded(), 16));
-			EQCPublicKey eqPublicKey = new EQCPublicKey(type);
+			EQCECCPublicKey eqPublicKey = new EQCECCPublicKey(type);
 			// Create EQPublicKey according to java pubkey
 			eqPublicKey.setECPoint((ECPublicKey) pubKey);
 			eqPublicKey.setECPoint(eqPublicKey.getCompressedPublicKeyEncoded());
@@ -918,21 +918,21 @@ public class Test {
 //		Peer peer1 = new Peer(), peer2 = new Peer(), peer3 = new Peer();
 //		peer1.setPeerSN(1);
 //		peer1.setTimestamp(Time.UTC(2019, 2, 6, 10, 0, 0));
-//		peer1.addAddress(Keystore.getInstance().getUserAccounts().get(1).getAddress(), 
-//				Keystore.getInstance().getUserAccounts().get(2).getAddress(),
-//				Keystore.getInstance().getUserAccounts().get(3).getAddress());
+//		peer1.addAddress(Keystore.getInstance().getUserProfiles().get(1).getAddress(), 
+//				Keystore.getInstance().getUserProfiles().get(2).getAddress(),
+//				Keystore.getInstance().getUserProfiles().get(3).getAddress());
 //		
 //		peer2.setPeerSN(2);
 //		peer2.setTimestamp(Time.UTC(2029, 2, 2, 24, 0, 0));
-//		peer2.addAddress(Keystore.getInstance().getUserAccounts().get(4).getAddress(), 
-//				Keystore.getInstance().getUserAccounts().get(5).getAddress(),
-//				Keystore.getInstance().getUserAccounts().get(6).getAddress());
+//		peer2.addAddress(Keystore.getInstance().getUserProfiles().get(4).getAddress(), 
+//				Keystore.getInstance().getUserProfiles().get(5).getAddress(),
+//				Keystore.getInstance().getUserProfiles().get(6).getAddress());
 //		
 //		peer3.setPeerSN(3);
 //		peer3.setTimestamp(Time.UTC(2029, 2, 2, 24, 0, 0));
-//		peer3.addAddress(Keystore.getInstance().getUserAccounts().get(7).getAddress(), 
-//				Keystore.getInstance().getUserAccounts().get(8).getAddress(),
-//				Keystore.getInstance().getUserAccounts().get(9).getAddress());
+//		peer3.addAddress(Keystore.getInstance().getUserProfiles().get(7).getAddress(), 
+//				Keystore.getInstance().getUserProfiles().get(8).getAddress(),
+//				Keystore.getInstance().getUserProfiles().get(9).getAddress());
 //		
 //		pAddress.addPeer(peer1, peer2, peer3);
 //		pAddress.generate();
@@ -951,7 +951,7 @@ public class Test {
 //		transaction.setNonce(BigInteger.valueOf(1l));
 //		TxOut txOut = new TxOut();
 //		address = new Address();
-//		address.setAddress(Keystore.getInstance().getUserAccounts().get(1).getAddress());
+//		address.setAddress(Keystore.getInstance().getUserProfiles().get(1).getAddress());
 //		txOut.setAddress(address);
 //		txOut.setValue(50 * Util.ABC);
 //		transaction.addTxOut(txOut);
@@ -959,9 +959,9 @@ public class Test {
 //		int sn = 1;
 //		PeerPublickeys peerPublickeys2 = new PeerPublickeys();
 //		peerPublickeys2.setPublickeySN(sn);
-//		peerPublickeys2.addPublickey(Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get((sn-1)*3+1).getPublicKey(), "abc"),
-//				Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get((sn-1)*3+2).getPublicKey(), "abc"),
-//				Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get((sn-1)*3+3).getPublicKey(), "abc"));
+//		peerPublickeys2.addPublickey(Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get((sn-1)*3+1).getPublicKey(), "abc"),
+//				Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get((sn-1)*3+2).getPublicKey(), "abc"),
+//				Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get((sn-1)*3+3).getPublicKey(), "abc"));
 //		com.eqzip.eqcoin.blockchain.PublicKey publicKey = new com.eqzip.eqcoin.blockchain.PublicKey();
 //		publicKey.setPublicKey(peerPublickeys2.getBytes());
 //		transaction.setPublickey(publicKey);
@@ -970,9 +970,9 @@ public class Test {
 //		
 //		PeerSignatures peerSignatures2 = new PeerSignatures();
 //		peerSignatures2.setSignatureSN(sn);
-//		peerSignatures2.addSignature(Util.signTransaction(Keystore.getInstance().getUserAccounts().get((sn-1)*3+1).getAddressType(), Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get((sn-1)*3+1).getPrivateKey(), "abc"), transaction, new byte[16], sn),
-//				Util.signTransaction(Keystore.getInstance().getUserAccounts().get((sn-1)*3+2).getAddressType(), Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get((sn-1)*3+2).getPrivateKey(), "abc"), transaction, new byte[16], sn),
-//				Util.signTransaction(Keystore.getInstance().getUserAccounts().get((sn-1)*3+3).getAddressType(), Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get((sn-1)*3+3).getPrivateKey(), "abc"), transaction, new byte[16], sn)
+//		peerSignatures2.addSignature(Util.signTransaction(Keystore.getInstance().getUserProfiles().get((sn-1)*3+1).getAddressType(), Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get((sn-1)*3+1).getPrivateKey(), "abc"), transaction, new byte[16], sn),
+//				Util.signTransaction(Keystore.getInstance().getUserProfiles().get((sn-1)*3+2).getAddressType(), Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get((sn-1)*3+2).getPrivateKey(), "abc"), transaction, new byte[16], sn),
+//				Util.signTransaction(Keystore.getInstance().getUserProfiles().get((sn-1)*3+3).getAddressType(), Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get((sn-1)*3+3).getPrivateKey(), "abc"), transaction, new byte[16], sn)
 //				);
 //		transaction.setSignature(peerSignatures2.getBytes());
 //		
@@ -1004,19 +1004,24 @@ public class Test {
 		bytes[0] = 1;
 		bytes[31] = 1;
 		Log.info("32 bytes 0: " + Base58.encode(bytes));
-		Log.info(Util.LockTool.generateAddress(bytes, LockType.T1) + " len: "
-				+ Util.LockTool.generateAddress(bytes, LockType.T1).length());
-		for (int i = 0; i < bytes.length; ++i) {
-			bytes[i] = (byte) 0xff;
+		try {
+			Log.info(LockTool.generateLock(bytes, LockType.T1) + " len: "
+					+ LockTool.generateLock(bytes, LockType.T1).length());
+			for (int i = 0; i < bytes.length; ++i) {
+				bytes[i] = (byte) 0xff;
+			}
+			Log.info("32 bytes ff: " + Base58.encode(bytes));
+			Log.info(LockTool.generateLock(bytes, LockType.T1) + " len: "
+					+ LockTool.generateLock(bytes, LockType.T1).length());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		Log.info("32 bytes ff: " + Base58.encode(bytes));
-		Log.info(Util.LockTool.generateAddress(bytes, LockType.T1) + " len: "
-				+ Util.LockTool.generateAddress(bytes, LockType.T1).length());
 	}
 
-	public static void testDisplayKeystore() {
-		Vector<UserAccount> userAccounts = Keystore.getInstance().getUserAccounts();
-		for (UserAccount userAccount : userAccounts) {
+	public static void testDisplayUserProfiles() {
+		Vector<UserProfile> userAccounts = Keystore.getInstance().getUserProfiles();
+		for (UserProfile userAccount : userAccounts) {
 			Log.info(userAccount.toString());
 		}
 	}
@@ -1123,7 +1128,7 @@ public class Test {
 	public static void testRocksDBAccount() {
 //		Account account = new AssetAccount();
 //		Passport passport = new Passport();
-//		passport.setReadableAddress(Keystore.getInstance().getUserAccounts().get(0).getReadableAddress());
+//		passport.setReadableAddress(Keystore.getInstance().getUserProfiles().get(0).getReadableAddress());
 //		passport.setID(ID.TWO);
 //		account.setPassport(passport);
 //		account.setLockCreateHeight(ID.ZERO);
@@ -1239,26 +1244,32 @@ public class Test {
 	}
 
 	public static void testVerifyAddress() {
-		byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPrivateKey(), "abc");
-		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPublicKey(), "abc");
-		String key = LockTool.generateAddress(publickey, LockType.T2);
-		Log.info(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
-		Log.info(key);
-		if (LockTool.verifyLockAndPublickey(Keystore.getInstance().getUserAccounts().get(0).getReadableLock(),
-				publickey)) {
-			Log.info("Publickey verify passed");
-		} else {
-			Log.info("Publickey verify failed");
-		}
-		if (LockTool.verifyAddressCRC32C(Keystore.getInstance().getUserAccounts().get(0).getReadableLock())) {
-			Log.info("crc passed");
-		} else {
-			Log.info("crc failed");
+		try {
+			byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(0).getPrivateKey(), "abc");
+			byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(0).getPublicKey(), "abc");
+			String key;
+			key = LockTool.generateLock(publickey, LockType.T2);
+			Log.info(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
+			Log.info(key);
+			if (LockTool.verifyLockAndPublickey(Keystore.getInstance().getUserProfiles().get(0).getReadableLock(),
+					publickey)) {
+				Log.info("Publickey verify passed");
+			} else {
+				Log.info("Publickey verify failed");
+			}
+			if (LockTool.verifyAddressCRC32C(Keystore.getInstance().getUserProfiles().get(0).getReadableLock())) {
+				Log.info("crc passed");
+			} else {
+				Log.info("crc failed");
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
 	public static void testBase582() {
-		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(0).getPublicKey(), "abc");
+		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(0).getPublicKey(), "abc");
 		Log.info(Base58.encode(publickey));
 		try {
 			if (Arrays.equals(publickey, Base58.decode(Base58.encode(publickey)))) {
@@ -1362,7 +1373,7 @@ public class Test {
 //		Passport account = new AssetPassport();
 //		Lock key = new Lock();
 //		key.setID(ID.ZERO);
-//		key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+//		key.setReadableLock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 //		account.setKey(key);
 //		account.setLockCreateHeight(ID.ZERO);
 //		Asset asset = new CoinAsset();
@@ -1371,7 +1382,7 @@ public class Test {
 //		try {
 //			EQCBlockChainH2.getInstance().savePassportSnapshot(account, ID.ZERO);
 //			key.setID(ID.ZERO);
-//			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+//			key.setReadableLock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 //			account.setKey(key);
 //			account.setLockCreateHeight(ID.ZERO);
 //			asset = new CoinAsset();
@@ -1380,7 +1391,7 @@ public class Test {
 //			EQCBlockChainH2.getInstance().savePassportSnapshot(account, ID.ONE);
 //
 //			key.setID(ID.ZERO);
-//			key.setReadableLock(Keystore.getInstance().getUserAccounts().get(0).getReadableLock());
+//			key.setReadableLock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 //			account.setKey(key);
 //			account.setLockCreateHeight(ID.ZERO);
 //			asset = new CoinAsset();
@@ -1404,8 +1415,8 @@ public class Test {
 	}
 
 	public static void testTransaction() {
-//		UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(1);
-//		UserAccount userAccount1 = Keystore.getInstance().getUserAccounts().get(3);
+//		UserAccount userAccount = Keystore.getInstance().getUserProfiles().get(1);
+//		UserAccount userAccount1 = Keystore.getInstance().getUserProfiles().get(3);
 //		TransferTransaction transaction = new TransferTransaction();
 //		TxIn txIn = new TxIn();
 //		txIn.setKey(new Lock(userAccount.getReadableLock()));
@@ -1459,8 +1470,8 @@ public class Test {
 	}
 
 	public static void testTransaction1() {
-//		UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(1);
-//		UserAccount userAccount1 = Keystore.getInstance().getUserAccounts().get(2);
+//		UserAccount userAccount = Keystore.getInstance().getUserProfiles().get(1);
+//		UserAccount userAccount1 = Keystore.getInstance().getUserProfiles().get(2);
 //		TxIn txIn = new TxIn();
 //		txIn.setKey(new Lock(userAccount.getReadableLock()));
 //
@@ -1480,7 +1491,7 @@ public class Test {
 //		publicKey2.setCompressedPublickey(publickey);
 //		operationTransaction.setCompressedPublickey(publicKey2);
 //		UpdateAddressOperation updateAddressOperation = new UpdateAddressOperation();
-//		UserAccount userAccount2 = Keystore.getInstance().getUserAccounts().get(3);
+//		UserAccount userAccount2 = Keystore.getInstance().getUserProfiles().get(3);
 //		updateAddressOperation.setAddress(new Lock(userAccount2.getReadableLock()));
 //		operationTransaction.setOperation(updateAddressOperation);
 //		operationTransaction.setTxIn(txIn);
@@ -1506,14 +1517,14 @@ public class Test {
 	public static void testAccountHashTime() {
 //		Passport account = new AssetPassport();
 //		Lock key = new Lock();
-//		key.setReadableLock(Keystore.getInstance().getUserAccounts().get(1).getReadableLock());
+//		key.setReadableLock(Keystore.getInstance().getUserProfiles().get(1).getReadableLock());
 //		key.setID(ID.ONE);
 //		account.setKey(key);
 //		account.setLockCreateHeight(ID.ONE);
 //		Asset asset = new CoinAsset();
 //		asset.deposit(new ID(50 * Util.ABC));
 //		account.setAsset(asset);
-//		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(1).getPublicKey(), "abc");
+//		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(1).getPublicKey(), "abc");
 //		Publickey publicKey2 = new Publickey();
 //		publicKey2.setCompressedPublickey(publickey);
 //		publicKey2.setPublickeyCreateHeight(ID.ONE);
@@ -1597,36 +1608,51 @@ public class Test {
 //		header.setRootHash(Util.EQCCHA_MULTIPLE_FIBONACCI_MERKEL(Util.getSecureRandomBytes(), Util.ONE, true));
 //		header.setTimestamp(new ID(System.currentTimeMillis()));
 //		Log.info(header.toString());
-		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(1).getPublicKey(), "abc");
+		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(1).getPublicKey(), "abc");
 		Log.info("Publickey Len: " + publickey.length);
 		long c0 = System.currentTimeMillis();
 		int n = 1000;
 		for (int i = 0; i < n; ++i) {
 //			Util.multipleExtend(Util.getSecureRandomBytes(), Util.HUNDRED_THOUSAND);
 //			Util.EQCCHA_MULTIPLE(header.getBytes(), Util.HUNDRED_THOUSAND, true);
-			Util.LockTool.generateAddress(publickey, LockType.T2);
+			try {
+				LockTool.generateLock(publickey, LockType.T2);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		long c1 = System.currentTimeMillis();
 		Log.info("total time: " + (c1 - c0) + " average time:" + (double) (c1 - c0) / n);
 	}
 
 	public static void testVerrifyAddressTime() {
-		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserAccounts().get(1).getPublicKey(), "abc");
+		byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(1).getPublicKey(), "abc");
 		Log.info("Publickey Len: " + publickey.length);
 		long c0 = System.currentTimeMillis();
 		int n = 10000;
 		for (int i = 0; i < n; ++i) {
-			Util.LockTool.verifyLockAndPublickey(
-					Keystore.getInstance().getUserAccounts().get(1).getReadableLock(), publickey);
+			try {
+				LockTool.verifyLockAndPublickey(
+						Keystore.getInstance().getUserProfiles().get(1).getReadableLock(), publickey);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		long c1 = System.currentTimeMillis();
 		Log.info("total time: " + (c1 - c0) + " average time:" + (double) (c1 - c0) / n);
 	}
 
 	public static void testAddressCRC32C() {
-		Log.info(Keystore.getInstance().getUserAccounts().get(2).getReadableLock());
-		if (LockTool.verifyAddressCRC32C(Keystore.getInstance().getUserAccounts().get(2).getReadableLock())) {
-			Log.info("Passed");
+		Log.info(Keystore.getInstance().getUserProfiles().get(2).getReadableLock());
+		try {
+			if (LockTool.verifyAddressCRC32C(Keystore.getInstance().getUserProfiles().get(2).getReadableLock())) {
+				Log.info("Passed");
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 	}
@@ -1650,7 +1676,7 @@ public class Test {
 			for (int i = 1; i < id.intValue(); ++i) {
 				ChangeLog changeLog = new ChangeLog(new ID(i),
 						new Filter(Mode.MINING));
-				EQCHive eqcBlock = Util.DB().getEQCHive(new ID(i), true);
+				EQCHive eqcBlock = new EQCHive(Util.DB().getEQCHive(new ID(i)));
 				try {
 					eqcBlock.isValid();
 				} catch (Exception e) {
@@ -1839,8 +1865,8 @@ public class Test {
 	}
 	
 	public static void sendTransaction() {
-//		UserAccount userAccount = Keystore.getInstance().getUserAccounts().get(0);
-//		UserAccount userAccount1 = Keystore.getInstance().getUserAccounts().get(3);
+//		UserAccount userAccount = Keystore.getInstance().getUserProfiles().get(0);
+//		UserAccount userAccount1 = Keystore.getInstance().getUserProfiles().get(3);
 		TransferTransaction transaction = new TransferTransaction();
 //		TxIn txIn = new TxIn();
 //		txIn.setLock(new EQCLock(userAccount.getReadableLock()));
@@ -1920,5 +1946,27 @@ public class Test {
 			e1.printStackTrace();
 		}
 	}
-	
+
+	public static void dumpPassport(long lastId) {
+		for (long i = 0; i < lastId; ++i) {
+			try {
+				Log.info(Util.DB().getPassport(new ID(i), Mode.GLOBAL).toString());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static void dumpLock(long lastId) {
+		for (long i = 0; i < lastId; ++i) {
+			try {
+				Log.info(Util.DB().getLock(new ID(i), Mode.GLOBAL).toString());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
 }

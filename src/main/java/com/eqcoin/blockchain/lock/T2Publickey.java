@@ -39,7 +39,6 @@ import com.eqcoin.util.Util;
  * @date Apr 10, 2020
  * @email 10509759@qq.com
  */
-@Deprecated
 public class T2Publickey extends EQCPublickey {
 	
 	public T2Publickey() {

@@ -36,6 +36,7 @@ import java.security.acl.Owner;
 import java.util.Arrays;
 import javax.print.attribute.standard.RequestingUserName;
 
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.persistence.EQCBlockChainH2;
 import com.eqcoin.serialization.EQCSerializable;
@@ -44,8 +45,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -74,7 +73,7 @@ public class EQCLock extends EQCSerializable {
 //	private ID passportId;
 //	private byte[] publickey;
 	protected LockType lockType;
-	protected byte[] lockHash;
+	protected byte[] lockCode;
 
 	public EQCLock() {
 		super();
@@ -117,7 +116,7 @@ public class EQCLock extends EQCSerializable {
 			lock = new T2Lock(is);
 		}
 		else {
-			new IllegalStateException("Wrong lock type: " + lockType);
+			throw new IllegalStateException("Wrong lock type: " + lockType);
 		}
 		return lock;
 	}
@@ -152,10 +151,9 @@ public class EQCLock extends EQCSerializable {
 	 * @see com.eqcoin.serialization.EQCSerializable#getHeaderBytes()
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(lockType.getEQCBits());
-		return os.toByteArray();
+		return os;
 	}
 
 	/*
@@ -257,17 +255,17 @@ public class EQCLock extends EQCSerializable {
 	}
 
 	/**
-	 * @return the lockHash
+	 * @return the lockCode
 	 */
-	public byte[] getLockHash() {
-		return lockHash;
+	public byte[] getLockCode() {
+		return lockCode;
 	}
 
 	/**
-	 * @param lockHash the lockHash to set
+	 * @param lockCode the lockCode to set
 	 */
-	public void setLockHash(byte[] lockHash) {
-		this.lockHash = lockHash;
+	public void setLockCode(byte[] lockCode) {
+		this.lockCode = lockCode;
 	}
 
 	/**
@@ -284,20 +282,11 @@ public class EQCLock extends EQCSerializable {
 		this.lockType = lockType;
 	}
 	
-	public void cloneFromReadableLock(String readableLock) throws Exception {
-		if(!LockTool.isReadableLockSanity(readableLock)) {
-			throw new IllegalStateException("Readable lock isn't sanity: " + readableLock);
-		}
-		byte[] aiLock = LockTool.readableLockToAI(readableLock);
-		lockType = LockType.get(aiLock[0]);
-		System.arraycopy(aiLock, 1, lockHash, 0, aiLock.length - 1);
-	}
-	
 	public Value getProofLength() {
 		return  Value.ZERO;
 	}
 
-	public String getReadableLock() throws NoSuchFieldException {
+	public String getReadableLock() throws Exception {
 		return LockTool.EQCLockToReadableLock(this);
 	}
 	

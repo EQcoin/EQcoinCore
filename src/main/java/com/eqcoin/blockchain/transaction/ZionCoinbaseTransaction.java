@@ -32,6 +32,7 @@ package com.eqcoin.blockchain.transaction;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Vector;
 
 import com.eqcoin.blockchain.changelog.ChangeLog;
@@ -88,9 +89,6 @@ public class ZionCoinbaseTransaction extends Transaction {
 	 */
 	@Override
 	public boolean isValid() throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!isSanity()) {
-			return false;
-		}
 		if(!nonce.equals(changeLog.getHeight().getNextID())) {
 			return false;
 		}
@@ -172,8 +170,10 @@ public class ZionCoinbaseTransaction extends Transaction {
 	 */
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		parseSoloAndTransactionType(is);
-		parseNonce(is);
+		// Parse Transaction type
+		transactionType = TransactionType.get(EQCType.parseID(is).intValue());
+		// Parse nonce
+		nonce = EQCType.parseID(is);
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
@@ -185,31 +185,19 @@ public class ZionCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#getHeaderBytes(com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			serializeSoloAndTransactionTypeBytes(os);
-			serializeNonce(os);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization Transaction type
+		os.write(transactionType.getEQCBits());
+		// Serialization nonce
+		os.write(EQCType.bigIntegerToEQCBits(nonce));
+		return os;
 	}
-	
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization TxOut
-			os.write(eqCoinFederalTxOut.getBytes());
-			os.write(eqCoinMinerTxOut.getBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization TxOut
+		os.write(eqCoinFederalTxOut.getBytes());
+		os.write(eqCoinMinerTxOut.getBytes());
+		return os;
 	}
 
 	/**

@@ -60,8 +60,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -103,27 +101,6 @@ public class TransferTransaction extends Transaction {
 		return transactionType == TransactionType.TRANSFER;
 	}
 	
-	public void parseHeader(ByteArrayInputStream is)
-			throws Exception {
-		parseNonce(is);
-		parseTxIn(is);
-	}
-
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization nonce
-			serializeNonce(os);
-			// Serialization TxIn
-			serializeTxInBytes(os);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
 	public String toInnerJson() {
 		return
 
@@ -173,14 +150,6 @@ public class TransferTransaction extends Transaction {
 		return os.toByteArray();
 	}
 
-	protected boolean isTxInPublickeyValid() {
-		if(txInLockMate.getEqcPublickey().isNULL()) {
-			Log.Error("TxIn's Lock relevant publikey is null.");
-			return false;
-		}
-		return true;
-	}
-	
 	/**
 	 * Check if all TxOut relevant fields is valid for example the TxOutList, Operation,
 	 * HelixList etc...
@@ -190,10 +159,6 @@ public class TransferTransaction extends Transaction {
 	 */
 	public boolean isDerivedValid() throws Exception {
 
-		if(!isTxInPublickeyValid()) {
-			return false;
-		}
-		
 		// Check if All LockID is valid
 		if(!isAllTxOutLockIDValid()) {
 			Log.Error("isAllTxOutLockIDValid failed.");

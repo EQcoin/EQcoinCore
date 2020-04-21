@@ -91,8 +91,8 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	 * @see com.eqchains.blockchain.subchain.EQCSubchainHeader#parseBody(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		super.parseBody(is);
+	public void parse(ByteArrayInputStream is) throws Exception {
+		super.parse(is);
 		totalSupply = EQCType.parseValue(is);
 		totalLockNumbers = EQCType.parseID(is);
 		totalPassportNumbers = EQCType.parseID(is);
@@ -106,16 +106,15 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 		else {
 			forbiddenLockProofRoot = bytes;
 		}
-		coinbaseTransaction = Transaction.class.newInstance().Parse(is);
+		coinbaseTransaction = Transaction.class.getDeclaredConstructor().newInstance().Parse(is);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqchains.blockchain.subchain.EQCSubchainHeader#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(super.getBodyBytes());
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
+		super.getBytes(os);
 		os.write(totalSupply.getEQCBits());
 		os.write(totalLockNumbers.getEQCBits());
 		os.write(totalPassportNumbers.getEQCBits());
@@ -123,7 +122,7 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 		os.write(passportProofRoot);
 		os.write(EQCType.bytesToBIN(forbiddenLockProofRoot));
 		os.write(coinbaseTransaction.getBytes());
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

@@ -30,6 +30,7 @@
 package com.eqcoin.serialization;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
@@ -41,6 +42,7 @@ public interface EQCInheritable {
 	public void parse(ByteArrayInputStream is)  throws Exception;
 	public void parseHeader(ByteArrayInputStream is)  throws Exception;
 	public void parseBody(ByteArrayInputStream is)  throws Exception;
-	public byte[] getHeaderBytes() throws Exception;
-	public byte[] getBodyBytes() throws Exception;
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception;
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception;
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception;
 }

@@ -61,6 +61,9 @@ public class Filter {
 	}
 
 	public Filter(Mode mode) throws ClassNotFoundException, SQLException, Exception {
+		if(mode == Mode.GLOBAL) {
+			throw new IllegalStateException("Filter's mode only support MINING and VALID");
+		}
 		this.mode = mode;
 		connection = Util.DB().getConnection();
 		// In case before close the app crashed or abnormal interruption so here just
@@ -176,7 +179,7 @@ public class Filter {
 					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
 					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
-					if(lockId.compareTo(changeLog.getPreviousTotalLockNumbers()) > 0) {
+					if(lockId != null && lockId.compareTo(changeLog.getPreviousTotalLockNumbers()) > 0) {
 						lockId = null;
 					}
 				} else {

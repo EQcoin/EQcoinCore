@@ -80,7 +80,7 @@ public class T1Witness extends EQCWitness {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		eqcSignature = EQCType.parseNBytes(is, Util.P256_POINT_LEN.intValue());
+		eqcSignature = EQCType.parseNBytes(is, Util.P256_SIGNATURE_LEN.intValue());
 	}
 	
 	public static byte[] DERToEQCSignature(byte[] derSignature) throws Exception {

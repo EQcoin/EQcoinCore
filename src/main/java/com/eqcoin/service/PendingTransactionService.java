@@ -77,7 +77,7 @@ public class PendingTransactionService extends EQCService {
 		try {
 			Log.info("Received new Transaction");
 			pendingTransactionState = (PendingTransactionState) state;
-			transaction = Transaction.parseTransaction(pendingTransactionState.getTransaction());
+//			transaction = Transaction.parseTransaction(pendingTransactionState.getTransaction());
 			account = Util.DB().getPassport(transaction.getTxIn().getPassportId(), Mode.GLOBAL);
 			if(account == null) {
 				Log.info("Transaction with id " + transaction.getTxIn().getPassportId() + "'s relevant Passport doesn't exists just discard it");

@@ -29,7 +29,10 @@
  */
 package com.eqcoin.test;
 
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -44,9 +47,9 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.test.FixedSecureRandom.BigInteger;
 
-import com.eqcoin.crypto.EQCPublicKey;
+import com.eqcoin.crypto.ECDSASignature;
+import com.eqcoin.crypto.EQCECCPublicKey;
 import com.eqcoin.keystore.Keystore.ECCTYPE;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -58,19 +61,31 @@ import com.eqcoin.util.Util;
  */
 public class ECCSignatureTest {
 	
-	private static EQCPublicKey eqcPublicKey = new EQCPublicKey(ECCTYPE.P256);
+	private static EQCECCPublicKey eqcPublicKey = new EQCECCPublicKey(ECCTYPE.P256);
+	private static StringBuilder sb;
 	
 	public static void main(String[] args) throws Exception {
+		 byte[] signature1 = getSignature();  
+		 Log.info(Util.bytesToHexString(signature1));
+		 ECDSASignature ecdsaSignature = ECDSASignature.decodeFromDER(signature1);
+		 Log.info(Util.bytesToHexString(ecdsaSignature.encodeToDER()));
+		
 //        Security.addProvider(new BouncyCastleProvider());
 		
-		 byte[] signature1 = getSignature();  
-		 byte id = 0;
-		 byte[] pub = eqcPublicKey.recoveryPublickey(Util.SHA3_256("message to sign".getBytes("UTF-8")), signature1, eqcPublicKey.getCompressedPublicKeyEncoded());
-		 Log.info(Util.bytesToHexString(pub));
+//		for(int i=0; i<10000; ++i) {
+//			 byte[] signature1 = getSignature();  
+//			 byte id = 0;
+//			 byte[] pub = eqcPublicKey.recoveryPublickey(Util.SHA3_256("message to sign".getBytes("UTF-8")), signature1, eqcPublicKey.getCompressedPublicKeyEncoded());
+////			 Log.info("\n" + sb.append(Util.bytesToHexString(pub)).toString());
+//			 if(pub == null) {
+//				 Log.Error("can't recovery publickey");
+//			 }
+//		}
+		
 		 //		Log.info(""+id);
 //		byte[] pub = eqcPublicKey.recoverFromSignature(id, ECDSASignature.decodeFromDER(signature1), Util.SHA3_256("message to sign".getBytes("UTF-8")));
 //		 Log.info("Compressed Publickey: " + Util.bytesToHexString(pub));
-		byte[] bytes = null;
+		 byte[] bytes = null;
 		 int n130 = 0, n131 = 0, n132 = 0;
 		 
 		  StringBuilder sb = new StringBuilder();
@@ -140,7 +155,10 @@ public class ECCSignatureTest {
         keyPairGenerator.initialize(ecParameterSpec, SecureRandom.getInstance("SHA1PRNG"));
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
         eqcPublicKey.setECPoint((ECPublicKey) keyPair.getPublic());
-        Log.info("Compressed Publickey: " + Util.bytesToHexString(eqcPublicKey.getCompressedPublicKeyEncoded()));
+//        Log.info("Compressed Publickey: " + Util.bytesToHexString(eqcPublicKey.getCompressedPublicKeyEncoded()));
+        sb = new StringBuilder();
+        sb.append(Util.bytesToHexString(eqcPublicKey.getCompressedPublicKeyEncoded()));
+        sb.append("\n");
         Signature signature = Signature.getInstance("NONEwithECDSA", "SunEC");//Signature.getInstance("SHA256withECDSA");
         signature.initSign(keyPair.getPrivate());
         signature.update(Util.SHA3_256("message to sign".getBytes("UTF-8")));

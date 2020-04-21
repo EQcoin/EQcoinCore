@@ -54,29 +54,26 @@ import com.eqcoin.util.Log;
 // Due to the expandability so here need use isMeetPreconditions
 public class Operation  extends EQCSerializable {
 	public enum OP {
-		PUBLICKEY, LOCK, CHECKPOINT, BLOCKINTERVAL, MAXBLOCKSIZE, TXFEERATE, UPDATESCRIPT;
+		LOCK, CHECKPOINT, BLOCKINTERVAL, MAXBLOCKSIZE, TXFEERATE, UPDATESCRIPT;
 		public static OP get(int ordinal) {
 			OP op = null;
 			switch (ordinal) {
 			case 0:
-				op = OP.PUBLICKEY;
-				break;
-			case 1:
 				op = OP.LOCK;
 				break;
-			case 3:
+			case 1:
 				op = OP.CHECKPOINT;
 				break;
-			case 4:
+			case 2:
 				op = OP.BLOCKINTERVAL;
 				break;
-			case 5:
+			case 3:
 				op = OP.MAXBLOCKSIZE;
 				break;
-			case 6:
+			case 4:
 				op = OP.TXFEERATE;
 				break;
-			case 7:
+			case 5:
 				op = OP.UPDATESCRIPT;
 				break;
 			}
@@ -130,11 +127,18 @@ public class Operation  extends EQCSerializable {
 	 */
 	@Override
 	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
-		UpdateEQCPublickeyOP.class.getDeclaredConstructor().newInstance().parse(is);
-		return (T) parseOperation(is);
+		Operation operation = null;
+		OP op = parseOP(is);
+		if (op == OP.LOCK) {
+			operation = new ChangeLockOP(transaction);
+		} else if (op == OP.CHECKPOINT) {
+			operation = new ChangeCheckPointOP(transaction);
+		} 
+		operation.parse(is);
+		return (T) operation;
 	}
 
-	public static OP parseOP(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
+	public OP parseOP(ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
 		is.mark(0);
 		OP op = null;
 		int opCode = -1;
@@ -145,19 +149,6 @@ public class Operation  extends EQCSerializable {
 			throw new IllegalStateException("OP shouldn't null.");
 		}
 		return op;
-	}
-
-	public static Operation parseOperation(ByteArrayInputStream is) throws Exception {
-		Operation operation = null;
-		OP op = parseOP(is);
-		if(op == OP.PUBLICKEY) {
-			operation = new UpdateEQCPublickeyOP(is);
-		} else if (op == OP.LOCK) {
-			operation = new ChangeLockOP(is);
-		} else if (op == OP.CHECKPOINT) {
-			operation = new ChangeCheckPointOP(is);
-		} 
-		return operation;
 	}
 
 	/* (non-Javadoc)
@@ -176,21 +167,6 @@ public class Operation  extends EQCSerializable {
 	}
 
 	@Override
-	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		// Serialization Header
-		os.write(getHeaderBytes());
-		// Serialization Body
-		os.write(getBodyBytes());
-		return os.toByteArray();
-	}
-
-	@Override
-	public byte[] getBin() throws Exception {
-		return EQCType.bytesToBIN(getBytes());
-	}
-
-	@Override
 	public boolean isSanity() {
 		// TODO Auto-generated method stub
 		return false;
@@ -203,29 +179,10 @@ public class Operation  extends EQCSerializable {
 	}
 
 	@Override
-	public void parseBody(ByteArrayInputStream is)
-			throws Exception {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public byte[] getHeaderBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 			// Serialization OP
 			os.write(EQCType.longToEQCBits(op.ordinal()));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-
-	@Override
-	public byte[] getBodyBytes() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return os;
 	}
 
 	@Override

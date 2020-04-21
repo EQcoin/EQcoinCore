@@ -64,16 +64,34 @@ public abstract class EQCSerializable implements EQCTypable, EQCInheritable {
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
+	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream, java.lang.Object[])
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
 		parseHeader(is);
 		parseBody(is);
 	}
-	
+
+	/**
+	 * When the object which extends from EQCSerializable have multiple sub classes
+	 * need implement this to support parse different sub class from the
+	 * ByteArrayInputStream
+	 * 
+	 * @param is
+	 * @return
+	 * @throws Exception
+	 */
 	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
 		return null;
+	}
+	
+	public <T extends EQCSerializable> T Parse(byte[] bytes) throws Exception {
+		EQCType.assertNotNull(bytes);
+		T t = null;
+		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+		t = Parse(is);
+		EQCType.assertNoRedundantData(is);
+		return t;
 	}
 
 	/* (non-Javadoc)
@@ -98,37 +116,32 @@ public abstract class EQCSerializable implements EQCTypable, EQCInheritable {
 	 * @see com.eqcoin.serialization.EQCInheritable#getHeaderBytes()
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
+		return os;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCInheritable#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		return os;
 	}
 
+	@Override
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
+ 		getHeaderBytes(os);
+		getBodyBytes(os);
+		return os;
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCTypable#getBytes()
 	 */
 	@Override
 	public byte[] getBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Header
-			os.write(getHeaderBytes());
-			// Serialization Body
-			os.write(getBodyBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+		return getBytes(os).toByteArray();
 	}
 
 	/* (non-Javadoc)

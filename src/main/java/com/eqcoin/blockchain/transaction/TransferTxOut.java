@@ -38,7 +38,6 @@ import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
 
 /**
  * @author Xun Wang

@@ -78,10 +78,9 @@ public class IP extends EQCSerializable {
 	 * @see com.eqcoin.serialization.EQCSerializable#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.stringToASCIIBytes(ip));
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

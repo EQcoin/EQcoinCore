@@ -42,31 +42,31 @@ import java.util.Arrays;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import com.eqcoin.blockchain.transaction.TransferTransaction;
 import com.eqcoin.blockchain.transaction.Value;
+import com.eqcoin.blockchain.lock.LockTool;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionShape;
-import com.eqcoin.crypto.EQCPublicKey;
+import com.eqcoin.crypto.EQCECCPublicKey;
 import com.eqcoin.keystore.Keystore.ECCTYPE;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
  * @date 9-19-2018
  * @email 10509759@qq.com
  */
-public class UserAccount implements EQCTypable {
+public class UserProfile extends EQCSerializable {
 
 	private String userName;
 	private byte[] pwdHash;
 	private byte[] privateKey;
 	private byte[] publicKey;
 	private String readableLock;
-	private Value balance;
 
-	public UserAccount() {
+	public UserProfile() {
 	}
 
 	/**
@@ -75,22 +75,29 @@ public class UserAccount implements EQCTypable {
 	 * @param privateKey
 	 * @param publicKey
 	 * @param readableAddress
-	 * @param balance
 	 */
-	public UserAccount(String userName, byte[] pwdHash, byte[] privateKey, byte[] publicKey, String readableAddress, Value balance) {
+	public UserProfile(String userName, byte[] pwdHash, byte[] privateKey, byte[] publicKey, String readableAddress) {
 		super();
 		this.userName = userName;
 		this.pwdHash = pwdHash;
 		this.privateKey = privateKey;
 		this.publicKey = publicKey;
 		this.readableLock = readableAddress;
-		this.balance = balance;
 	}
 
-	public UserAccount(byte[] bytes) throws NoSuchFieldException, IOException {
-		super();
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-
+	public UserProfile(byte[] bytes) throws Exception {
+		super(bytes);
+	}
+	
+	public UserProfile(ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse userName
 		userName = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
 
@@ -105,39 +112,30 @@ public class UserAccount implements EQCTypable {
 
 		// Parse address
 		readableLock = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
-
-		// Parse balance
-		balance = EQCType.parseValue(is);
-
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
+		return (T) new UserProfile(is);
 	}
 
 	@Override
-	public byte[] getBytes() {
+	public byte[] getBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// userName
-			os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(userName)));
-			// pwdHash
-			os.write(EQCType.bytesToBIN(pwdHash));
-			// privateKey
-			os.write(EQCType.bytesToBIN(privateKey));
-			// publicKey
-			os.write(EQCType.bytesToBIN(publicKey));
-			// address
-			os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(readableLock)));
-			// balance
-			os.write(balance.getEQCBits());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+		// userName
+		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(userName)));
+		// pwdHash
+		os.write(EQCType.bytesToBIN(pwdHash));
+		// privateKey
+		os.write(EQCType.bytesToBIN(privateKey));
+		// publicKey
+		os.write(EQCType.bytesToBIN(publicKey));
+		// address
+		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(readableLock)));
 		return os.toByteArray();
-	}
-
-	@Override
-	public byte[] getBin() {
-		return EQCType.bytesToBIN(getBytes());
 	}
 
 	/**
@@ -214,20 +212,6 @@ public class UserAccount implements EQCTypable {
 		this.readableLock = readableAddress;
 	}
 
-	/**
-	 * @return the balance
-	 */
-	public Value getBalance() {
-		return balance;
-	}
-
-	/**
-	 * @param balance the balance to set
-	 */
-	public void setBalance(Value balance) {
-		this.balance = balance;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -255,7 +239,7 @@ public class UserAccount implements EQCTypable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		UserAccount other = (UserAccount) obj;
+		UserProfile other = (UserProfile) obj;
 		if (readableLock == null) {
 			if (other.readableLock != null)
 				return false;
@@ -320,34 +304,30 @@ public class UserAccount implements EQCTypable {
 	public String toString() {
 		return
 				"{\n" +
-				"\"Account\":" + 
+				"\"UserProfile\":" + 
 				"{\n" +
-					"\"userName\":" + "\"" + userName + "\"" + ",\n" +
-					"\"pwdHash\":" + "\"" + Util.dumpBytes(pwdHash, 16) + "\"" + ",\n" +
-					"\"privateKey\":" + "\"" + Util.dumpBytes(privateKey, 16)  + "\"" + ",\n" +
-					"\"publicKey\":" + "\"" + Util.dumpBytes(publicKey, 16)  + "\"" + ",\n" +
-					"\"address\":" + "\"" + readableLock + "\"" + ",\n" +
-					"\"balance\":" + "\"" + Long.toHexString(balance.longValue()) + "\"" + "\n" +
+					"\"UserName\":" + "\"" + userName + "\"" + ",\n" +
+					"\"PasswordHash\":" + "\"" + Util.dumpBytes(pwdHash, 16) + "\"" + ",\n" +
+					"\"PrivateKey\":" + "\"" + Util.dumpBytes(privateKey, 16)  + "\"" + ",\n" +
+					"\"PublicKey\":" + "\"" + Util.dumpBytes(publicKey, 16)  + "\"" + ",\n" +
+					"\"ReadableLock\":" + "\"" + readableLock + "\"" + "\n" +
 				"}\n" +
 			"}";
 	}
 
-	public LockType getAddressType() {
-		return Util.LockTool.getLockType(readableLock);
+	public LockType getAddressType() throws Exception {
+		return LockTool.getLockType(readableLock);
 	}
 
 	@Override
 	public boolean isSanity() throws Exception {
-		if(userName == null || pwdHash == null || privateKey == null || publicKey == null || readableLock == null || balance == null) {
+		if(userName == null || pwdHash == null || privateKey == null || publicKey == null || readableLock == null) {
 			return false;
 		}
 		if(pwdHash.length != Util.HASH_LEN) {
 			return false;
 		}
 		if(readableLock.length() < Util.MIN_ADDRESS_LEN || readableLock.length() > Util.MAX_ADDRESS_LEN) {
-			return false;
-		}
-		if(!balance.isSanity()) {
 			return false;
 		}
 		return true;

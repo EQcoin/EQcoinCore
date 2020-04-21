@@ -43,7 +43,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
 
 /**
  * @author Xun Wang
@@ -125,7 +124,6 @@ public class ZionTxOut extends Tx {
 	protected void init() {
 		super.init();
 		passportId = null;
-		lock = new EQCLock();
 	}
 
 	/**

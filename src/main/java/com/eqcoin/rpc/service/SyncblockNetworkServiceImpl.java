@@ -112,7 +112,7 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 			europa.setHeight(Util.DB().getEQCHiveTailHeight());
 			eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 			europa.setCheckPointHeight(eQcoinSubchainAccount.getCheckPointHeight());
-			europa.setBlockTailProof(Util.DB().getEQCHive(europa.getHeight(), true).getEqcHeader().getProof());
+			europa.setBlockTailProof(Util.DB().getEQCHiveRoot(europa.getHeight()).getProof());
 			io = europa.getProtocol();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -125,11 +125,11 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	@Override
 	public O getBlock(O height) {
 		O block = null;
-		EQCHive eqcHive = null;
+		byte[] eqcHive = null;
 		try {
-			eqcHive = Util.DB().getEQCHive(new ID(height.getO().array()), false);
+			eqcHive = Util.DB().getEQCHive(new ID(height.getO().array()));
 			if(eqcHive != null) {
-				block = Util.bytes2O(eqcHive.getBytes());
+				block = Util.bytes2O(eqcHive);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -157,11 +157,11 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	@Override
 	public O getEQCHeader(O height) {
 		O eqcHeader = null;
-		EQCHiveRoot eqcHeader1 = null;
+		byte[] eqcHeader1 = null;
 		try {
-			eqcHeader1 = Util.DB().getEQCHive(new ID(height.getO().array()), true).getEqcHeader();
+			eqcHeader1 = Util.DB().getEQCHiveRoot(new ID(height.getO().array())).getBytes();
 			if(eqcHeader1 != null) {
-				eqcHeader = Util.bytes2O(eqcHeader1.getBytes());
+				eqcHeader = Util.bytes2O(eqcHeader1);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -212,19 +212,12 @@ public abstract class SmartContractPassport extends Passport {
 	 * @see com.eqchains.blockchain.account.Account#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(super.getBodyBytes());
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+			super.getBodyBytes(os);
 			os.write(founderID.getEQCBits());
 			os.write(languageType.getEQCBits());
 			os.write(totalStateSize.getEQCBits());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

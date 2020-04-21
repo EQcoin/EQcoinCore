@@ -39,6 +39,7 @@ import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.Transaction.TransactionType;
+import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
@@ -86,9 +87,6 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	@Override
 	public boolean isValid() throws NoSuchFieldException, IllegalStateException, IOException, Exception {
 		ID lockId = null;
-		if(!isSanity()) {
-			return false;
-		}
 		if(!nonce.equals(changeLog.getHeight().getNextID())) {
 			return false;
 		}
@@ -193,8 +191,10 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	 */
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		parseSoloAndTransactionType(is);
-		parseNonce(is);
+		// Parse Transaction type
+		transactionType = TransactionType.get(EQCType.parseID(is).intValue());
+		// Parse nonce
+		nonce = EQCType.parseID(is);
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
@@ -206,31 +206,19 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#getHeaderBytes(com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			serializeSoloAndTransactionTypeBytes(os);
-			serializeNonce(os);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization Transaction type
+		os.write(transactionType.getEQCBits());
+		// Serialization nonce
+		os.write(EQCType.bigIntegerToEQCBits(nonce));
+		return os;
 	}
 	
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization TxOut
-			os.write(eqCoinFederalTxOut.getBytes());
-			os.write(eqCoinMinerTxOut.getBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization TxOut
+		os.write(eqCoinFederalTxOut.getBytes());
+		os.write(eqCoinMinerTxOut.getBytes());
+		return os;
 	}
 
 	/**
@@ -266,7 +254,7 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	 */
 	@Override
 	protected boolean isEQCWitnessSanity() {
-		return eqcWitness.isNull();
+		return eqcWitness == null;
 	}
 
 	/* (non-Javadoc)
@@ -290,8 +278,8 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	@Override
 	public String toString() {
 		return "ZeroZionCoinbaseTransaction [eqCoinFederalTxOut=" + eqCoinFederalTxOut + ", eqCoinMinerTxOut="
-				+ eqCoinMinerTxOut + ", solo=" + solo + ", transactionType=" + transactionType + ", nonce=" + nonce
-				+ ", txIn=" + txIn + ", eqcWitness=" + eqcWitness + ", operationList=" + operationList + ", changeLog="
+				+ eqCoinMinerTxOut + ", transactionType=" + transactionType + ", nonce=" + nonce
+				+ ", txIn=" + txIn + ", eqcWitness=" + eqcWitness + ", operationList=" + operation + ", changeLog="
 				+ changeLog + ", txInPassport=" + txInPassport + ", txInLock=" + txInLockMate + ", transactionShape="
 				+ transactionShape + ", txFeeRate=" + txFeeRate + ", lockType=" + lockType + "]";
 	}

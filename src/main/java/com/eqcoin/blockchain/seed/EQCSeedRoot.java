@@ -36,6 +36,7 @@ import java.io.IOException;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.serialization.EQCInheritable;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
@@ -47,7 +48,7 @@ import com.eqcoin.util.Util;
  * @date July 30, 2019
  * @email 10509759@qq.com
  */
-public abstract class EQCSeedRoot implements EQCTypable, EQCInheritable {
+public abstract class EQCSeedRoot extends EQCSerializable {
 	/**
 	 * Calculate this according to newTransactionList ARRAY's length
 	 */
@@ -59,14 +60,11 @@ public abstract class EQCSeedRoot implements EQCTypable, EQCInheritable {
 	}
 	
 	public EQCSeedRoot(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parse(is);
-		EQCType.assertNoRedundantData(is);
+		super(bytes);
 	}
 	
 	public EQCSeedRoot(ByteArrayInputStream is) throws Exception {
-		parse(is);
+		super(is);
 	}
 	
 	/* (non-Javadoc)
@@ -74,41 +72,16 @@ public abstract class EQCSeedRoot implements EQCTypable, EQCInheritable {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		parseBody(is);
-	}
-
-	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-	}
-
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
 		totalTransactionNumbers = EQCType.parseID(is);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
+	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(totalTransactionNumbers.getEQCBits());
-		return os.toByteArray();
-	}
-
-	@Override
-	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(getBodyBytes());
-		return os.toByteArray();
-	}
-
-	@Override
-	public byte[] getBin() throws Exception {
-		return EQCType.bytesToBIN(getBytes());
+		return os;
 	}
 
 	@Override

@@ -44,7 +44,6 @@ import com.eqcoin.blockchain.transaction.operation.Operation.OP;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
-import com.eqcoin.util.Util.LockTool;
 
 /**
  * @author Xun Wang
@@ -108,17 +107,10 @@ public class ChangeTxFeeRateOP extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#getBodyBytes(com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public byte[] getBodyBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization TxFeeRate
-			os.write(EQCType.bytesToBIN(new byte[] {txFeeRate}));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization TxFeeRate
+		os.write(EQCType.bytesToBIN(new byte[] { txFeeRate }));
+		return os;
 	}
 
 	/* (non-Javadoc)

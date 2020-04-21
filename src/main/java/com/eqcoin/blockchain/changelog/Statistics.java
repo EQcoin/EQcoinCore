@@ -68,8 +68,7 @@ public class Statistics {
 			return true;
 		}
 		// Check if total new lock numbers equal to total new passport numbers + total new updated Lock numbers
-		EQcoinSeedRoot preEQcoinSeedRoot = changeLog.getEQCHive(changeLog.getHeight().getPreviousID(), true).getEQcoinSeed()
-				.getEQcoinSeedRoot();
+		EQcoinSeedRoot preEQcoinSeedRoot = changeLog.getDB().getEQcoinSeedRoot(changeLog.getHeight().getPreviousID()); 
 		ID totalNewLockNumbers = changeLog.getTotalLockNumbers().subtract(preEQcoinSeedRoot.getTotalLockNumbers());
 		ID totalNewPassportNumbers = changeLog.getTotalPassportNumbers().subtract(preEQcoinSeedRoot.getTotalPassportNumbers());
 		if(!totalNewLockNumbers.equals(totalNewPassportNumbers.add(new ID(changeLog.getForbiddenLockList().size())))) {
@@ -91,13 +90,13 @@ public class Statistics {
 		
 		// Check if total lock numbers is valid
 		if(!changeLog.getTotalLockNumbers().equals(Util.DB().getTotalLockNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewLockNumbers(changeLog)))) {
-			Log.Error("Total lock numbers is invalid.");
+			Log.Error("Total lock numbers is invalid expected: " + changeLog.getTotalLockNumbers() + " but actual: " + Util.DB().getTotalLockNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewLockNumbers(changeLog)));
 			return false;
 		}
 		
 		// Check if total passport numbers is valid
 		if(!changeLog.getTotalPassportNumbers().equals(Util.DB().getTotalPassportNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewPassportNumbers(changeLog)))) {
-			Log.Error("Total passport numbers is invalid.");
+			Log.Error("Total passport numbers is invalid expected: " + changeLog.getTotalPassportNumbers() + " but actual: " + Util.DB().getTotalPassportNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewPassportNumbers(changeLog)));
 			return false;
 		}
 		

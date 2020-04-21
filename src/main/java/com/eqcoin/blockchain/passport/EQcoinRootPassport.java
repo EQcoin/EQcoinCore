@@ -87,21 +87,14 @@ public class EQcoinRootPassport extends Passport {
 	 * @see com.eqchains.blockchain.account.AssetSubchainAccount#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(super.getBodyBytes());
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+			super.getBodyBytes(os);
 			os.write(new byte[] {maxBlockSize});
 			os.write(new byte[] {blockInterval});
 			os.write(new byte[]{txFeeRate});
 			os.write(checkPointHeight.getEQCBits());
 			os.write(EQCType.bytesToBIN(checkPointHash));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+		return os;
 	}
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()

@@ -53,7 +53,6 @@ public class EQCLockMate extends EQCSerializable {
 	 */
 	@Override
 	protected void init() {
-		lock = new EQCLock();
 		eqcPublickey = new EQCPublickey();
 	}
 
@@ -69,7 +68,7 @@ public class EQCLockMate extends EQCSerializable {
 		os.write(passportId.getEQCBits());
 		os.write(lock.getBytes());
 		os.write(eqcPublickey.getBytes());
-		return null;
+		return os.toByteArray();
 	}
 
 	/* (non-Javadoc)
@@ -137,7 +136,7 @@ public class EQCLockMate extends EQCSerializable {
 	 * @param lock the lock to set
 	 */
 	public void setLock(EQCLock lock) {
-		lock = lock;
+		this.lock = lock;
 	}
 
 	/**
@@ -152,6 +151,25 @@ public class EQCLockMate extends EQCSerializable {
 	 */
 	public void setEqcPublickey(EQCPublickey eqcPublickey) {
 		this.eqcPublickey = eqcPublickey;
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "{\n" +
+				toInnerJson() +
+				"\n}";
+	}
+
+	public String toInnerJson() {
+		return "\"EQCLockMate\":" + "{\n" + 
+				"\"ID\":" + "\"" + id + "\"" + ",\n" +
+				"\"PassportID\":" + "\"" + passportId + "\"" + ",\n" +
+				lock.toInnerJson() + "\"" + ",\n" +
+				"\"EQCPublickey\":" + "\"" + eqcPublickey.toInnerJson() + "\"" + 
+				"\n}";
 	}
 	
 }

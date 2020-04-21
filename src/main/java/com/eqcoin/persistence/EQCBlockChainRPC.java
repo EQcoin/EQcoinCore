@@ -37,10 +37,12 @@ import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
+import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQCSeed;
+import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
 import com.eqcoin.rpc.Balance;
@@ -101,11 +103,8 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.EQCBlockChain#getEQCBlock(com.eqchains.util.ID, boolean)
-	 */
 	@Override
-	public EQCHive getEQCHive(ID height, boolean isSegwit) throws Exception {
+	public byte[] getEQCHive(ID height) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -274,15 +273,6 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	public boolean saveEQCHiveTailHeight(ID height) throws Exception {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.EQCBlockChain#getTotalAccountNumbers(com.eqchains.util.ID)
-	 */
-	@Override
-	public ID getTotalAccountNumbers(ID height) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/* (non-Javadoc)
@@ -618,6 +608,18 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 
 	@Override
 	public ID isLockExists(EQCLock eqcLock, Mode mode) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public EQCHiveRoot getEQCHiveRoot(ID height) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public EQcoinSeedRoot getEQcoinSeedRoot(ID height) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

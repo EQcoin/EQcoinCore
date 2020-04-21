@@ -105,7 +105,7 @@ public class TransactionIndexList<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCInheritable#getHeaderBytes()
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -114,11 +114,10 @@ public class TransactionIndexList<T> extends IO<T> {
 	 * @see com.eqchains.serialization.EQCInheritable#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.eqcSerializableListToArray(transactionIndexList));
 		os.write(EQCType.longToEQCBits(syncTime));
-		return os.toByteArray();
+		return os;
 	}
 
 	public void addTransactionIndex(TransactionIndex transactionIndex) {

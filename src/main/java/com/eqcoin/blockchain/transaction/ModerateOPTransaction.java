@@ -173,26 +173,19 @@ public class ModerateOPTransaction extends Transaction {
 		operation.planting();
 	}
 
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			// Serialization Super body
-			os.write(super.getBodyBytes());
-			// Serialization Operation
-			os.write(operation.getBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		// Serialization Super body
+		super.getBodyBytes(os);
+		// Serialization Operation
+		os.write(operation.getBytes());
+		return os;
 	}
 	
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse Super body
 		super.parseBody(is);
 		// Parse Operation
-		operation = Operation.parseOperation(is);
+		operation = new Operation(this).Parse(is);
 	}
 
 }

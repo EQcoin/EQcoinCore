@@ -71,24 +71,18 @@ public class ZionOPTransaction extends ZionTransaction {
 	@Override
 	public boolean isValid()
 			throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!super.isValid()) {
-			return false;
-		}
-		if(!isOperationListValid()) {
-			return false;
-		}
-		return true;
+		return (super.isValid() && operation.isMeetPreconditions() && operation.isValid());
 	}
 
 	public String toInnerJson() {
 		return
-		"\"ZionOPTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n"
-				+ "\"OperationList\":" + "\n{\n" + "\"Size\":" + "\"" + operationList.size() + "\"" + ",\n"
-				+ "\"List\":" + "\n" + getOperationListString() + "\n},\n"
+		"\"ZionOPTransaction\":" + "\n{\n" 
+				+ txIn.toInnerJson() + ",\n"
+				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
 				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
 				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
-				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
-				+ "\"EQCWitness\":" + eqcWitness.toInnerJson()
+				+ operation.toInnerJson() + ",\n"
+				+ eqcWitness.toInnerJson()
 				+ "\n" + "}";
 	}
 	
@@ -106,38 +100,27 @@ public class ZionOPTransaction extends ZionTransaction {
 	 */
 	@Override
 	public boolean isDerivedSanity() throws Exception {
-		if(!super.isDerivedSanity() && !isOperationListSanity()) {
-			return false;
-		}
-		
-		return true;
+		return (super.isDerivedSanity() && operation != null && operation.isSanity());
 	}
 	
 	@Override
 	protected void derivedPlanting() throws Exception {
 		super.derivedPlanting();
-		plantingOperationList();
+		operation.planting();
 	}
 
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 			// Serialization Super body
-			os.write(super.getBodyBytes());
-			os.write(EQCType.eqcSerializableListToArray(operationList));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+			super.getBodyBytes(os);
+			os.write(operation.getBytes());
+		return os;
 	}
 	
 	public void parseBody(ByteArrayInputStream is) throws Exception {
 		// Parse Super body
 		super.parseBody(is);
 		// Parse Operation
-		operationList = EQCType.parseArray(is, new Operation(this));
+		operation = new Operation(this).Parse(is);
 	}
 
 	/* (non-Javadoc)
@@ -146,7 +129,7 @@ public class ZionOPTransaction extends ZionTransaction {
 	@Override
 	protected void derivedTxOutPlanting() throws Exception {
 		super.derivedTxOutPlanting();
-		plantingOperationList();
+		operation.planting();
 	}
 
 //	// Here exists one bug still doesn't know how to fix it

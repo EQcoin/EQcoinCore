@@ -44,6 +44,7 @@ import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.lock.EQCPublickey;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.transaction.Value;
 import com.eqcoin.rpc.TailInfo;
 import com.eqcoin.serialization.EQCInheritable;
@@ -53,7 +54,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * Passport table's schema after refactor meet 3NF now //does not match 3NF but very blockchain.
@@ -163,24 +163,9 @@ public abstract class Passport extends EQCSerializable {
 	}
 
 	public Passport(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		init();
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parse(is);
-		EQCType.assertNoRedundantData(is);
+		super(bytes);
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-		// Parse Header
-		parseHeader(is);
-		// Parse Body
- 		parseBody(is);
-	}
-
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws NoSuchFieldException, IOException {
  		passportType = PassportType.get(EQCType.parseID(is).intValue());
@@ -209,51 +194,28 @@ public abstract class Passport extends EQCSerializable {
 	public Passport(PassportType passportTypeType) {
 		super();
 		this.passportType = passportTypeType;
-		init();
+	}
+	
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
+		getHeaderBytes(os);
+		getBodyBytes(os);
+		return os;
 	}
 	
 	@Override
-	public byte[] getBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(getHeaderBytes());
-			os.write(getBodyBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(passportType.getEQCBits());
+		return os;
 	}
+	
 	@Override
-	public byte[] getBin() {
-		return EQCType.bytesToBIN(getBytes());
-	}
-	@Override
-	public byte[] getHeaderBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(passportType.getEQCBits());
-		} catch (IOException e) {
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
-	}
-	@Override
-	public byte[] getBodyBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(id.getEQCBits());
-			os.write(lockID.getEQCBits());
-			os.write(balance.getEQCBits());
-			os.write(nonce.getEQCBits());
-			os.write(updateHeight.getEQCBits());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(id.getEQCBits());
+		os.write(lockID.getEQCBits());
+		os.write(balance.getEQCBits());
+		os.write(nonce.getEQCBits());
+		os.write(updateHeight.getEQCBits());
+		return os;
 	}
 	
 	public byte[] getHash() throws Exception {
@@ -313,7 +275,7 @@ public abstract class Passport extends EQCSerializable {
 		return false;
 	}
 
-	public O getO() {
+	public O getO() throws Exception {
 		return new O(ByteBuffer.wrap(getBytes()));
 	}
 	

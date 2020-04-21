@@ -37,6 +37,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.transaction.ModerateOPTransaction;
 import com.eqcoin.blockchain.transaction.Transaction;
@@ -54,8 +55,7 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
+
 
 /**
  * The SegWit contains the compressed public key corresponding to the
@@ -67,13 +67,13 @@ import com.eqcoin.util.Util.LockTool.LockType;
  * @date Sep 28, 2018
  * @email 10509759@qq.com
  */
-@Deprecated
 public class EQCPublickey extends EQCSerializable {
 	/**
 	 * The No. Passport relevant publickey which is BINX type.
 	 */
 	protected byte[] publickey;
 	protected Transaction transaction;
+	private boolean isNew;
 	
 	public EQCPublickey() {
 	}
@@ -103,9 +103,9 @@ public class EQCPublickey extends EQCSerializable {
 	@Override
 	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
 		EQCPublickey eqcPublickey = null;
-		if (transaction.getTxInLockMate().getLock().getLockType() ==LockType.T1) {
+		if (transaction.getLockType() ==LockType.T1) {
 			eqcPublickey = new T1Publickey(is);
-		} else if (transaction.getTxInLockMate().getLock().getLockType() == LockType.T2) {
+		} else if (transaction.getLockType() == LockType.T2) {
 			eqcPublickey = new T2Publickey(is);
 		} else {
 			throw new IllegalStateException("Bad lock type: " + transaction.getTxInLockMate().getLock().getLockType());
@@ -122,7 +122,12 @@ public class EQCPublickey extends EQCSerializable {
 	public byte[] getBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			os.write(publickey);
+			if(publickey == null) {
+				os.write(EQCType.NULL);
+			}
+			else {
+				os.write(publickey);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -192,7 +197,7 @@ public class EQCPublickey extends EQCSerializable {
 	}
 
 	public String toInnerJson() {
-		return "\"EQCPublickey\":" + "\"" + Util.getHexString(publickey) + "\"";
+		return "\"EQCPublickey\":" + ((publickey == null) ? null : "\"" + Util.getHexString(publickey) + "\"");
 	}
 
 	@Override
@@ -204,4 +209,18 @@ public class EQCPublickey extends EQCSerializable {
 		return publickey == null;
 	}
 
+	/**
+	 * @return the isNew
+	 */
+	public boolean isNew() {
+		return isNew;
+	}
+
+	/**
+	 * @param isNew the isNew to set
+	 */
+	public void setNew() {
+		this.isNew = true;
+	}
+	
 }

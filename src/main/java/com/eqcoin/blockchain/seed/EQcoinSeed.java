@@ -42,6 +42,7 @@ import com.eqcoin.blockchain.changelog.Statistics;
 import com.eqcoin.blockchain.hive.EQCHive;
 import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.lock.EQCPublickey;
+import com.eqcoin.blockchain.lock.T2Lock;
 import com.eqcoin.blockchain.passport.AssetPassport;
 import com.eqcoin.blockchain.passport.EQcoinRootPassport;
 import com.eqcoin.blockchain.passport.Passport;
@@ -58,7 +59,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
 
 /**
  * @author Xun Wang
@@ -82,10 +82,15 @@ public class EQcoinSeed extends EQCSeed {
 	public EQcoinSeed(byte[] bytes) throws Exception {
 		super(bytes);
 	}
+	
+	public EQcoinSeed(ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
 
 	public void addTransaction(Transaction transaction) throws ClassNotFoundException, SQLException, Exception {
 			// Add Transaction
 			newTransactionList.add(transaction);
+			// Here need change to get seed bytes
 			newTransactionListLength += transaction.getBytes().length;
 	}
 	
@@ -222,49 +227,33 @@ public class EQcoinSeed extends EQCSeed {
 			ZeroZionCoinbaseTransaction zeroZionCoinbaseTransaction = new ZeroZionCoinbaseTransaction();
 
 			ZionTxOut txOut = new ZionTxOut();
-			txOut.getLock().cloneFromReadableLock(Util.SINGULARITY_A);
+			txOut.setLock(new T2Lock(Util.SINGULARITY_A));
 			Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
 			txOut.setValue(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
 			zeroZionCoinbaseTransaction.setEqCoinFederalTxOut(txOut);
 
 			txOut = new ZionTxOut();
-			txOut.getLock().cloneFromReadableLock(Util.SINGULARITY_B);
+			txOut.setLock(new T2Lock(Util.SINGULARITY_B));
 			txOut.setValue(minerCoinbaseReward);
 			zeroZionCoinbaseTransaction.setEqCoinMinerTxOut(txOut);
 			zeroZionCoinbaseTransaction.setNonce(changeLog.getHeight().getNextID());
 			coinbaseTransaction = zeroZionCoinbaseTransaction;
-			
-			if(!coinbaseTransaction.isSanity()) {
-				Log.Error("CoinbaseTransaction isn't sanity have to terminate planting Transaction: " + coinbaseTransaction.toString());
-				throw new IllegalStateException("CoinbaseTransaction isn't sanity have to terminate planting Transaction");
-			}
 			coinbaseTransaction.init(changeLog);
-			if (coinbaseTransaction.isValid()) {
-				coinbaseTransaction.planting();
-			} else {
-				throw new IllegalStateException("CoinbaseTransaction is invalid: " + coinbaseTransaction);
-			}
+			if (!coinbaseTransaction.planting()) {
+				throw new IllegalStateException("ZeroZionCoinbaseTransaction is invalid: " + coinbaseTransaction);
+			} 
 			// Add CoinBase into EQcoinSeedHeader
 			addCoinbaseTransaction(coinbaseTransaction);
 			// Here need do more job to analysis if exist a better way
 			changeLog.setCoinbaseTransaction(coinbaseTransaction);
 		}
 		else {
-			EQCHive eqcHive = changeLog.getEQCHive(changeLog.getHeight().getPreviousID(), true);
-			if(eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getTotalSupply().compareTo(Util.MAX_EQC) <= 0) {
+			EQcoinSeedRoot eQcoinSeedRoot = changeLog.getDB().getEQcoinSeedRoot(changeLog.getHeight().getPreviousID());
+			if(eQcoinSeedRoot.getTotalSupply().compareTo(Util.MAX_EQC) <= 0) {
 				// Create CoinBase Transaction
-				EQCLockMate lock = new EQCLockMate();
-				lock.setId(ID.ONE);
-				coinbaseTransaction = Util.generateTransferCoinbaseTransaction(lock, changeLog);
-				
-				if(!coinbaseTransaction.isSanity()) {
-					Log.Error("CoinbaseTransaction isn't sanity have to terminate planting Transaction: " + coinbaseTransaction.toString());
-					throw new IllegalStateException("CoinbaseTransaction isn't sanity have to terminate planting Transaction");
-				}
+				coinbaseTransaction = Util.generateTransferCoinbaseTransaction(ID.ONE, changeLog);
 				coinbaseTransaction.init(changeLog);
-				if (coinbaseTransaction.isValid()) {
-					coinbaseTransaction.planting();
-				} else {
+				if (!coinbaseTransaction.planting()) {
 					throw new IllegalStateException("CoinbaseTransaction is invalid: " + coinbaseTransaction);
 				}
 				// Add CoinBase into EQcoinSeedHeader

@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Vector;
 
 import javax.naming.InitialContext;
@@ -60,20 +61,20 @@ import com.eqcoin.blockchain.transaction.operation.ChangeLockOP;
 import com.eqcoin.crypto.MerkleTree;
 import com.eqcoin.keystore.Keystore;
 import com.eqcoin.persistence.EQCBlockChainH2;
+import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.service.MinerService;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
  * @date Oct 1, 2018
  * @email 10509759@qq.com
  */
-public class EQCHive implements EQCTypable {
+public class EQCHive extends EQCSerializable {
 	private EQCHiveRoot eqcHiveRoot;
 	private EQcoinSeed eQcoinSeed;
 	private ChangeLog changeLog;
@@ -83,25 +84,21 @@ public class EQCHive implements EQCTypable {
 	private final int size = 142;
 
 	public EQCHive(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parse(is);
-		EQCType.assertNoRedundantData(is);
+		super(bytes);
 	}
 
-	private void parse(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse EqcHeader
-		eqcHiveRoot = new EQCHiveRoot(EQCType.parseBIN(is));
-
+		eqcHiveRoot = new EQCHiveRoot(is);
 		// Parse EQcoinSeed
-		eQcoinSeed = new EQcoinSeed(EQCType.parseBIN(is));
+		eQcoinSeed.parse(is);
 	}
-
+	
 	public EQCHive() {
-		init();
+		super();
 	}
 
-	private void init() {
+	protected void init() {
 		eqcHiveRoot = new EQCHiveRoot();
 		eQcoinSeed = new EQcoinSeed();
 	}
@@ -336,8 +333,8 @@ public class EQCHive implements EQCTypable {
 	public byte[] getBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			os.write(eqcHiveRoot.getBin());
-			os.write(eQcoinSeed.getBin());
+			os.write(eqcHiveRoot.getBytes());
+			os.write(eQcoinSeed.getBytes());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

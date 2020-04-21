@@ -34,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import com.eqcoin.blockchain.lock.EQCPublickey;
+import com.eqcoin.blockchain.lock.LockTool.LockType;
 import com.eqcoin.blockchain.lock.T1Publickey;
 import com.eqcoin.blockchain.lock.T2Publickey;
 import com.eqcoin.serialization.EQCInheritable;
@@ -41,7 +42,6 @@ import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * EQCWitness contains the transaction relevant witness parts for example signature.

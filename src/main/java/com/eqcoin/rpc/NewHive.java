@@ -105,7 +105,7 @@ public class NewHive<T> extends IO<T> implements Comparable<NewHive> {
 	 * @see com.eqchains.serialization.EQCInheritable#getHeaderBytes()
 	 */
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -114,12 +114,11 @@ public class NewHive<T> extends IO<T> implements Comparable<NewHive> {
 	 * @see com.eqchains.serialization.EQCInheritable#getBodyBytes()
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(cookie.getBytes());
 		os.write(eqcHive.getBin());
 		os.write(checkPointHeight.getEQCBits());
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

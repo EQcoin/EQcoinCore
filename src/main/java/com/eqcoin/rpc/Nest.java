@@ -46,16 +46,15 @@ public class Nest<T> extends IO<T> {
 	}
 
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(id.getEQCBits());
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

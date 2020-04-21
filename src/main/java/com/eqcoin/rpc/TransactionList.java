@@ -1,13 +1,16 @@
 package com.eqcoin.rpc;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Vector;
 
 import com.eqcoin.avro.O;
+import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.blockchain.changelog.Filter;
+import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 public class TransactionList<T> extends IO<T> {
 	private Vector<Transaction> transactionList;
@@ -43,18 +46,19 @@ public class TransactionList<T> extends IO<T> {
 
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		transactionList = EQCType.parseArray(is, new Transaction(Util.DB()));
+		transactionList = EQCType.parseArray(is, new Transaction());
 	}
 
 	@Override
-	public byte[] getHeaderBytes() throws Exception {
+	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		return EQCType.eqcSerializableListToArray(transactionList);
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(EQCType.eqcSerializableListToArray(transactionList));
+		return os;
 	}
 	
 	public void addTransaction(Transaction transaction) throws Exception {

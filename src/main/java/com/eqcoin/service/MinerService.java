@@ -88,7 +88,7 @@ public final class MinerService extends EQCService {
 	private static ChangeLog changeLog;
 	private ID newHiveHeight;
 	private AtomicBoolean isMining;
-	
+
 	private MinerService() {
 		super();
 		isMining = new AtomicBoolean(false);
@@ -104,8 +104,10 @@ public final class MinerService extends EQCService {
 		}
 		return instance;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see com.eqchains.service.EQCService#start()
 	 */
 	@Override
@@ -115,8 +117,10 @@ public final class MinerService extends EQCService {
 		startMining();
 		Log.info(name + "started");
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see com.eqchains.service.EQCService#stop()
 	 */
 	@Override
@@ -144,7 +148,7 @@ public final class MinerService extends EQCService {
 			break;
 		}
 	}
-	
+
 	public void stopMining() {
 		Log.info(name + "begin stop mining progress");
 		isMining.set(false);
@@ -153,21 +157,21 @@ public final class MinerService extends EQCService {
 		}
 		resumeHalt();
 	}
-	
+
 	public void startMining() {
 		offerState(new EQCServiceState(State.MINING));
 	}
-	
+
 	private void onMinering(EQCServiceState state) {
 		Log.info("Begin minering...");
 		this.state.set(State.MINER);
 		while (isRunning.get() && isMining.get()) {
- 			onPause("prepare minering");
-			if(!isRunning.get() || !isMining.get()) {
+			onPause("prepare minering");
+			if (!isRunning.get() || !isMining.get()) {
 				Log.info("Exit from prepare minering");
 				break;
 			}
-			
+
 			try {
 				Thread.sleep(Util.BASIC_BLOCK_INTERVAL.longValue());
 //				miningOneHive();
@@ -177,148 +181,122 @@ public final class MinerService extends EQCService {
 				Log.Error("Due to error occur have to exit mining");
 				break;
 			}
-			
+
 		}
 		Log.info("End of mining");
 	}
-	
+
 	public void miningOneHive() throws Exception {
 		// Get current EQCBlock's tail
-		ID blockTailHeight;
-		try {
-			blockTailHeight = Util.DB().getEQCHiveTailHeight();
-			/////////////////////////////////////////////////
-//			if(blockTailHeight.compareTo(ID.valueOf(2)) == 0) {
-//				break;
-//			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-			throw e;
-		}
-		EQCHive blockTail;
-		try {
-			Log.info("Begin mining new hive local blockTailHeight: " + blockTailHeight + " work thread state: " + worker.getState());
-			blockTail = Util.DB().getEQCHive(blockTailHeight, false);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-			throw e;
-		}
-
-		// Begin making new EQCBlock
-		newHiveHeight = blockTailHeight.getNextID();
-		// If create AccountsMerkleTree just create it
-		try {
-			changeLog = new ChangeLog(newHiveHeight, new Filter(Mode.MINING));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-			throw e;
-		}
+		ID blockTailHeight = null;
+		EQCHive blockTail = null;
 		EQCHive newEQCHive = null;
 		try {
-			newEQCHive = new EQCHive(newHiveHeight, blockTail.getEqcHeader().getPreHash(), changeLog);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-			throw e;
-		}
+			// Initial new EQCBlock
+			try {
+				// Begin making new EQCBlock
+				blockTailHeight = Util.DB().getEQCHiveTailHeight();
+				Log.info("Begin mining new hive local blockTailHeight: " + blockTailHeight + " work thread state: "
+						+ worker.getState());
+				newHiveHeight = blockTailHeight.getNextID();
+				changeLog = new ChangeLog(newHiveHeight, new Filter(Mode.MINING));
+				blockTail = new EQCHive(Util.DB().getEQCHive(blockTailHeight));
+				newEQCHive = new EQCHive(newHiveHeight, blockTail.getEqcHeader().getPreHash(), changeLog);
+				// Build Transactions and initial Root
+				newEQCHive.plantingEQCHive();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				Log.Error("Warning during Build Transactions error occur have to exit need check to find the reason: "
+						+ e.getMessage());
+				throw e;
+			}
 
-		// Initial new EQCBlock
-		try {
-			// Build Transactions and initial Root
-			newEQCHive.plantingEQCHive();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error("Warning during Build Transactions error occur have to exit need check to find the reason: "
-					+ e.getMessage());
-			throw e;
-		}
-		
-		Log.info("New hive height: " + newHiveHeight);
+			Log.info("New hive height: " + newHiveHeight);
 //		Log.info(newEQCBlock.toString());
-		Log.info("Size: " + newEQCHive.getBytes().length);
-		Log.info("New hive have " +  newEQCHive.getEQcoinSeed().getNewTransactionList().size() + " new transactions");
-		Log.info("New hive have " +  changeLog.getForbiddenLockList().size() + " forbidden locks");
+			Log.info("Size: " + newEQCHive.getBytes().length);
+			Log.info(
+					"New hive have " + newEQCHive.getEQcoinSeed().getNewTransactionList().size() + " new transactions");
+			Log.info("New hive have " + changeLog.getForbiddenLockList().size() + " forbidden locks");
 //		Log.info("EQcoin new passport numbers: " + newEQCHive.getEQcoinSeed().getNewHelixList().size());
 //		Log.info("EQcoin new compressed publickey numbers: " + newEQCHive.getEQcoinSeed().getNewCompressedPublickeyList().size());
-		try {
-			EQCHive eqcHive = new EQCHive(newEQCHive.getBytes());
-		} catch (Exception e) {
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		
-		// Send locked transactions to EQC network haven't implement, doesn't implement in MVP phase...
-		
-		// Beginning calculate new EQCBlock's hash
-		BigInteger hash;
-		ID nonce = ID.ZERO;
-		BigInteger difficulty = Util.targetBytesToBigInteger(newEQCHive.getEqcHeader().getTarget());
-		while (true) {
-			onPause("minering");
-			if(!isRunning.get() || !isMining.get()) {
-				Log.info("Exit from mining");
-				break;
+			try {
+				EQCHive eqcHive = new EQCHive(newEQCHive.getBytes());
+			} catch (Exception e) {
+				e.printStackTrace();
+				Log.Error(e.getMessage());
 			}
-			newEQCHive.getEqcHeader().setNonce(nonce);
-			hash = new BigInteger(1, newEQCHive.getHash());
-			if (hash.compareTo(difficulty) <= 0) { 
-				try {
-					synchronized (EQCService.class) {
-						// Here add synchronized to avoid conflict with Sync block service handle new received block
-						Log.info("Begin synchronized (EQCService.class)");
-//						onPause("verify new block"); // Here can't pause which will cause deadlock
-						if(!isRunning.get() || !isMining.get()) {
-							// Here need check if it has been stopped
-							Log.info("Exit from verify new block");
-							break;
-						}
-						
-						Log.info(Util.getHexString(newEQCHive.getHash()));
-						Log.info("EQC Block No." + newEQCHive.getHeight().longValue() + " Find use: "
-								+ (System.currentTimeMillis() - newEQCHive.getEqcHeader().getTimestamp().longValue())
-								+ " ms, details:");
 
-						Log.info(newEQCHive.getEqcHeader().toString());
+			// Send locked transactions to EQC network haven't implement, doesn't implement
+			// in MVP phase...
+
+			// Beginning calculate new EQCBlock's hash
+			BigInteger hash;
+			ID nonce = ID.ZERO;
+			BigInteger difficulty = Util.targetBytesToBigInteger(newEQCHive.getEqcHeader().getTarget());
+			while (true) {
+				onPause("minering");
+				if (!isRunning.get() || !isMining.get()) {
+					Log.info("Exit from mining");
+					break;
+				}
+				newEQCHive.getEqcHeader().setNonce(nonce);
+				hash = new BigInteger(1, newEQCHive.getHash());
+				if (hash.compareTo(difficulty) <= 0) {
+					try {
+						synchronized (EQCService.class) {
+							// Here add synchronized to avoid conflict with Sync block service handle new
+							// received block
+							Log.info("Begin synchronized (EQCService.class)");
+//						onPause("verify new block"); // Here can't pause which will cause deadlock
+							if (!isRunning.get() || !isMining.get()) {
+								// Here need check if it has been stopped
+								Log.info("Exit from verify new block");
+								break;
+							}
+
+							Log.info(Util.getHexString(newEQCHive.getHash()));
+							Log.info(
+									"EQC Block No." + newEQCHive.getHeight().longValue() + " Find use: "
+											+ (System.currentTimeMillis()
+													- newEQCHive.getEqcHeader().getTimestamp().longValue())
+											+ " ms, details:");
+
+							Log.info(newEQCHive.getEqcHeader().toString());
 //						Log.info(newEQCBlock.getRoot().toString());
-						
+
 //						try {
 //							PendingNewBlockService.getInstance().pause();
 //						}
 //						catch (Exception e) {
 //							Log.Error(e.getMessage());
 //						}
-						// Check if current local tail is the mining base in case which has been changed by SyncBlockService
-						if (newHiveHeight.isNextID(Util.DB().getEQCHiveTailHeight())) {
-							Log.info("Still on the tail just save it");
-							Util.DB().getConnection().setAutoCommit(false);
-							Util.DB().saveEQCHive(newEQCHive);
-							changeLog.updateGlobalState();
-							Util.DB().saveEQCHiveTailHeight(newEQCHive.getHeight());
-							Util.DB().getConnection().commit();
-							try {
-								// Send new block to EQC Miner network
-								NewHiveState newBlockState = new NewHiveState(State.BROADCASTNEWHIVE);
-								EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
-								NewHive newBlock = new NewHive();
-								newBlock.setEqcHive(newEQCHive);
-								newBlock.setCheckPointHeight(eQcoinRootPassport.getCheckPointHeight());
-								newBlockState.setNewBlock(newBlock);
-								BroadcastNewHiveService.getInstance().offerNewBlockState(newBlockState);
-								
-								EQCBlockChainH2.getInstance().deleteTransactionsInPool(newEQCHive);
-								
-							}
-							catch (Exception e) {
-								Log.Error(e.getMessage());
-							}
-							
+							// Check if current local tail is the mining base in case which has been changed
+							// by SyncBlockService
+							if (newHiveHeight.isNextID(Util.DB().getEQCHiveTailHeight())) {
+								Log.info("Still on the tail just save it");
+								Util.DB().getConnection().setAutoCommit(false);
+								Util.DB().saveEQCHive(newEQCHive);
+								changeLog.updateGlobalState();
+								Util.DB().saveEQCHiveTailHeight(newEQCHive.getHeight());
+								Util.DB().getConnection().commit();
+								try {
+									// Send new block to EQC Miner network
+									NewHiveState newBlockState = new NewHiveState(State.BROADCASTNEWHIVE);
+									EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) Util.DB()
+											.getPassport(ID.ZERO, Mode.GLOBAL);
+									NewHive newBlock = new NewHive();
+									newBlock.setEqcHive(newEQCHive);
+									newBlock.setCheckPointHeight(eQcoinRootPassport.getCheckPointHeight());
+									newBlockState.setNewBlock(newBlock);
+									BroadcastNewHiveService.getInstance().offerNewBlockState(newBlockState);
+
+									EQCBlockChainH2.getInstance().deleteTransactionsInPool(newEQCHive);
+
+								} catch (Exception e) {
+									Log.Error(e.getMessage());
+								}
+
 //							// Here exists one bug before delete the old history snapshot need recovery the checkpoint's height's status first
 //							EQcoinSubchainAccount eQcoinSubchainAccount = (EQcoinSubchainAccount) Util.DB()
 //									.getAccount(ID.ONE);
@@ -330,40 +308,42 @@ public final class MinerService extends EQCService {
 //							catch (Exception e) {
 //								Log.Error(e.getMessage());
 //							}
+							} else {
+								Log.Error("Current mining height is: " + newHiveHeight
+										+ " but local tail height changed to: " + Util.DB().getEQCHiveTailHeight()
+										+ " so have to discard this block");
+							}
+							Log.info("End synchronized (EQCService.class)");
 						}
-						else {
-							Log.Error("Current mining height is: " + newHiveHeight + " but local tail height changed to: " + Util.DB().getEQCHiveTailHeight() + 
-									" so have to discard this block");
-						}
-						Log.info("End synchronized (EQCService.class)");
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					try {
-						Util.DB().getConnection().rollback();
-					} catch (ClassNotFoundException | SQLException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						Log.Error(e1.getMessage());
-					}
-					Log.Error(e.getMessage());
-				}
-				finally {
-					try {
-						Util.DB().getConnection().setAutoCommit(true);
-					} catch (ClassNotFoundException | SQLException e) {
+					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
+						try {
+							Util.DB().getConnection().rollback();
+						} catch (ClassNotFoundException | SQLException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+							Log.Error(e1.getMessage());
+						}
 						Log.Error(e.getMessage());
+					} finally {
+						try {
+							Util.DB().getConnection().setAutoCommit(true);
+						} catch (ClassNotFoundException | SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							Log.Error(e.getMessage());
+						}
 					}
+					break;
 				}
-				break;
+				nonce = nonce.getNextID();
+				if (nonce.mod(ID.TWO).equals(ID.ZERO) && isRunning.get() && isMining.get()) {
+					halt();
+				}
 			}
-			nonce = nonce.getNextID();
-			if(nonce.mod(ID.TWO).equals(ID.ZERO) && isRunning.get() && isMining.get()) {
-				halt();
-			}
+		} finally {
+			Log.info("Exit miningOneHive");
 		}
 	}
 
@@ -376,18 +356,18 @@ public final class MinerService extends EQCService {
 			}
 		}
 	}
-	
+
 	private void resumeHalt() {
 		synchronized (name) {
 			name.notify();
 		}
 	}
-	
+
 	/**
 	 * @return the newBlockHeight
 	 */
 	public ID getNewBlockHeight() {
 		return newHiveHeight;
 	}
-	
+
 }

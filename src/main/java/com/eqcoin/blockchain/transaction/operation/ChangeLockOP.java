@@ -44,8 +44,6 @@ import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 import com.eqcoin.util.Log;
 import com.eqcoin.util.Util;
-import com.eqcoin.util.Util.LockTool;
-import com.eqcoin.util.Util.LockTool.LockType;
 
 /**
  * @author Xun Wang
@@ -72,7 +70,6 @@ public class ChangeLockOP extends Operation {
 	@Override
 	public void planting() throws Exception {
 		Passport passport = transaction.getChangeLog().getFilter().getPassport(transaction.getTxIn().getPassportId(), true);
-		transaction.getChangeLog().getForbiddenLockList().add(transaction.getChangeLog().getFilter().getLock(transaction.getTxIn().getPassportId(), true));
 		EQCLockMate eqcLockMate = new EQCLockMate();
 		eqcLockMate.setId(transaction.getChangeLog().getNextLockId());
 		eqcLockMate.setPassportId(passport.getId());
@@ -80,6 +77,11 @@ public class ChangeLockOP extends Operation {
 		passport.setLockID(eqcLockMate.getId());
 		transaction.getChangeLog().getFilter().saveLock(eqcLockMate);
 		transaction.getChangeLog().getFilter().savePassport(passport);
+//		// Due to from here doesn't need forbidden lock any more so just remove it's publickey to release space
+//		transaction.getTxInLockMate().getEqcPublickey().setPublickey(null);
+//		transaction.getChangeLog().getFilter().saveLock(transaction.getTxInLockMate());
+		// At the last add the forbidden lock in case exist any exception
+		transaction.getChangeLog().getForbiddenLockList().add(transaction.getTxInLockMate());
 	}
 
 	/**
@@ -110,14 +112,10 @@ public class ChangeLockOP extends Operation {
 		"}";
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.transaction.operation.Operation#parseBody(java.io.ByteArrayInputStream, com.eqchains.blockchain.transaction.Address.AddressShape)
-	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is)
 			throws Exception {
 		// Parse Lock
-		// here need do more job to support AI
 		lock = EQCLock.parseEQCLock(is);
 	}
 
@@ -125,11 +123,10 @@ public class ChangeLockOP extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#getBodyBytes(com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public byte[] getBodyBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		// Serialization Lock
-		os.write(lock.getBin());
-		return os.toByteArray();
+		os.write(lock.getBytes());
+		return os;
 	}
 
 	/* (non-Javadoc)

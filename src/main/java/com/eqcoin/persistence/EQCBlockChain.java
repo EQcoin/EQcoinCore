@@ -38,10 +38,12 @@ import javax.annotation.security.DenyAll;
 import com.eqcoin.blockchain.changelog.ChangeLog;
 import com.eqcoin.blockchain.changelog.Filter.Mode;
 import com.eqcoin.blockchain.hive.EQCHive;
+import com.eqcoin.blockchain.hive.EQCHiveRoot;
 import com.eqcoin.blockchain.lock.EQCLock;
 import com.eqcoin.blockchain.lock.EQCLockMate;
 import com.eqcoin.blockchain.passport.Passport;
 import com.eqcoin.blockchain.seed.EQCSeed;
+import com.eqcoin.blockchain.seed.EQcoinSeedRoot;
 import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.persistence.EQCBlockChainH2.NODETYPE;
 import com.eqcoin.rpc.Balance;
@@ -151,8 +153,12 @@ public interface EQCBlockChain {
 
 	public boolean saveEQCHive(EQCHive eqcHive) throws Exception;
 
-	public EQCHive getEQCHive(ID height, boolean isSegwit) throws Exception;
+	public byte[] getEQCHive(ID height) throws Exception;
 
+	public EQCHiveRoot getEQCHiveRoot(ID height) throws Exception;
+	
+	public EQcoinSeedRoot getEQcoinSeedRoot(ID height) throws Exception;
+	
 	public boolean deleteEQCHive(ID height) throws Exception;
 
 	// TransactionPool relevant interface for H2, avro.
@@ -198,9 +204,6 @@ public interface EQCBlockChain {
 	public ID getEQCHiveTailHeight() throws Exception;
 
 	public boolean saveEQCHiveTailHeight(ID height) throws Exception;
-
-	@Deprecated
-	public ID getTotalAccountNumbers(ID height) throws Exception;
 
 	public SignHash getSignHash(ID id) throws Exception;
 

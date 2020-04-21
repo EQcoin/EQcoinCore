@@ -29,92 +29,25 @@
  */
 package com.eqcoin.crypto;
 
-import java.math.BigInteger;
-
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.math.ec.ECPoint;
-
 /**
  * @author Xun Wang
- * @date Apr 13, 2020
+ * @date Apr 14, 2020
  * @email 10509759@qq.com
  */
-public abstract class ECDSACurve {
-	/**
-	 * The parameters of ECDSA curve that EQcoin uses.
-	 */
-	protected ECDomainParameters CURVE;
-	protected X9ECParameters CURVE_PARAMS;
-	protected BigInteger HALF_CURVE_ORDER;
+public class RecoverySECP521R1Publickey extends RecoveryECCPublickey {
 
-	// For java standard EC
-	protected ECNamedCurveParameterSpec spec;
-	protected ECNamedCurveSpec ecParams;
+	private static RecoverySECP521R1Publickey recoverySECP521R1Publickey;
 	
-	public ECDSACurve() {}
+	static {
+		recoverySECP521R1Publickey = new RecoverySECP521R1Publickey();
+	}
 	
-	/**
-	 * @return the cURVE
-	 */
-	public ECDomainParameters getCURVE() {
-		return CURVE;
+	private RecoverySECP521R1Publickey() {
+		ecdsaCurve = SECP521R1Curve.getInstance();
 	}
-	/**
-	 * @param cURVE the cURVE to set
-	 */
-	public void setCURVE(ECDomainParameters cURVE) {
-		CURVE = cURVE;
-	}
-	/**
-	 * @return the cURVE_PARAMS
-	 */
-	public X9ECParameters getCURVE_PARAMS() {
-		return CURVE_PARAMS;
-	}
-	/**
-	 * @param cURVE_PARAMS the cURVE_PARAMS to set
-	 */
-	public void setCURVE_PARAMS(X9ECParameters cURVE_PARAMS) {
-		CURVE_PARAMS = cURVE_PARAMS;
-	}
-	/**
-	 * @return the hALF_CURVE_ORDER
-	 */
-	public BigInteger getHALF_CURVE_ORDER() {
-		return HALF_CURVE_ORDER;
-	}
-	/**
-	 * @param hALF_CURVE_ORDER the hALF_CURVE_ORDER to set
-	 */
-	public void setHALF_CURVE_ORDER(BigInteger hALF_CURVE_ORDER) {
-		HALF_CURVE_ORDER = hALF_CURVE_ORDER;
-	}
-	/**
-	 * @return the spec
-	 */
-	public ECNamedCurveParameterSpec getSpec() {
-		return spec;
-	}
-	/**
-	 * @param spec the spec to set
-	 */
-	public void setSpec(ECNamedCurveParameterSpec spec) {
-		this.spec = spec;
-	}
-	/**
-	 * @return the ecParams
-	 */
-	public ECNamedCurveSpec getEcParams() {
-		return ecParams;
-	}
-	/**
-	 * @param ecParams the ecParams to set
-	 */
-	public void setEcParams(ECNamedCurveSpec ecParams) {
-		this.ecParams = ecParams;
+	
+	public static RecoverySECP521R1Publickey getInstance() {
+		return recoverySECP521R1Publickey;
 	}
 	
 }

@@ -129,17 +129,10 @@ public class ChangeCheckPointOP extends Operation {
 	 * @see com.eqchains.blockchain.transaction.operation.Operation#getBodyBytes(com.eqchains.blockchain.transaction.Address.AddressShape)
 	 */
 	@Override
-	public byte[] getBodyBytes() {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(EQCType.bytesToBIN(checkPointHash));
-			os.write(checkPointHeight.getEQCBits());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(EQCType.bytesToBIN(checkPointHash));
+		os.write(checkPointHeight.getEQCBits());
+		return os;
 	}
 
 	/**
