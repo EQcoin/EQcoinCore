@@ -166,7 +166,7 @@ public abstract class EQCSeed extends EQCSerializable {
 			newTransactionListLength += transaction.getBytes().length;
 	}
 	
-	public byte[] getProofRoot() throws Exception {
+	public byte[] getProof() throws Exception {
 		return null;
 	}
 	

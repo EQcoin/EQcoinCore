@@ -114,7 +114,7 @@ public class PendingNewHiveService extends EQCService {
 			if (newBlockState.getNewBlock().getEqcHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight()) > 0
 					&& newBlockState.getNewBlock().getCheckPointHeight()
 							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
-					&& newBlockState.getNewBlock().getEqcHive().getEqcHeader().isDifficultyValid()) {
+					&& newBlockState.getNewBlock().getEqcHive().getEQCHiveRoot().isDifficultyValid()) {
 				if(newBlockState.getNewBlock().getEqcHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight().getNextID()) > 0) {
 					if(SyncblockNetworkClient.ping(newBlockState.getNewBlock().getCookie().getIp()) == -1) {
 						Log.info("Received new hive and which height:" + newBlockState.getNewBlock().getEqcHive().getHeight() + " is more than one bigger than local tail:" + Util.DB().getEQCHiveTailHeight() + " but it's IP:" + newBlockState.getNewBlock().getCookie().getIp() + " can't reach here have nothing to do");

@@ -201,7 +201,7 @@ public final class MinerService extends EQCService {
 				newHiveHeight = blockTailHeight.getNextID();
 				changeLog = new ChangeLog(newHiveHeight, new Filter(Mode.MINING));
 				blockTail = new EQCHive(Util.DB().getEQCHive(blockTailHeight));
-				newEQCHive = new EQCHive(newHiveHeight, blockTail.getEqcHeader().getPreHash(), changeLog);
+				newEQCHive = new EQCHive(blockTail.getEQCHiveRoot().getProof(), newHiveHeight, changeLog);
 				// Build Transactions and initial Root
 				newEQCHive.plantingEQCHive();
 			} catch (Exception e) {
@@ -233,15 +233,15 @@ public final class MinerService extends EQCService {
 			// Beginning calculate new EQCBlock's hash
 			BigInteger hash;
 			ID nonce = ID.ZERO;
-			BigInteger difficulty = Util.targetBytesToBigInteger(newEQCHive.getEqcHeader().getTarget());
+			BigInteger difficulty = Util.targetBytesToBigInteger(newEQCHive.getEQCHiveRoot().getTarget());
 			while (true) {
 				onPause("minering");
 				if (!isRunning.get() || !isMining.get()) {
 					Log.info("Exit from mining");
 					break;
 				}
-				newEQCHive.getEqcHeader().setNonce(nonce);
-				hash = new BigInteger(1, newEQCHive.getHash());
+				newEQCHive.getEQCHiveRoot().setNonce(nonce);
+				hash = new BigInteger(1, newEQCHive.getProof());
 				if (hash.compareTo(difficulty) <= 0) {
 					try {
 						synchronized (EQCService.class) {
@@ -255,14 +255,14 @@ public final class MinerService extends EQCService {
 								break;
 							}
 
-							Log.info(Util.getHexString(newEQCHive.getHash()));
+							Log.info(Util.getHexString(newEQCHive.getProof()));
 							Log.info(
 									"EQC Block No." + newEQCHive.getHeight().longValue() + " Find use: "
 											+ (System.currentTimeMillis()
-													- newEQCHive.getEqcHeader().getTimestamp().longValue())
+													- newEQCHive.getEQCHiveRoot().getTimestamp().longValue())
 											+ " ms, details:");
 
-							Log.info(newEQCHive.getEqcHeader().toString());
+							Log.info(newEQCHive.getEQCHiveRoot().toString());
 //						Log.info(newEQCBlock.getRoot().toString());
 
 //						try {

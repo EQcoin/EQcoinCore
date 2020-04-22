@@ -155,7 +155,7 @@ public class SyncBlockService extends EQCService {
 	}
 
 	private void onFind(EQCServiceState state) {
-		IPList<O> minerList = null;
+		IPList minerList = null;
 		IP maxTail = null;
 		TailInfo minerTailInfo = null;
 		TailInfo maxTailInfo = null;
@@ -180,7 +180,7 @@ public class SyncBlockService extends EQCService {
 			}
 			
 			Log.info("MinerList's size: " + minerList.getIpList().size());
-			Vector<TailInfo<O>> minerTailList = new Vector<>();
+			Vector<TailInfo> minerTailList = new Vector<>();
 			for (IP ip : minerList.getIpList()) {
 				try {
 					// Doesn't need include current Node's ip
@@ -301,8 +301,8 @@ public class SyncBlockService extends EQCService {
 					} else {
 						EQCHive localTailHive = new EQCHive( Util.DB().getEQCHive(Util.DB().getEQCHiveTailHeight()));
 						if (syncHiveState.getEqcHive().getHeight().isNextID(localTailHive.getHeight())) {
-							if (Arrays.equals(syncHiveState.getEqcHive().getEqcHeader().getPreHash(),
-									localTailHive.getHash())) {
+							if (Arrays.equals(syncHiveState.getEqcHive().getEQCHiveRoot().getPreProof(),
+									localTailHive.getProof())) {
 								Log.info("New block is current tail's next block just begin verify it");
 								changeLog = new ChangeLog(syncHiveState.getEqcHive().getHeight(),
 										new Filter(Mode.VALID));
@@ -355,7 +355,7 @@ public class SyncBlockService extends EQCService {
 					// Try to find local chain's which height match with max tail chain
 					Log.info("Try to find local chain's which height match with max tail chain");
 					for (; base >= eQcoinSubchainAccount.getCheckPointHeight().longValue(); --base) {
-						if (Arrays.equals(Util.DB().getEQCHeaderHash(new ID(base)),
+						if (Arrays.equals(Util.DB().getEQCHiveRootProof(new ID(base)),
 								SyncblockNetworkClient.getEQCHeaderHash(new ID(base), syncHiveState.getIp()))) {
 							Log.info("Current max tail chain's local base height is: " + base);
 							isValidChain = true;

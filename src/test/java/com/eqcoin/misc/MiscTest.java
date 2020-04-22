@@ -131,18 +131,20 @@ public class MiscTest {
 	   }
 	   
 	   @Test
-	   void verifyBlock() {
+	   void verifyEQCHive() {
 		   ID id;
 		try {
 			id = Util.DB().getEQCHiveTailHeight();
-			Log.info("" + id);
+			Log.info("Current tail height: " + id);
 			 for(int i=1; i<=id.intValue(); ++i) {
 			   ChangeLog changeLog = new ChangeLog(new ID(i), new Filter(Mode.MINING));
 			   EQCHive eqcBlock = new EQCHive(Util.DB().getEQCHive(new ID(i)));
-//			   Log.info(eqcBlock.toString());
+			   eqcBlock.setChangeLog(changeLog);
+			   Log.info("Begin verify No." + i + " EQCHive");
+			   Log.info("\n" + eqcBlock.toString());
 				assertTrue(eqcBlock.isValid());
 				changeLog.clear();
-				 Log.info("i: " + i + " passed");
+				 Log.info("EQCHive No." + i + " verify passed");
 			   }
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block

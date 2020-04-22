@@ -42,18 +42,25 @@ import com.eqcoin.util.Util;
  * @date Jun 27, 2019
  * @email 10509759@qq.com
  */
-public class TransactionIndexList<T> extends IO<T> {
-	private Vector<TransactionIndex<T>> transactionIndexList;
+public class TransactionIndexList extends IO {
+	private Vector<TransactionIndex> transactionIndexList;
 	private long transactionIndexListSize;
 	private long syncTime;
 	
-	public TransactionIndexList() {
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
 		transactionIndexList = new Vector<>();
 	}
+
+	public TransactionIndexList() {
+		super();
+	}
 	
-	public TransactionIndexList(T type) throws Exception {
-		transactionIndexList = new Vector<>();
-		parse(type);
+	public <T> TransactionIndexList(T type) throws Exception {
+		super(type);
 	}
 
 	/* (non-Javadoc)
@@ -78,21 +85,12 @@ public class TransactionIndexList<T> extends IO<T> {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#parseHeader(java.io.ByteArrayInputStream)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#parseBody(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		Vector<byte[]> array = EQCType.parseArray(is);
 		transactionIndexListSize = array.size();
 		for(byte[] bytes:array) {
@@ -102,19 +100,10 @@ public class TransactionIndexList<T> extends IO<T> {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#getHeaderBytes()
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
 	 */
 	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#getBodyBytes()
-	 */
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.eqcSerializableListToArray(transactionIndexList));
 		os.write(EQCType.longToEQCBits(syncTime));
 		return os;
@@ -127,14 +116,14 @@ public class TransactionIndexList<T> extends IO<T> {
 	/**
 	 * @return the transactionIndexList
 	 */
-	public Vector<TransactionIndex<T>> getTransactionIndexList() {
+	public Vector<TransactionIndex> getTransactionIndexList() {
 		return transactionIndexList;
 	}
 
 	/**
 	 * @param transactionIndexList the transactionIndexList to set
 	 */
-	public void setTransactionIndexList(Vector<TransactionIndex<T>> transactionIndexList) {
+	public void setTransactionIndexList(Vector<TransactionIndex> transactionIndexList) {
 		this.transactionIndexList = transactionIndexList;
 	}
 

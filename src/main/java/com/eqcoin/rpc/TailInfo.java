@@ -43,7 +43,7 @@ import com.eqcoin.util.ID;
  * @date Jun 24, 2019
  * @email 10509759@qq.com
  */
-public class TailInfo<T> extends IO<T> implements Comparable<TailInfo> {
+public class TailInfo extends IO implements Comparable<TailInfo> {
 	private ID height;
 	private ID checkPointHeight;
 	private byte[] blockTailProof;
@@ -52,8 +52,8 @@ public class TailInfo<T> extends IO<T> implements Comparable<TailInfo> {
 	public TailInfo() {
 	}
 	
-	public TailInfo(T type) throws Exception {
-		parse(type);
+	public <T> TailInfo(T type) throws Exception {
+		super(type);
 	}
 	
 	/* (non-Javadoc)
@@ -103,28 +103,22 @@ public class TailInfo<T> extends IO<T> implements Comparable<TailInfo> {
 	public void setCheckPointHeight(ID checkPointHeight) {
 		this.checkPointHeight = checkPointHeight;
 	}
-
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		height = new ID(EQCType.parseEQCBits(is));
 		checkPointHeight = new ID(EQCType.parseEQCBits(is));
 		blockTailProof = EQCType.parseBIN(is);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
+	 */
 	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(height.getEQCBits());
 		os.write(checkPointHeight.getEQCBits());
 		os.write(EQCType.bytesToBIN(blockTailProof));

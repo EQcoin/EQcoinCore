@@ -85,18 +85,18 @@ public class SyncService extends EQCService {
 //			}
 			
 			// Sync Transaction
-			IPList<O> ipList = EQCBlockChainH2.getInstance().getMinerList();
+			IPList ipList = EQCBlockChainH2.getInstance().getMinerList();
 			ipList.addIP(Util.SINGULARITY_IP);
-			TransactionIndexList<O> transactionIndexList = null;
-			TransactionIndexList<O> needSyncList = null;
-			TransactionList<O> transactionList = null;
+			TransactionIndexList transactionIndexList = null;
+			TransactionIndexList needSyncList = null;
+			TransactionList transactionList = null;
 			for(IP ip:ipList.getIpList()) {
 				Log.info("Begin get Transaction list");
 				transactionIndexList = MinerNetworkClient.getTransactionIndexList(ip);
 				needSyncList = new TransactionIndexList();
 				if(transactionIndexList != null) {
 					Log.info("Begin sync Transaction");
-					for(TransactionIndex<O> transactionIndex:transactionIndexList.getTransactionIndexList()) {
+					for(TransactionIndex transactionIndex:transactionIndexList.getTransactionIndexList()) {
 						if(!EQCBlockChainH2.getInstance().isTransactionExistsInPool(transactionIndex)) {
 							needSyncList.addTransactionIndex(transactionIndex);
 						}

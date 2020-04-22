@@ -63,7 +63,7 @@ import com.eqcoin.util.Util;
  */
 public class TransactionNetworkClient extends EQCRPCClient {
 
-	public static Info ping(Cookie<O> cookie, String ip) throws Exception {
+	public static Info ping(Cookie cookie, String ip) throws Exception {
 		Info info = null;
 		NettyTransceiver nettyTransceiver = null;
 		TransactionNetwork client = null;
@@ -73,7 +73,7 @@ public class TransactionNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(TransactionNetwork.class, nettyTransceiver);
-			info = new Info(client.ping(cookie.getProtocol()));
+			info = new Info(client.ping(cookie.getProtocol(O.class)));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -189,7 +189,7 @@ public class TransactionNetworkClient extends EQCRPCClient {
 		return account;
 	}
 
-	public static MaxNonce getMaxNonce(Nest<O> nest, IP ip) throws Exception {
+	public static MaxNonce getMaxNonce(Nest nest, IP ip) throws Exception {
 		MaxNonce maxNonce = null;
 		NettyTransceiver nettyTransceiver = null;
 		TransactionNetwork client = null;
@@ -199,7 +199,7 @@ public class TransactionNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(TransactionNetwork.class, nettyTransceiver);
-			maxNonce = new MaxNonce(client.getMaxNonce(nest.getProtocol()));
+			maxNonce = new MaxNonce(client.getMaxNonce(nest.getProtocol(O.class)));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -214,7 +214,7 @@ public class TransactionNetworkClient extends EQCRPCClient {
 		return maxNonce;
 	}
 
-	public static Balance getBalance(Nest<O> nest, String ip) throws Exception {
+	public static Balance getBalance(Nest nest, String ip) throws Exception {
 		Balance balance = null;
 		NettyTransceiver nettyTransceiver = null;
 		TransactionNetwork client = null;
@@ -224,7 +224,7 @@ public class TransactionNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(TransactionNetwork.class, nettyTransceiver);
-			balance = new Balance(client.getBalance(nest.getProtocol()));
+			balance = new Balance(client.getBalance(nest.getProtocol(O.class)));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -299,7 +299,7 @@ public class TransactionNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			proxy = SpecificRequestor.getClient(TransactionNetwork.class, client);
-			proxy.ping(Util.getCookie().getProtocol());
+			proxy.ping(Util.getCookie().getProtocol(O.class));
 			time = System.currentTimeMillis() - time;
 		} catch (Exception e) {
 			Log.Error(e.getMessage());

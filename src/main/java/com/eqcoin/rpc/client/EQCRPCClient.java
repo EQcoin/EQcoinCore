@@ -40,14 +40,14 @@ import com.eqcoin.util.Util;
  * @date Jun 29, 2019
  * @email 10509759@qq.com
  */
-public abstract class EQCRPCClient<T> {
-	protected  Cookie<T> cookie;
+public abstract class EQCRPCClient {
+	protected  Cookie cookie;
 	protected Info info;
 	
 	public EQCRPCClient() {
 		info = new Info();
 		info.setCode(Code.OK);
-		cookie = new Cookie<T>();
+		cookie = new Cookie();
 		cookie.setIp(Util.LOCAL_IP);
 		cookie.setVersion(Util.PROTOCOL_VERSION);
 		info.setCookie(cookie);
@@ -56,13 +56,13 @@ public abstract class EQCRPCClient<T> {
 	/**
 	 * @return the cookie
 	 */
-	public Cookie<T> getCookie() {
+	public Cookie getCookie() {
 		return cookie;
 	}
 	/**
 	 * @param cookie the cookie to set
 	 */
-	public void setCookie(Cookie<T> cookie) {
+	public void setCookie(Cookie cookie) {
 		this.cookie = cookie;
 	}
 	/**

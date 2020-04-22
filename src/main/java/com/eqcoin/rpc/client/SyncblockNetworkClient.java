@@ -57,7 +57,7 @@ import com.eqcoin.util.Util;
  */
 public class SyncblockNetworkClient extends EQCRPCClient {
 
-	public static Info ping(Cookie<O> cookie, String ip) throws Exception {
+	public static Info ping(Cookie cookie, String ip) throws Exception {
 		Info info = null;
 		NettyTransceiver nettyTransceiver = null;
 		SyncblockNetwork client = null;
@@ -67,7 +67,7 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(SyncblockNetwork.class, nettyTransceiver);
-			info = new Info(client.ping(cookie.getProtocol()));
+			info = new Info(client.ping(cookie.getProtocol(O.class)));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -242,7 +242,7 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 					new InetSocketAddress(InetAddress.getByName(remoteIP.getIp()), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()), Util.DEFAULT_TIMEOUT);
 			proxy = SpecificRequestor.getClient(SyncblockNetwork.class, client);
-			proxy.ping(Util.getCookie().getProtocol());
+			proxy.ping(Util.getCookie().getProtocol(O.class));
 			time = System.currentTimeMillis() - time;
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
@@ -255,7 +255,7 @@ public class SyncblockNetworkClient extends EQCRPCClient {
 		return time;
 	}
 
-	public static IP getFastestServer(IPList<O> ipList) {
+	public static IP getFastestServer(IPList ipList) {
 		IP fastestServer = null;
 		long time = 0;
 		long maxTime = 0;

@@ -45,21 +45,25 @@ import com.eqcoin.util.Util;
  * @date Jun 25, 2019
  * @email 10509759@qq.com
  */
-public class Cookie<T> extends IO<T> {
+public class Cookie extends IO {
 	private IP ip;
 	private ID version;
-
-	public Cookie(ByteArrayInputStream is) throws Exception {
-		super(is);
-	}
 	
-	public Cookie() {
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
 		ip = Util.LOCAL_IP;
 		version = Util.PROTOCOL_VERSION;
 	}
+
+	public Cookie() {
+		super();
+	}
 	
-	public Cookie(T type) throws Exception {
-		parse(type);
+	public <T> Cookie(T type) throws Exception {
+		super(type);
 	}
 
 	/* (non-Javadoc)
@@ -114,26 +118,20 @@ public class Cookie<T> extends IO<T> {
 		return ip == null || ip.getIp().isEmpty();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		ip = new IP(EQCType.bytesToASCIISting(EQCType.parseBIN(is)));
 		version = EQCType.eqcBitsToID(EQCType.parseEQCBits(is));
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
+	 */
 	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(ip.getBytes());
 		os.write(version.getEQCBits());
 		return os;

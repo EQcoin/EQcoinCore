@@ -184,7 +184,7 @@ public class EQcoinSeedRoot extends EQCSeedRoot {
 	@Override
 	public boolean isValid() throws Exception {
 		// Check if CoinbaseTransaction is need
-		if(changeLog.getHeight().compareTo(Util.getMaxCoinbaseHeight(changeLog.getHeight())) < 0) {
+		if(totalSupply.compareTo(Util.MAX_EQC) <= 0) {
 			if(coinbaseTransaction == null || !coinbaseTransaction.isSanity()) {
 				return false;
 			}

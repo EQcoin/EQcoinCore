@@ -192,13 +192,14 @@ public interface EQCBlockChain {
 	public TransactionIndexList getTransactionIndexListInPool(long previousSyncTime, long currentSyncTime)
 			throws Exception;
 
-	public TransactionList<byte[]> getTransactionListInPool(TransactionIndexList<byte[]> transactionIndexList)
+	public TransactionList getTransactionListInPool(TransactionIndexList transactionIndexList)
 			throws Exception;
 
 	// For sign and verify Transaction need use relevant TxIn's EQC block header's
 	// hash via this function to get it from xxx.EQC.
-	public byte[] getEQCHeaderHash(ID height) throws Exception;
+	public byte[] getEQCHiveRootProof(ID height) throws Exception;
 
+	@Deprecated
 	public byte[] getEQCHeaderBuddyHash(ID height, ID currentTailHeight) throws Exception;
 
 	public ID getEQCHiveTailHeight() throws Exception;

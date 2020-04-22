@@ -300,9 +300,9 @@ public final class Util {
 	
 	public final static ID PROTOCOL_VERSION = DEFAULT_PROTOCOL_VERSION;
 	
-	private static Cookie<O> cookie = null;
+	private static Cookie cookie = null;
 
-	private static Info<O> info = null;
+	private static Info info = null;
 	
 	public static final long DEFAULT_TIMEOUT = 3000;
 	
@@ -1323,8 +1323,7 @@ public final class Util {
 				new Filter(Mode.MINING));
 
 		// Create EQC block
-		eqcHive = new EQCHive();
-		eqcHive.setChangeLog(changeLog);
+		eqcHive = new EQCHive(MAGIC_HASH, ID.ZERO, changeLog);
 
 		// Create TransactionsHeader
 //		TransactionsHeader transactionsHeader = new TransactionsHeader();
@@ -1371,17 +1370,10 @@ public final class Util {
 //		root.setSubchainsMerkelTreeRoot(eqcHive.geteQcoinSeed().getRoot());
 
 		// Create EQC block header
-		EQCHiveRoot header = new EQCHiveRoot();
-		header.setPreHash(MAGIC_HASH);
-		header.setTarget(Util.getDefaultTargetBytes());
-		header.setHeight(ID.ZERO);
-		header.setTimestamp(new ID(0));
-		header.setNonce(ID.ZERO);
-		header.setEQCoinSeedHash(eqcHive.getEQcoinSeed().getProofRoot());
-		eqcHive.setEqcHeader(header);
+		eqcHive.getEQCHiveRoot().setTimestamp(new ID(0));
 		
-		while(!header.isDifficultyValid()) {
-			header.setNonce(header.getNonce().getNextID());
+		while(!eqcHive.getEQCHiveRoot().isDifficultyValid()) {
+			eqcHive.getEQCHiveRoot().setNonce(eqcHive.getEQCHiveRoot().getNonce().getNextID());
 		}
 		
 //		eqcBlock.setIndex(index);
@@ -1406,17 +1398,17 @@ public final class Util {
 		}
 	}
 
-	public static byte[] cypherTarget(ID height, ChangeLog changeLog) throws Exception {
+	public static byte[] cypherTarget(ChangeLog changeLog) throws Exception {
 		// Here need dore more job change Util.DB() to changelog
 		byte[] target = null;
 		BigInteger oldDifficulty;
 		BigInteger newDifficulty;
-		if (height.longValue() <= 9) {
+		if (changeLog.getHeight().longValue() <= 9) {
 			return getDefaultTargetBytes();
 		}
-		ID serialNumber_end = new ID(height.subtract(BigInteger.ONE));
-		ID serialNumber_begin = new ID(height.subtract(BigInteger.valueOf(10)));
-		if (height.longValue() % 10 != 0) {
+		ID serialNumber_end = new ID(changeLog.getHeight().subtract(BigInteger.ONE));
+		ID serialNumber_begin = new ID(changeLog.getHeight().subtract(BigInteger.valueOf(10)));
+		if (changeLog.getHeight().longValue() % 10 != 0) {
 //			Log.info(serialNumber_end.toString());
 			target = Util.DB().getEQCHiveRoot(serialNumber_end).getTarget();//EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
 //			Log.info(Util.bigIntegerTo128String(Util.targetBytesToBigInteger(target)));
@@ -1522,7 +1514,7 @@ public final class Util {
 		return ip;
 	}
 
-	public static Cookie<O> getCookie() {
+	public static Cookie getCookie() {
 		return cookie;
 	}
 
@@ -1530,12 +1522,12 @@ public final class Util {
 //		cookie.setIp(getIP());
 //	}
 
-	public static Info<O> getDefaultInfo() {
+	public static Info getDefaultInfo() {
 		return info;
 	}
 
-	public static Info<O> getInfo(Code code, String message) {
-		Info<O> info = new Info();
+	public static Info getInfo(Code code, String message) {
+		Info info = new Info();
 		info.setCookie(cookie);
 		info.setCode(code);
 		info.setMessage(message);
@@ -1703,8 +1695,8 @@ public final class Util {
 	}
 	
 	public static void syncMinerList() throws ClassNotFoundException, SQLException, Exception {
-		IPList<O> ipList = EQCBlockChainH2.getInstance().getMinerList();
-		IPList<O> ipList2 = null;
+		IPList ipList = EQCBlockChainH2.getInstance().getMinerList();
+		IPList ipList2 = null;
 		if (ipList.isEmpty()) {
 			if (LOCAL_IP.equals(SINGULARITY_IP)) {
 				return;

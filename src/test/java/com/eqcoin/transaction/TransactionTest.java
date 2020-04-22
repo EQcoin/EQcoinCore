@@ -289,13 +289,18 @@ public class TransactionTest {
 	}
 	
 	@Test
+	void regresstionZeroZionTest() {
+		TransTest.Zion(0, 2000, TRANSACTION_PRIORITY.ASAP, 2);
+	}
+	
+	@Test
 	void regresstionZionTest() {
-		TransTest.Zion(2, 51, TRANSACTION_PRIORITY.ASAP, 14, 15, 16);
+		TransTest.Zion(2, 51, TRANSACTION_PRIORITY.ASAP, 3);
 	}
 	
 	@Test
 	void regresstionTransferTest() {
-		TransTest.Tranfer(2, 1, TRANSACTION_PRIORITY.ASAP, 5);
+		TransTest.Tranfer(2, 1, TRANSACTION_PRIORITY.ASAP, 3);
 	}
 	
 }

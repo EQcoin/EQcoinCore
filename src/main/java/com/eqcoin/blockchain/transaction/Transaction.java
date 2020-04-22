@@ -672,11 +672,7 @@ public class Transaction extends EQCSerializable implements Comparator<Transacti
 			}
 		} catch (Exception e) {
 			Log.Error("During planting error occur: " + e.getMessage());
-			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO, true);
-			Passport passport = changeLog.getFilter().getPassport(ID.ONE, true);
 			changeLog.getFilter().getConnection().rollback();
-			eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO, true);
-			passport = changeLog.getFilter().getPassport(ID.ONE, true);
 			throw e;
 		} finally {
 			// End Transaction

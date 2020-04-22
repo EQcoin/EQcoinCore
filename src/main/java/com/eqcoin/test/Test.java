@@ -114,9 +114,9 @@ public class Test {
 	public static void testHashTime() {
 		EQCHiveRoot header = new EQCHiveRoot();
 		header.setNonce(ID.ONE);
-		header.setPreHash(Util.EQCCHA_MULTIPLE_DUAL_MIX(Util.getSecureRandomBytes(), Util.ONE, true, false));
+		header.setPreProof(Util.EQCCHA_MULTIPLE_DUAL_MIX(Util.getSecureRandomBytes(), Util.ONE, true, false));
 		header.setTarget(Util.getDefaultTargetBytes());
-		header.setEQCoinSeedHash(Util.EQCCHA_MULTIPLE_DUAL(Util.getSecureRandomBytes(), Util.ONE, true, false));
+		header.setEQCoinSeedProof(Util.EQCCHA_MULTIPLE_DUAL(Util.getSecureRandomBytes(), Util.ONE, true, false));
 		header.setHeight(ID.ZERO);
 		header.setTimestamp(new ID(System.currentTimeMillis()));
 		Log.info(header.toString());
@@ -1722,7 +1722,7 @@ public class Test {
     	NettyTransceiver client = null;
     	try {
 //    		Util.init();
-    		Cookie<O> cookie = new Cookie();
+    		Cookie cookie = new Cookie();
     		cookie.setIp(localIP);
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		System.out.println("Begin link remote: " + time);
@@ -1738,7 +1738,7 @@ public class Test {
             TailInfo europa = null;
 //            while(true) {
             	time = System.currentTimeMillis();
-            	System.out.println("Result: " + (System.currentTimeMillis() - time) + "\n" + proxy.ping(cookie.getProtocol()));
+            	System.out.println("Result: " + (System.currentTimeMillis() - time) + "\n" + proxy.ping(cookie.getProtocol(O.class)));
 //            	europa = new Europa(proxy.getBlockTail());
 //    			System.out.println("getBlockTail Result: " + (System.currentTimeMillis() - time) + "\n" + europa.getHeight());
 //            }
@@ -1761,12 +1761,12 @@ public class Test {
 		long time = System.currentTimeMillis();
     	NettyTransceiver client = null;
     	try {
-    		Cookie<O> cookie = new Cookie();
+    		Cookie cookie = new Cookie();
     		cookie.setIp(Util.LOCAL_IP);
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		client = new NettyTransceiver(new InetSocketAddress(InetAddress.getByName(remoteIP), 7997), 3000l);
     		SyncblockNetwork proxy = SpecificRequestor.getClient(SyncblockNetwork.class, client);
-    		O io = proxy.ping(cookie.getProtocol());
+    		O io = proxy.ping(cookie.getProtocol(O.class));
 //    			System.out.println("sResult: " + time + "\n" + proxy.ping(cookie.getIO()));
             	time = System.currentTimeMillis() - time;
             	Log.info("" + time);
@@ -1818,7 +1818,7 @@ public class Test {
 		long time = System.currentTimeMillis();
     	NettyTransceiver client = null;
     	try {
-    		Cookie<O> cookie = new Cookie();
+    		Cookie cookie = new Cookie();
     		cookie.setIp(new IP("10.0.0.1"));
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		client = new NettyTransceiver(new InetSocketAddress(InetAddress.getByName(remoteIP), 7997), 3000l);
@@ -1843,7 +1843,7 @@ public class Test {
 		O io = null;
 		// Here need add function to test ping
 //		Test.ping(Util.getStatus().getCookie().getIp().toString(), Util.getStatus().getCookie().getIp().toString());
-		Cookie<O> cookie1 = new Cookie();
+		Cookie cookie1 = new Cookie();
 		cookie1.setIp(Util.LOCAL_IP);
 		cookie1.setVersion(Util.PROTOCOL_VERSION);
 		if (cookie1.getIp().getIp().isEmpty()) {
@@ -1851,12 +1851,12 @@ public class Test {
 		} else {
 			Log.info(cookie1.toString());
 		}
-		Info<O> info = new Info();
+		Info info = new Info();
 		info.setCookie(cookie1);
 		info.setCode(Code.OK);
 		info.setMessage(new Date().toString());
 		try {
-			 io = info.getProtocol();//Util.getStatus();
+			 io = info.getProtocol(O.class);//Util.getStatus();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1918,7 +1918,7 @@ public class Test {
 //				}
 //				Log.info(Util.dumpBytes(transaction.getSignature(), 16));
 //				EQCBlockChainH2.getInstance().saveTransactionInPool(transaction);
-				IPList<O> ipList = MinerNetworkClient.getMinerList(Util.SINGULARITY_IP);//EQCBlockChainH2.getInstance().getMinerList();
+				IPList ipList = MinerNetworkClient.getMinerList(Util.SINGULARITY_IP);//EQCBlockChainH2.getInstance().getMinerList();
 				ipList.addIP(Util.SINGULARITY_IP);
 //				IPList ipList = new IPList();
 //				ipList.addIP(Util.IP);

@@ -35,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -103,30 +104,30 @@ public class EQCHive extends EQCSerializable {
 		eQcoinSeed = new EQcoinSeed();
 	}
 
-	public EQCHive(ID currentBlockHeight, byte[] previousBlockHeaderHash, ChangeLog changeLog) throws Exception {
-		init();
+	public EQCHive(byte[] preProof, ID currentHeight, ChangeLog changeLog) throws Exception {
+		super();
 		this.changeLog = changeLog;
 		eQcoinSeed.setChangeLog(changeLog);
 		// Create EQC block header
-		eqcHiveRoot.setPreHash(previousBlockHeaderHash);
-		eqcHiveRoot.setHeight(currentBlockHeight);
-		eqcHiveRoot.setTarget(Util.cypherTarget(currentBlockHeight, changeLog));
+		eqcHiveRoot.setPreProof(preProof);
+		eqcHiveRoot.setHeight(currentHeight);
+		eqcHiveRoot.setTarget(Util.cypherTarget(changeLog));
 		eqcHiveRoot.setTimestamp(new ID(System.currentTimeMillis()));
 		eqcHiveRoot.setNonce(ID.ZERO);
 	}
 
 	/**
-	 * @return the eqcHeader
+	 * @return the eqcHiveRoot
 	 */
-	public EQCHiveRoot getEqcHeader() {
+	public EQCHiveRoot getEQCHiveRoot() {
 		return eqcHiveRoot;
 	}
 
 	/**
-	 * @param eqcHeader the eqcHeader to set
+	 * @param eqcHiveRoot the eqcHiveRoot to set
 	 */
-	public void setEqcHeader(EQCHiveRoot eqcHeader) {
-		this.eqcHiveRoot = eqcHeader;
+	public void setEQCHiveRoot(EQCHiveRoot eqcHiveRoot) {
+		this.eqcHiveRoot = eqcHiveRoot;
 	}
 
 	public ID getHeight() {
@@ -172,8 +173,8 @@ public class EQCHive extends EQCSerializable {
 		eQcoinSeed.plantingTransaction(pendingTransactionList);
 		
 		// Set EQCHeader's Root's hash
-		eqcHiveRoot.setEQCoinSeedHash(eQcoinSeed.getProofRoot());
-
+		eqcHiveRoot.setEQCoinSeedProof(eQcoinSeed.getProof());
+		
 	}
 
 	/**
@@ -352,8 +353,8 @@ public class EQCHive extends EQCSerializable {
 		return getBytes().length;
 	}
 
-	public byte[] getHash() {
-		return eqcHiveRoot.getHash();
+	public byte[] getProof() throws NoSuchAlgorithmException {
+		return eqcHiveRoot.getProof();
 	}
 
 	@Override
@@ -392,16 +393,16 @@ public class EQCHive extends EQCSerializable {
 				return false;
 			}
 
-			// Verify Statistics
-			changeLog.getStatistics().generateStatistics(eQcoinSeed);
-			if (!changeLog.getStatistics().isValid(eQcoinSeed)) {
-				Log.Error("Statistics data is invalid.");
-				return false;
-			}
-
-			// Build AccountsMerkleTree and generate Root and Statistics
-			changeLog.buildProofBase();
-			changeLog.generateProofRoot();
+//			// Verify Statistics
+//			changeLog.getStatistics().generateStatistics(eQcoinSeed);
+//			if (!changeLog.getStatistics().isValid(eQcoinSeed)) {
+//				Log.Error("Statistics data is invalid.");
+//				return false;
+//			}
+//
+//			// Build AccountsMerkleTree and generate Root and Statistics
+//			changeLog.buildProofBase();
+//			changeLog.generateProofRoot();
 
 			// Verify Root
 //		// Check total supply
@@ -450,7 +451,7 @@ public class EQCHive extends EQCSerializable {
 //				return false;
 //			}
 			// Verify EQCHeader
-			if (!eqcHiveRoot.isValid(changeLog, eQcoinSeed.getProofRoot())) {
+			if (!eqcHiveRoot.setChangeLog(changeLog).setEQcoinSeed(eQcoinSeed).isValid()) {
 				Log.Error("EQCHeader is invalid!");
 				return false;
 			}
@@ -493,6 +494,7 @@ public class EQCHive extends EQCSerializable {
 	public void setChangeLog(ChangeLog changeLog) {
 		this.changeLog = changeLog;
 		eQcoinSeed.setChangeLog(changeLog);
+		changeLog.setCoinbaseTransaction(eQcoinSeed.getEQcoinSeedRoot().getCoinbaseTransaction());
 	}
 	
 }

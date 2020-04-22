@@ -71,10 +71,10 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 		try {
 			cookie1 = new Cookie(cookie);
 			if(cookie1.isSanity()) {
-				info = Util.getDefaultInfo().getProtocol();
+				info = Util.getDefaultInfo().getProtocol(O.class);
 			}
 			else {
-				info = Util.getInfo(Code.WRONGPROTOCOL, null).getProtocol();
+				info = Util.getInfo(Code.WRONGPROTOCOL, null).getProtocol(O.class);
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -91,7 +91,7 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 	public O getMinerList() {
 		O minerList = null;
 		try {
-			minerList = EQCBlockChainH2.getInstance().getMinerList().getProtocol();
+			minerList = EQCBlockChainH2.getInstance().getMinerList().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -110,7 +110,7 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 		try {
 			pendingTransactionState = new PendingTransactionState(transactionRPC);
 			PendingTransactionService.getInstance().offerPendingTransactionState(pendingTransactionState);
-			info = Util.getDefaultInfo().getProtocol();
+			info = Util.getDefaultInfo().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -167,10 +167,10 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 	@Override
 	public O getMaxNonce(O nest) {
 		O io = null;
-		MaxNonce<O> maxNonce = null;
+		MaxNonce maxNonce = null;
 		try {
 			maxNonce = EQCBlockChainH2.getInstance().getTransactionMaxNonce(new Nest(nest));
-			io = maxNonce.getProtocol();
+			io = maxNonce.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -185,10 +185,10 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 	@Override
 	public O getBalance(O nest) {
 		O io = null;
-		Balance<O> balance = null;
+		Balance balance = null;
 		try {
 			balance = Util.DB().getBalance(new Nest(nest));
-			io = balance.getProtocol();
+			io = balance.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -222,7 +222,7 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 	@Override
 	public O getPendingTransactionList(O nest) {
 		O io = null;
-		TransactionList<O> transactionList = new TransactionList();
+		TransactionList transactionList = new TransactionList();
 		Vector<Transaction> transactions = null;
 		try {
 			transactions = EQCBlockChainH2.getInstance().getPendingTransactionListInPool(new Nest(nest));
@@ -230,7 +230,7 @@ public class TransactionNetworkServiceImpl implements TransactionNetwork {
 				for(Transaction transaction:transactions) {
 					transactionList.addTransaction(transaction);
 				}
-				io = transactionList.getProtocol();
+				io = transactionList.getProtocol(O.class);
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

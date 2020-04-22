@@ -62,7 +62,7 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 	 */
 	@Override
 	public O ping(O cookie) {
-		Info<O> info = null;
+		Info info = null;
 		O o = null;
 		Cookie cookie1 = null;
 		try {
@@ -78,7 +78,7 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 			} else {
 				info = Util.getInfo(Code.WRONGPROTOCOL, null);
 			}
-			o = info.getProtocol();
+			o = info.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -95,7 +95,7 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 	public O getMinerList() {
 		O minerList = null;
 		try {
-			minerList = EQCBlockChainH2.getInstance().getMinerList().getProtocol();
+			minerList = EQCBlockChainH2.getInstance().getMinerList().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -111,7 +111,7 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 	public O getFullNodeList() {
 		O fullNodeList = null;
 		try {
-			fullNodeList = EQCBlockChainH2.getInstance().getFullNodeList().getProtocol();
+			fullNodeList = EQCBlockChainH2.getInstance().getFullNodeList().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -132,14 +132,14 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 			newBlock = new NewHive(block);
 			Log.info("MinerNetworkServiceImpl received new block");
 			if(newBlock.getCookie().isSanity()) {
-				info = Util.getDefaultInfo().getProtocol();
+				info = Util.getDefaultInfo().getProtocol(O.class);
 				newBlockState = new NewHiveState(State.PENDINGNEWBLOCK);
 				newBlockState.setNewBlock(newBlock);
 				PendingNewHiveService.getInstance().offerNewBlockState(newBlockState);
 				Log.info("Call PendingNewBlockService handle the new block");
 			}
 			else {
-				info = Util.getInfo(Code.WRONGPROTOCOL, null).getProtocol();
+				info = Util.getInfo(Code.WRONGPROTOCOL, null).getProtocol(O.class);
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -156,10 +156,10 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 	public O getTransactionIndexList(O synctime) {
 		O io = null;
 		long syncTime = Util.bytesToLong(synctime.getO().array());
-		TransactionIndexList<O> transactionIndexList = null;
+		TransactionIndexList transactionIndexList = null;
 		try {
 			transactionIndexList = EQCBlockChainH2.getInstance().getTransactionIndexListInPool(syncTime, System.currentTimeMillis());
-			io = transactionIndexList.getProtocol();
+			io = transactionIndexList.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -175,10 +175,10 @@ public class MinerNetworkServiceImpl implements MinerNetwork {
 	@Override
 	public O getTransactionList(O transactionIndexList) {
 		O io = null;
-		TransactionList<O> transactionList = null;
+		TransactionList transactionList = null;
 		try {
 			transactionList = EQCBlockChainH2.getInstance().getTransactionListInPool(new TransactionIndexList(transactionIndexList));
-			io = transactionList.getProtocol();
+			io = transactionList.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

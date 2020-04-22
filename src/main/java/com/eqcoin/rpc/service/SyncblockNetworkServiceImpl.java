@@ -67,7 +67,7 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 			possibleNode.setNodeType(NODETYPE.FULL);
 			possibleNode.setTime(System.currentTimeMillis());
 			PossibleNodeService.getInstance().offerNode(possibleNode);
-			info = Util.getDefaultInfo().getProtocol();
+			info = Util.getDefaultInfo().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -80,7 +80,7 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	public O getMinerList() {
 		O minerList = null;
 		try {
-			minerList = EQCBlockChainH2.getInstance().getMinerList().getProtocol();
+			minerList = EQCBlockChainH2.getInstance().getMinerList().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -93,7 +93,7 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	public O getFullNodeList() {
 		O fullNodeList = null;
 		try {
-			fullNodeList = EQCBlockChainH2.getInstance().getFullNodeList().getProtocol();
+			fullNodeList = EQCBlockChainH2.getInstance().getFullNodeList().getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -105,15 +105,15 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 	@Override
 	public O getBlockTail() {
 		O io = null;
-		TailInfo<O> europa = null;
+		TailInfo europa = null;
 		EQcoinRootPassport eQcoinSubchainAccount = null;
 		try {
 			europa = new TailInfo();
 			europa.setHeight(Util.DB().getEQCHiveTailHeight());
 			eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
 			europa.setCheckPointHeight(eQcoinSubchainAccount.getCheckPointHeight());
-			europa.setBlockTailProof(Util.DB().getEQCHiveRoot(europa.getHeight()).getProof());
-			io = europa.getProtocol();
+			europa.setBlockTailProof(Util.DB().getEQCHiveRoot(europa.getHeight()).getSnapshot());
+			io = europa.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -143,7 +143,7 @@ public class SyncblockNetworkServiceImpl implements SyncblockNetwork {
 		O eqcHeaderHash = null;
 		byte[] eqcHeaderHash1 = null;
 		try {
-			eqcHeaderHash1 = Util.DB().getEQCHeaderHash(new ID(height.getO().array()));
+			eqcHeaderHash1 = Util.DB().getEQCHiveRootProof(new ID(height.getO().array()));
 			if(eqcHeaderHash1 != null) {
 				eqcHeaderHash = new O(ByteBuffer.wrap(eqcHeaderHash1));
 			}

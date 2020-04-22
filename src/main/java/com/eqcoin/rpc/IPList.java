@@ -41,16 +41,23 @@ import com.eqcoin.serialization.EQCType;
  * @date Jun 28, 2019
  * @email 10509759@qq.com
  */
-public class IPList<T> extends IO<T> {
+public class IPList extends IO {
 	private Vector<IP> ipList;
 	
-	public IPList() {
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
 		ipList = new Vector<>();
 	}
+
+	public IPList() {
+		super();
+	}
 	
-	public IPList(T type) throws Exception {
-		ipList = new Vector<>();
-		parse(type);
+	public <T> IPList(T type) throws Exception {
+		super(type);
 	}
 	
 	/* (non-Javadoc)

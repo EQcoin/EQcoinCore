@@ -31,6 +31,7 @@ package com.eqcoin;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.sql.Savepoint;
 import java.util.Base64;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicReference;
@@ -113,6 +114,9 @@ public class Singularity {
 //			Log.info(""+a.subtract(b).toByteArray().length);
 //			Test.dumpPassport(3);
 //			Test.dumpLock(3);
+//			Passport passport = Util.DB().getPassport(ID.ZERO, ID.ONE);
+//			int i;
+//			Log.info(Util.DB().getLock(ID.ZERO, Mode.GLOBAL).toString());
 			Util.init();
 			Util.IsDeleteTransactionInPool = true;
 			MinerService.getInstance().start();

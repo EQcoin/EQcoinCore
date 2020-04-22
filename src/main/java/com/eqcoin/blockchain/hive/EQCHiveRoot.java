@@ -34,6 +34,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Arrays;
 
@@ -41,6 +43,7 @@ import javax.print.attribute.standard.RequestingUserName;
 
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.changelog.ChangeLog;
+import com.eqcoin.blockchain.seed.EQcoinSeed;
 import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCTypable;
 import com.eqcoin.serialization.EQCType;
@@ -55,12 +58,12 @@ import com.eqcoin.util.Util;
  */
 public class EQCHiveRoot extends EQCSerializable {
 	/*
-	 * previous Hive hash |  target  | EQcoinSeed hash | 	 Height 	 |     timestamp 	 |       nonce  
-   			 64 bytes	     4 bytes     64 bytes  lengthen(>=1bytes) lengthen(>=6bytes)  lengthen(<=4bytes)   
+	 * previous Hive proof |  target  | EQcoinSeed proof | 	 Height 	 |     timestamp 	 |       nonce  
+   	 *		 64 bytes	     4 bytes     64 bytes  lengthen(>=1bytes) lengthen(>=6bytes)  lengthen(<=8bytes)   
 	 */
-	private byte[]	preHash;
+	private byte[]	preProof;
 	private byte[]	target;
-	private byte[]	eqCoinSeedHash;
+	private byte[]	eqCoinSeedProof;
 	private ID height;
 	private ID timestamp;
 	private ID nonce;
@@ -69,6 +72,8 @@ public class EQCHiveRoot extends EQCSerializable {
 	private final static int MIN_TIMESTAMP_LEN = 6;
 	private final static int MAX_NONCE_LEN = 8;
 	private final static int TARGET_LEN = 4;
+	private ChangeLog changeLog;
+	private EQcoinSeed eQcoinSeed;
 	
 	/**
 	 * @param header
@@ -87,16 +92,16 @@ public class EQCHiveRoot extends EQCSerializable {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		preHash = new byte[Util.HASH_LEN];
+		preProof = new byte[Util.HASH_LEN];
 		target = new byte[TARGET_LEN];
-		eqCoinSeedHash = new byte[Util.HASH_LEN];
+		eqCoinSeedProof = new byte[Util.HASH_LEN];
 		try {
 			// Parse PreHash
-			preHash = EQCType.parseNBytes(is, Util.HASH_LEN);
+			preProof = EQCType.parseNBytes(is, Util.HASH_LEN);
 			// Parse Target
 			target = EQCType.parseNBytes(is, TARGET_LEN);
 			// Parse EQCoinSeedHash
-			eqCoinSeedHash = EQCType.parseNBytes(is, Util.HASH_LEN);
+			eqCoinSeedProof = EQCType.parseNBytes(is, Util.HASH_LEN);
 			// Parse Height
 			height = new ID(EQCType.parseEQCBits(is));
 			// Parse Timestamp
@@ -163,9 +168,9 @@ public class EQCHiveRoot extends EQCSerializable {
 	public byte[] getBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
-			os.write(preHash);
+			os.write(preProof);
 			os.write(target);
-			os.write(eqCoinSeedHash);
+			os.write(eqCoinSeedProof);
 			os.write(height.getEQCBits());
 			os.write(timestamp.getEQCBits());
 			os.write(nonce.getEQCBits());
@@ -182,16 +187,16 @@ public class EQCHiveRoot extends EQCSerializable {
 	}
 	
 	/**
-	 * @return the preHash
+	 * @return the preProof
 	 */
-	public byte[] getPreHash() {
-		return preHash;
+	public byte[] getPreProof() {
+		return preProof;
 	}
 	/**
-	 * @param preHash the preHash to set
+	 * @param preProof the preProof to set
 	 */
-	public void setPreHash(byte[] preHash) {
-		this.preHash = preHash;
+	public void setPreProof(byte[] preProof) {
+		this.preProof = preProof;
 	}
 	/**
 	 * @return the target
@@ -206,16 +211,16 @@ public class EQCHiveRoot extends EQCSerializable {
 		this.target = target;
 	}
 	/**
-	 * @return the EQCoinSeedHash
+	 * @return the EQCoinSeedProof
 	 */
-	public byte[] getEQCoinSeedHash() {
-		return eqCoinSeedHash;
+	public byte[] getEQCoinSeedProof() {
+		return eqCoinSeedProof;
 	}
 	/**
-	 * @param EQCoinSeedHash the EQCoinSeedHash to set
+	 * @param EQCoinSeedProof the EQCoinSeedProof to set
 	 */
-	public void setEQCoinSeedHash(byte[] eqCoinSeedHash) {
-		this.eqCoinSeedHash = eqCoinSeedHash;
+	public void setEQCoinSeedProof(byte[] eqCoinSeedProof) {
+		this.eqCoinSeedProof = eqCoinSeedProof;
 	}
 	/**
 	 * @return the timestamp
@@ -256,10 +261,10 @@ public class EQCHiveRoot extends EQCSerializable {
 	public String toInnerJson() {
 		return "\"EQCHeader\":" + 
 				"{\n" +
-					"\"PreHash\":" + "\"" + Util.getHexString(preHash) + "\"" + ",\n" +
+					"\"PreProof\":" + "\"" + Util.getHexString(preProof) + "\"" + ",\n" +
 					"\"Target\":" + "\"" + Util.getHexString(Util.targetBytesToBigInteger(target).toByteArray()) + "\"" + ",\n" +
 					"\"TargetBytes\":" + "\"" + Integer.toHexString(Util.bytesToInt(target)).toUpperCase() + "\"" + ",\n" +
-					"\"EQCoinSeedHash\":" + "\"" + Util.dumpBytes(eqCoinSeedHash, 16) + "\"" + ",\n" +
+					"\"EQCoinSeedProof\":" + "\"" + Util.dumpBytes(eqCoinSeedProof, 16) + "\"" + ",\n" +
 					"\"Height\":" + "\"" + height + "\"" + ",\n" +
 					"\"Timestamp\":" + "\"" + Util.getGMTTime(timestamp.longValue()) + "\"" + ",\n" +
 					"\"Nonce\":" + "\"" + Integer.toHexString(nonce.intValue()).toUpperCase() + "\"" + "\n" +
@@ -278,23 +283,24 @@ public class EQCHiveRoot extends EQCSerializable {
 
 	/**
 	 * @return byte[] the eqcHeader's EQCCHA hash
+	 * @throws NoSuchAlgorithmException 
 	 */
-	public byte[] getHash() {
-		return Util.EQCCHA_MULTIPLE_DUAL_MIX(getBytes(), Util.HUNDREDPULS, true, false);
+	public byte[] getProof() throws NoSuchAlgorithmException {
+		return MessageDigest.getInstance("SHA3-512").digest(Util.multipleExtendMix(getBytes(), Util.HUNDREDPULS));
 	}
 
 	@Override
 	public boolean isSanity() {
-		if(preHash == null || target == null || eqCoinSeedHash == null || height == null || timestamp == null || nonce == null) {
+		if(preProof == null || target == null || eqCoinSeedProof == null || height == null || timestamp == null || nonce == null) {
 			return false;
 		}
-		if(preHash.length != Util.HASH_LEN) {
+		if(preProof.length != Util.HASH_LEN) {
 			return false;
 		}
 		if(target.length != TARGET_LEN) {
 			return false;
 		}
-		if(eqCoinSeedHash.length != Util.HASH_LEN) {
+		if(eqCoinSeedProof.length != Util.HASH_LEN) {
 			return false;
 		}
 		if(timestamp.getEQCBits().length < MIN_TIMESTAMP_LEN) {
@@ -307,40 +313,40 @@ public class EQCHiveRoot extends EQCSerializable {
 	}
 
 	public boolean isDifficultyValid(ChangeLog changeLog) throws Exception {
-		if (!Arrays.equals(target, Util.cypherTarget(changeLog.getHeight(), null))) {
+		if (!Arrays.equals(target, Util.cypherTarget(changeLog))) {
 			return false;
 		}
-		// getHash()
-//		Log.info(Util.getHexString(getHash()));
-		if (new BigInteger(1, getHash()).compareTo(Util.targetBytesToBigInteger(target)) > 0) {
+		if (!isDifficultyValid()) {
 			Log.info("Difficulty is invalid");
 			return false;
 		}
 		return true;
 	}
 	
-	public boolean isDifficultyValid() {
-		return (new BigInteger(1, getHash()).compareTo(Util.targetBytesToBigInteger(target)) <= 0);
+	public boolean isDifficultyValid() throws NoSuchAlgorithmException {
+		return (new BigInteger(1, getProof()).compareTo(Util.targetBytesToBigInteger(target)) <= 0);
 	}
 	
-	public boolean isValid(ChangeLog changeLog, byte[] eqCoinSeedHash) throws Exception {
+	@Override
+	public boolean isValid() throws Exception {
 		if(!isSanity()) {
 			Log.info("Sanity test failed.");
 			return false;
 		}
-		if(!Arrays.equals(preHash, Util.DB().getEQCHeaderHash(changeLog.getHeight().getPreviousID()))) {
+		EQCHiveRoot preEQCHiveRoot = Util.DB().getEQCHiveRoot(height.getPreviousID());
+		if(!Arrays.equals(preProof, preEQCHiveRoot.getProof())) {
 			Log.Error("PreHash is invalid.");
 			return false;
 		}
-		if(!Arrays.equals(this.eqCoinSeedHash, eqCoinSeedHash)) {
+		if(!Arrays.equals(eqCoinSeedProof, eQcoinSeed.getProof())) {
 			Log.Error("eqCoinSeedHash is invalid.");
 			return false;
 		}
-		if(height.getPreviousID().compareTo(Util.DB().getEQCHiveRoot(height).getHeight()) != 0) {
+		if(!height.isNextID(preEQCHiveRoot.getHeight())) {
 			Log.Error("Height should be the previous EQCBlock's next Height.");
 			return false;
 		}
-		if(timestamp.compareTo(Util.DB().getEQCHiveRoot(changeLog.getHeight().getPreviousID()).getTimestamp()) <= 0) {
+		if(timestamp.compareTo(preEQCHiveRoot.getTimestamp()) <= 0) {
 			Log.Error("Timestamp should bigger than previous EQCBlock's timestamp.");
 			return false;
 		}
@@ -364,19 +370,13 @@ public class EQCHiveRoot extends EQCSerializable {
 	public void setHeight(ID height) {
 		this.height = height;
 	}
-
-	@Override
-	public boolean isValid() {
-		// TODO Auto-generated method stub
-		return false;
-	}
 	
-	public byte[] getProof() {
+	public byte[] getSnapshot() {
 		byte[] bytes = new byte[5];
-		bytes[0] = preHash[33];
-		bytes[1] = preHash[51];
-		bytes[2] = eqCoinSeedHash[33];
-		bytes[3] = eqCoinSeedHash[51];
+		bytes[0] = preProof[33];
+		bytes[1] = preProof[51];
+		bytes[2] = eqCoinSeedProof[33];
+		bytes[3] = eqCoinSeedProof[51];
 		if(timestamp.equals(ID.ZERO)) {
 			bytes[4] = 0;
 		}
@@ -388,6 +388,22 @@ public class EQCHiveRoot extends EQCSerializable {
 	
 	public O getO() {
 		return new O(ByteBuffer.wrap(this.getBytes()));
+	}
+
+	/**
+	 * @param eQcoinSeed the eQcoinSeed to set
+	 */
+	public EQCHiveRoot setEQcoinSeed(EQcoinSeed eQcoinSeed) {
+		this.eQcoinSeed = eQcoinSeed;
+		return this;
+	}
+
+	/**
+	 * @param changeLog the changeLog to set
+	 */
+	public EQCHiveRoot setChangeLog(ChangeLog changeLog) {
+		this.changeLog = changeLog;
+		return this;
 	}
 	
 }

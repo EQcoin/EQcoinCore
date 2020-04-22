@@ -7,14 +7,15 @@ import com.eqcoin.avro.O;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.ID;
 
-public class Nest<T> extends IO<T> {
+public class Nest extends IO {
 	private ID id;
 	
-	public Nest(T type) throws Exception {
-		parse(type);
+	public <T> Nest(T type) throws Exception {
+		super(type);
 	}
 	
 	public Nest() {
+		super();
 	}
 
 	@Override

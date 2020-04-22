@@ -86,7 +86,7 @@ public class BroadcastNewHiveService extends EQCService {
 					Log.Error(e.getMessage());
 				}
 			}
-			IPList<O> minerList = EQCBlockChainH2.getInstance().getMinerList();
+			IPList minerList = EQCBlockChainH2.getInstance().getMinerList();
 			if(!minerList.isEmpty()) {
 				for(IP ip:minerList.getIpList()) {
 					if(!Util.LOCAL_IP.equals(ip)) {

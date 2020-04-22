@@ -56,7 +56,7 @@ public class SyncblockNetworkServiceTest {
     	NettyTransceiver client = null;
     	try {
 //    		Util.init();
-    		Cookie<O> cookie = new Cookie();
+    		Cookie cookie = new Cookie();
     		cookie.setIp(Util.SINGULARITY_IP);
     		cookie.setVersion(Util.PROTOCOL_VERSION);
     		Info info = new Info();
@@ -72,7 +72,7 @@ public class SyncblockNetworkServiceTest {
 //            cookie.setIp(Util.getCookie().getIp().toString());
 //            cookie.setVersion("0.01");
             System.out.println("Calling proxy.send with message:  " + cookie);
-            System.out.println("Result: " + proxy.ping(cookie.getProtocol()));
+            System.out.println("Result: " + proxy.ping(cookie.getProtocol(O.class)));
 
 //            // cleanup
 //            client.close();

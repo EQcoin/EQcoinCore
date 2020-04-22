@@ -243,7 +243,7 @@ public class EQCBlockChainRPC implements EQCBlockChain {
 	 * @see com.eqchains.blockchain.EQCBlockChain#getEQCHeaderHash(com.eqchains.util.ID)
 	 */
 	@Override
-	public byte[] getEQCHeaderHash(ID height) throws Exception {
+	public byte[] getEQCHiveRootProof(ID height) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

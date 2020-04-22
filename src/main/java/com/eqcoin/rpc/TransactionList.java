@@ -12,16 +12,23 @@ import com.eqcoin.blockchain.transaction.Transaction;
 import com.eqcoin.serialization.EQCType;
 import com.eqcoin.util.Util;
 
-public class TransactionList<T> extends IO<T> {
+public class TransactionList extends IO {
 	private Vector<Transaction> transactionList;
 	
-	public TransactionList() {
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
 		transactionList = new Vector<>();
 	}
+
+	public TransactionList() {
+		super();
+	}
 	
-	public TransactionList(T type) throws Exception {
-		transactionList = new Vector<>();
-		parse(type);
+	public <T> TransactionList(T type) throws Exception {
+		super(type);
 	}
 	
 	@Override
@@ -38,29 +45,23 @@ public class TransactionList<T> extends IO<T> {
 		return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		transactionList = EQCType.parseArray(is, new Transaction());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
+	 */
 	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.eqcSerializableListToArray(transactionList));
 		return os;
 	}
-	
+
 	public void addTransaction(Transaction transaction) throws Exception {
 		if(transaction != null) {
 			transactionList.add(transaction);

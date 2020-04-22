@@ -99,7 +99,7 @@ public class ChangeLog {
 	private byte[] forbiddenLockProofRoot;
 	
 	private Filter filter;
-	private EQcoinSeedRoot eQcoinSeedRoot;
+	private EQcoinSeedRoot preEQcoinSeedRoot;
 	private Transaction coinbaseTransaction;
 	private Statistics statistics;
 	private Value txFeeRate;
@@ -130,10 +130,10 @@ public class ChangeLog {
 			txFeeRate = new Value(Util.DEFAULT_TXFEE_RATE);
 		}
 		else {
-			eQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(height.getPreviousID());
+			preEQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(height.getPreviousID());
 			// Here exists one bug prevous total supply also need retrieve from previous EQCHive
-			previousTotalLockNumbers = eQcoinSeedRoot.getTotalLockNumbers();
-			previousTotalPassportNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
+			previousTotalLockNumbers = preEQcoinSeedRoot.getTotalLockNumbers();
+			previousTotalPassportNumbers = preEQcoinSeedRoot.getTotalPassportNumbers();
 			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) filter.getPassport(ID.ZERO, false);
 			txFeeRate = new Value(eQcoinRootPassport.getTxFeeRate());
 		}
@@ -231,7 +231,7 @@ public class ChangeLog {
 	}
 
 	public void buildProofBase() throws Exception {
-		buildPassportAndLivelyLockProofBase();
+ 		buildPassportAndLivelyLockProofBase();
 		buildForbiddenLockProofBase();
 	}
 	
@@ -256,7 +256,7 @@ public class ChangeLog {
 				passportList = new Vector<>();
 			}
 			// Build lively lock proof base
-			lock = filter.getLock(new ID(passport.getLockID()), true);
+ 			lock = filter.getLock(new ID(passport.getLockID()), true);
 			livelyLockList.add(lock.getBytes());
 			if((i%Util.KILOBYTE) == 0) {
 				livelyLockMerkleTree = new MerkleTree(livelyLockList, true);
@@ -347,17 +347,17 @@ public class ChangeLog {
 //	}
 
 	public byte[] getEQCHeaderHash(ID height) throws Exception {
-		return Util.DB().getEQCHeaderHash(height);
+		return Util.DB().getEQCHiveRootProof(height);
 	}
 	
 	public byte[] getEQCHeaderBuddyHash(ID height) throws Exception {
 		byte[] hash = null;
 		EQCType.assertNotBigger(height, this.height);
 		if(height.compareTo(this.height) < 0) {
-			hash = Util.DB().getEQCHeaderHash(height);
+			hash = Util.DB().getEQCHiveRootProof(height);
 		}
 		else {
-			hash = Util.DB().getEQCHeaderHash(height.getPreviousID());
+			hash = Util.DB().getEQCHiveRootProof(height.getPreviousID());
 		}
 		return hash;
 	}

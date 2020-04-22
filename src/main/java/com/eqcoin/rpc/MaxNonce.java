@@ -41,15 +41,15 @@ import com.eqcoin.util.ID;
  * @date Jun 26, 2019
  * @email 10509759@qq.com
  */
-public class MaxNonce<T> extends IO<T> {
+public class MaxNonce extends IO {
 	private ID nonce;
 	
 	public MaxNonce(ID nonce) {
 		this.nonce = nonce;
 	}
 	
-	public MaxNonce(T type) throws Exception {
-		parse(type);
+	public <T> MaxNonce(T type) throws Exception {
+		super(type);
 	}
 
 	/* (non-Javadoc)

@@ -35,50 +35,41 @@ import java.io.OutputStream;
 
 import com.eqcoin.serialization.EQCSerializable;
 import com.eqcoin.serialization.EQCType;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 
 /**
  * @author Xun Wang
  * @date Mar 26, 2020
  * @email 10509759@qq.com
  */
-public class IP extends EQCSerializable {
+public class IP extends IO {
 	private String ip;
 	
-	public IP() {}
+	public IP() {
+		super();
+	}
 
 	public IP(String ip) {
 		this.ip = ip;
 	}
 	
-	public IP(byte[] bytes) throws Exception {
-		super(bytes);
-	}
-	
-	public IP(ByteArrayInputStream is) throws Exception {
-		super(is);
+	public <T> IP(T type) throws Exception {
+		super(type);
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
-		return (T) new IP(is);
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#parseBody(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		ip = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#getBodyBytes()
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
 	 */
 	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.stringToASCIIBytes(ip));
 		return os;
 	}

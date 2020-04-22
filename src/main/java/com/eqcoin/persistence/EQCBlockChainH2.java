@@ -479,7 +479,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 			preparedStatement = connection
 					.prepareStatement("UPDATE EQCHIVE SET height = ?, eqchive_root = ?,  eqcoinseed_root = ?, seeds = ? WHERE height = ?");
 			preparedStatement.setLong(1, eqcHive.getHeight().longValue());
-			preparedStatement.setBytes(2, eqcHive.getEqcHeader().getBytes());
+			preparedStatement.setBytes(2, eqcHive.getEQCHiveRoot().getBytes());
 			preparedStatement.setBytes(3, eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getBytes());
 			preparedStatement.setBytes(4, eqcHive.getEQcoinSeed().getBodyBytes(os).toByteArray());
 			preparedStatement.setLong(5, eqcHive.getHeight().longValue());
@@ -489,7 +489,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 			preparedStatement = connection
 					.prepareStatement("INSERT INTO EQCHIVE (height, eqchive_root, eqcoinseed_root, seeds) VALUES (?, ?, ?, ?)");
 			preparedStatement.setLong(1, eqcHive.getHeight().longValue());
-			preparedStatement.setBytes(2, eqcHive.getEqcHeader().getBytes());
+			preparedStatement.setBytes(2, eqcHive.getEQCHiveRoot().getBytes());
 			preparedStatement.setBytes(3, eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getBytes());
 			preparedStatement.setBytes(4, eqcHive.getEQcoinSeed().getBodyBytes(os).toByteArray());
 			rowCounter = preparedStatement.executeUpdate();
@@ -559,14 +559,18 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 	}
 
 	@Override
-	public synchronized byte[] getEQCHeaderHash(ID height) throws Exception {
-//		EQCType.assertNotBigger(height, getEQCHiveTailHeight());
+	public synchronized byte[] getEQCHiveRootProof(ID height) throws Exception {
 		byte[] hash = null;
-		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM EQCHIVE WHERE height=?");
-		preparedStatement.setLong(1, height.longValue());
-		ResultSet resultSet = preparedStatement.executeQuery();
-		if (resultSet.next()) {
-			hash = resultSet.getBytes("eqcheader_hash");
+		EQCHiveRoot eqcHiveRoot = null;
+		eqcHiveRoot = getEQCHiveRoot(height.getNextID());
+		if(eqcHiveRoot != null) {
+			hash = eqcHiveRoot.getPreProof();
+		}
+		else {
+			eqcHiveRoot = getEQCHiveRoot(height);
+			if(eqcHiveRoot != null) {
+				hash = eqcHiveRoot.getProof();
+			}
 		}
 		return hash;
 	}
@@ -819,13 +823,13 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 	}
 
 	@Override
-	public synchronized Passport getPassportSnapshot(ID accountID, ID height)
+	public synchronized Passport getPassportSnapshot(ID passportID, ID height)
 			throws ClassNotFoundException, Exception {
 		Passport passport = null;
 		
 		PreparedStatement preparedStatement = connection.prepareStatement(
 				"SELECT * FROM PASSPORT_SNAPSHOT WHERE id=? AND snapshot_height >=? ORDER BY snapshot_height LIMIT 1");
-		preparedStatement.setLong(1, accountID.longValue());
+		preparedStatement.setLong(1, passportID.longValue());
 		preparedStatement.setLong(2, height.longValue());
 		ResultSet resultSet = preparedStatement.executeQuery();
 		if (resultSet.next()) {
@@ -941,9 +945,9 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 //		EQCType.assertNotBigger(height, tail);
 		// Here need pay attention to shouldn't include tail height because
 		if (height.compareTo(currentTailHeight) < 0) {
-			hash = getEQCHeaderHash(height);
+			hash = getEQCHiveRootProof(height);
 		} else if (height.equals(currentTailHeight)) {
-			hash = getEQCHeaderHash(height.getPreviousID());
+			hash = getEQCHiveRootProof(height.getPreviousID());
 		}
 //		else if(height.equals(tail.getNextID())){
 //			hash = getEQCHeaderHash(tail);
@@ -1136,8 +1140,8 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 	}
 
 	@Override
-	public IPList<O> getMinerList() throws SQLException, Exception {
-		IPList<O> ipList = new IPList();
+	public IPList getMinerList() throws SQLException, Exception {
+		IPList ipList = new IPList();
 		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM NETWORK WHERE type=?");
 		preparedStatement.setInt(1, NODETYPE.MINER.ordinal());
 		ResultSet resultSet = preparedStatement.executeQuery();
@@ -1172,8 +1176,8 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 	}
 
 	@Override
-	public IPList<O> getFullNodeList() throws SQLException, Exception {
-		IPList<O> ipList = new IPList();
+	public IPList getFullNodeList() throws SQLException, Exception {
+		IPList ipList = new IPList();
 		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM NETWORK WHERE type=?");
 		preparedStatement.setInt(1, NODETYPE.FULL.ordinal());
 		ResultSet resultSet = preparedStatement.executeQuery();
@@ -1464,7 +1468,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 		ResultSet resultSet = preparedStatement.executeQuery();
 		while (resultSet.next()) {
 			id = new ID(resultSet.getLong("id"));
-			passport = getPassportBytes(id, mode);
+			passport = getPassportBytes(id, mode.GLOBAL);
 			savePassportSnapshot(id, passport, changeLog.getHeight());
 		}
 		return true;
@@ -1619,10 +1623,10 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 	}
 
 	@Override
-	public  TransactionList<byte[]> getTransactionListInPool(TransactionIndexList<byte[]> transactionIndexList)
+	public  TransactionList getTransactionListInPool(TransactionIndexList transactionIndexList)
 			throws SQLException, Exception {
-		TransactionList<byte[]> transactionList = new TransactionList();
-		for (TransactionIndex<byte[]> transactionIndex : transactionIndexList.getTransactionIndexList()) {
+		TransactionList transactionList = new TransactionList();
+		for (TransactionIndex transactionIndex : transactionIndexList.getTransactionIndexList()) {
 			transactionList.addTransaction(getTransactionInPool(transactionIndex));
 		}
 		return transactionList;
@@ -1796,6 +1800,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 			lock = new EQCLockMate();
 			lock.setId(new ID(resultSet.getLong("id")));
 			lock.setPassportId(new ID(resultSet.getLong("passport_id")));
+			lockType = LockType.get(resultSet.getShort("lock_type"));
 			if(lockType == LockType.T1) {
 				eqcLock = new T1Lock();
 			}
@@ -1933,7 +1938,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 		}
 		else {
 			PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM "
-					+ LOCK_GLOBAL + " WHERE id >= ?");
+					+ LOCK_GLOBAL + " WHERE id < ?");
 			EQcoinSeedRoot eQcoinSeedRoot = getEQcoinSeedRoot(height);
 			preparedStatement.setLong(1, eQcoinSeedRoot.getTotalLockNumbers().longValue());
 			ResultSet resultSet = preparedStatement.executeQuery();
@@ -1974,7 +1979,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 		}
 		else {
 			PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM "
-					+ PASSPORT_GLOBAL + " WHERE id >= ?");
+					+ PASSPORT_GLOBAL + " WHERE id < ?");
 			EQcoinSeedRoot eQcoinSeedRoot = getEQcoinSeedRoot(height);
 			preparedStatement.setLong(1, eQcoinSeedRoot.getTotalPassportNumbers().longValue());
 			ResultSet resultSet = preparedStatement.executeQuery();
@@ -2019,7 +2024,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 		preparedStatement.setBytes(1, eqcLock.getLockCode());
 		ResultSet resultSet = preparedStatement.executeQuery();
 		if (resultSet.next()) {
-			lockId = new ID();
+			lockId = new ID(resultSet.getLong("id"));
 		}
 		return lockId;
 	}
@@ -2053,7 +2058,7 @@ public class EQCBlockChainH2 implements EQCBlockChain {
 		ResultSet resultSet = preparedStatement.executeQuery();
 		while (resultSet.next()) {
 			id = new ID(resultSet.getLong("id"));
-			lock = getLock(id, mode);
+			lock = getLock(id, Mode.GLOBAL);
 			saveLockSnapshot(lock, changeLog.getHeight());
 		}
 		return true;

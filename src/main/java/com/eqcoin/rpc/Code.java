@@ -38,7 +38,7 @@ import com.eqcoin.serialization.EQCType;
  * @email 10509759@qq.com
  */
 public enum Code {
-	OK, ERROR, WRONGPROTOCOL, FULL, MINER, INVALID;
+	OK, ERROR, WRONGPROTOCOL, FULL, MINER;
 	public static Code get(int ordinal) {
 		Code code = null;
 		switch (ordinal) {
@@ -48,17 +48,8 @@ public enum Code {
 		case 1:
 			code = ERROR;
 			break;
-		default:
-			code = INVALID;
-			break;
 		}
 		return code;
-	}
-	public boolean isSanity() {
-		if((this.ordinal() < OK.ordinal()) || (this.ordinal() > INVALID.ordinal())) {
-			return false;
-		}
-		return true;
 	}
 	public byte[] getEQCBits() {
 		return EQCType.intToEQCBits(this.ordinal());

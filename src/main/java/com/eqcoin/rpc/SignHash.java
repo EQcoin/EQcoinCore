@@ -40,13 +40,13 @@ import com.eqcoin.serialization.EQCType;
  * @date Jun 27, 2019
  * @email 10509759@qq.com
  */
-public class SignHash<T> extends IO<T> {
+public class SignHash extends IO {
 	private byte[] signHash;
 	
 	public SignHash() {
 	}
 	
-	public SignHash(T type) throws Exception {
+	public <T> SignHash(T type) throws Exception {
 		parse(type);
 	}
 	

@@ -43,20 +43,26 @@ import com.eqcoin.util.Util;
  * @date Jul 4, 2019
  * @email 10509759@qq.com
  */
-public class NewHive<T> extends IO<T> implements Comparable<NewHive> {
-	private Cookie<T> cookie;
+public class NewHive extends IO implements Comparable<NewHive> {
+	private Cookie cookie;
 	private EQCHive eqcHive;
 	private ID checkPointHeight;
 	private long time;
-
-	public NewHive() {
-//		cookie = Util.getCookie();
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
 		time = System.currentTimeMillis();
 	}
+
+	public NewHive() {
+		super();
+	}
 	
-	public NewHive(T type) throws Exception {
-		parse(type);
-		time = System.currentTimeMillis();
+	public <T> NewHive(T type) throws Exception {
+		super(type);
 	}
 	
 	/* (non-Javadoc)

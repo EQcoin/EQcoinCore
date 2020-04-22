@@ -125,7 +125,7 @@ public class Filter {
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
 					// Load relevant Account from snapshot
 					passport = EQCBlockChainH2.getInstance().getPassportSnapshot(new ID(id),
-							changeLog.getHeight().getPreviousID());
+							changeLog.getHeight());
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
 							+ Util.DB().getEQCHiveTailHeight());
@@ -179,7 +179,7 @@ public class Filter {
 					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
 					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
-					if(lockId != null && lockId.compareTo(changeLog.getPreviousTotalLockNumbers()) > 0) {
+					if(lockId != null && lockId.compareTo(changeLog.getPreviousTotalLockNumbers()) >= 0) {
 						lockId = null;
 					}
 				} else {

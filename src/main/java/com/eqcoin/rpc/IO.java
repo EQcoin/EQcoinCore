@@ -32,6 +32,7 @@ package com.eqcoin.rpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import com.eqcoin.avro.O;
 import com.eqcoin.blockchain.transaction.Transaction;
@@ -45,61 +46,53 @@ import com.eqcoin.serialization.EQCType;
  * @date Jun 25, 2019
  * @email 10509759@qq.com
  */
-public abstract class IO<T> extends EQCSerializable {
-	public IO() {}
+public abstract class IO extends EQCSerializable {
 	
-	public IO(ByteArrayInputStream is) throws Exception {
-		parse(is);
+	public IO() {
+		super();
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream)
+	public <T> IO(T type) throws Exception {
+		super();
+		parse(type);
+	}
+	
+	/**
+	 * Parse different network protocol relevant wrap object for communication
+	 * If need support new protocol type just add new type parse in here
+	 * @param type
+	 * @throws Exception
 	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-	}
-
-	protected void parse(T type) throws Exception {
+	protected <T> void parse(T type) throws Exception {
+		Objects.requireNonNull(type);
 		byte[] bytes = null;
 		if(type instanceof O) {
 			bytes = ((O) type).getO().array();
 		}
 		else {
-			throw new IllegalStateException("Invalid IO type");
+			throw new IllegalStateException("Invalid Protocol type");
 		}
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		parse(is);
 		EQCType.assertNoRedundantData(is);
 	}
 	
-	public T getProtocol() throws Exception {
-		T type = null;
-		if (type instanceof O) {
-			type = (T) new O(ByteBuffer.wrap(getBytes()));
+	/**
+	 *  Return different network protocol relevant wrap object for communication
+	 *  If need support new protocol type just add new type wrap in here
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
+	public <T> T getProtocol(Class<T> type) throws Exception {
+		T protocol = null;
+		if(type.equals(O.class)) {
+			protocol = (T) new O(ByteBuffer.wrap(getBytes()));
 		}
 		else {
-			throw new IllegalStateException("Invalid IO type");
+			throw new IllegalStateException("Invalid Protocol type");
 		}
-		return type;
-	}
-	
-//	public O getProtocol() throws Exception {
-////		if(type instanceof O) {
-////			return (T) new O(ByteBuffer.wrap(getBytes()));
-////		}
-//		return new O(ByteBuffer.wrap(getBytes()));
-//	}
-
-	public byte[] getBytes() throws Exception {
-		return null;
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCTypable#getBin()
-	 */
-	@Override
-	public byte[] getBin() throws Exception {
-		return EQCType.bytesToBIN(getBytes());
+		return protocol;
 	}
 	
 }

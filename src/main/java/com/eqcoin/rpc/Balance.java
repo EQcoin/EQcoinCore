@@ -43,50 +43,45 @@ import com.eqcoin.util.Util;
  * @date Jun 27, 2019
  * @email 10509759@qq.com
  */
-public class Balance<T> extends IO<T> {
+public class Balance extends IO {
 	private Value balance;
 	
-	public Balance() {
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
 		balance = new Value();
 	}
+
+	public Balance() {
+		super();
+	}
 	
-	public Balance(T t) throws Exception {
-		parse(t);
+	public <T> Balance(T type) throws Exception {
+		super(type);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCTypable#isSanity()
-	 */
 	@Override
 	public boolean isSanity() throws Exception {
 		return ((balance != null) && (balance.isSanity()));
 	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCTypable#isValid(com.eqchains.blockchain.accountsmerkletree.AccountsMerkleTree)
-	 */
-	@Override
-	public boolean isValid() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#parseBody(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		balance = new Value(EQCType.parseEQCBits(is));
-	}
 	
 	/* (non-Javadoc)
-	 * @see com.eqcoin.rpc.IO#getBytes()
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	public void parse(ByteArrayInputStream is) throws Exception {
+		balance = new Value(EQCType.parseEQCBits(is));
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
+	 */
+	@Override
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(balance.getEQCBits());
-		return os.toByteArray();
+		return os;
 	}
 
 	/**

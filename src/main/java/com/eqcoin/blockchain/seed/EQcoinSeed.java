@@ -159,7 +159,7 @@ public class EQcoinSeed extends EQCSeed {
 				return false;
 			}
 			
-			// Check if EQcoinSeedRoot is valid
+			// Check if EQcoinSeedRoot is valid include verify relevant root according to ChangeLog
 			if(!eqcSeedRoot.isValid()) {
 				Log.Error("EQcoinSeedRoot is invalid!");
 				return false;
@@ -324,7 +324,7 @@ public class EQcoinSeed extends EQCSeed {
 		return true;
 	}
 	
-	public byte[] getProofRoot() throws Exception {
+	public byte[] getProof() throws Exception {
 		Vector<byte[]> vector = new Vector<>();
 		vector.add(eqcSeedRoot.getBytes());
 		vector.add(getNewTransactionListProofRoot());

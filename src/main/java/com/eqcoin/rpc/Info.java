@@ -43,28 +43,19 @@ import com.eqcoin.util.ID;
  * @date Jun 25, 2019
  * @email 10509759@qq.com
  */
-public class Info<T> extends IO<T> {
-	private Cookie<T> cookie;
+public class Info extends IO {
+	private Cookie cookie;
 	private Code code;
 	private String message;
 	
-	public Info(T io) throws Exception {
-		parse(io);
+	public <T> Info(T type) throws Exception {
+		super(type);
 	}
 	
 	public Info() {
+		super();
 	}
 
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		byte[] bytes = null;
-		cookie = new Cookie(is);
-		code = Code.get(EQCType.eqcBitsToInt(EQCType.parseEQCBits(is)));
-		bytes = EQCType.parseBIN(is);
-		if(!EQCType.isNULL(bytes)) {
-			message = EQCType.bytesToASCIISting(bytes);
-		}
-	}
-	
 	/* (non-Javadoc)
 	 * @see com.eqchains.serialization.EQCTypable#isSanity()
 	 */
@@ -73,7 +64,7 @@ public class Info<T> extends IO<T> {
 		if(cookie == null || code == null) {
 			return false;
 		}
-		if(!cookie.isSanity() && !code.isSanity()) {
+		if(!cookie.isSanity()) {
 			return false;
 		}
 		return true;
@@ -130,20 +121,21 @@ public class Info<T> extends IO<T> {
 		this.message = message;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-		
+	public void parse(ByteArrayInputStream is) throws Exception {
+		cookie = new Cookie(is);
+		code = Code.get(EQCType.parseID(is).intValue());
+		message = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
 	}
 
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
+	 */
 	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(cookie.getBytes());
 		os.write(code.getEQCBits());
 		os.write(EQCType.stringToBIN(message));
