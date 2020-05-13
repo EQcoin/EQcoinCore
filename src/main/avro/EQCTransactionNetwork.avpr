@@ -1,0 +1,54 @@
+{"namespace": "org.eqcoin.avro",
+ "protocol": "EQCTransactionNetwork",
+
+ "types": [
+     {"name": "O", "type": "record",
+      "fields": [
+          {"name": "o", "type": "bytes"}
+      ]
+     }
+ ],
+
+ "messages": {
+     "ping": {
+     	 // S means SP
+         "request": [],
+         "response": "O"
+     },
+     "registerSP": {
+     	 // S means SP
+         "request": [{"name": "S", "type": "O"}],
+         "response": "O"
+     },
+     "getSPList": {
+          // F means service provider's flag
+         "request": [{"name": "F", "type": "O"}],
+         "response": "O"
+     },
+     "sendTransaction": {
+     	 // T means transaction
+         "request": [{"name": "T", "type": "O"}],
+         "response": "O"
+     },
+   	  "getLockInfo": {
+   	  	 // S means relevant lock status which is lock's id or readable lock
+         "request": [{"name": "S", "type": "O"}],
+         "response": "O"
+   	  },
+   	  "getPendingTransactionList": {
+   	  	 // I means relevant Passport's ID
+         "request": [{"name": "I", "type": "O"}],
+         "response": "O"
+   	  },
+     "getTransactionIndexList": {
+     	 // T means sync time
+         "request": [{"name": "T", "type": "O"}],
+         "response": "O"
+     },
+     "getTransactionList": {
+         // L means transactionIndexList
+         "request": [{"name": "L", "type": "O"}],
+         "response": "O"
+     }
+ }
+}

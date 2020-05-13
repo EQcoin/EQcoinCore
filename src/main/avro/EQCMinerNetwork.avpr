@@ -1,0 +1,29 @@
+{"namespace": "org.eqcoin.avro",
+ "protocol": "EQCMinerNetwork",
+
+ "types": [
+     {"name": "O", "type": "record",
+      "fields": [
+          {"name": "o", "type": "bytes"}
+      ]
+     }
+ ],
+
+ "messages": {
+     "registerSP": {
+     	 // S means SP
+         "request": [{"name": "S", "type": "O"}],
+         "response": "O"
+     },
+     "getSPList": {
+          // F means service provider's flag
+         "request": [{"name": "F", "type": "O"}],
+         "response": "O"
+     },
+     "broadcastNewEQCHive": {
+     	 // E means new EQCHive
+         "request": [{"name": "E", "type": "O"}],
+         "response": "O"
+     }
+ }
+}
