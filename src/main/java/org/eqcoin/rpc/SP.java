@@ -65,6 +65,14 @@ public class SP extends IO {
 	}
 	
 	/* (non-Javadoc)
+	 * @see org.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public SP Parse(ByteArrayInputStream is) throws Exception {
+		return new SP(is);
+	}
+
+	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override

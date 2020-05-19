@@ -30,15 +30,18 @@
 package org.eqcoin.rpc.client;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.sql.SQLException;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.hive.EQCHiveRoot;
+import org.eqcoin.persistence.hive.EQCHiveH2;
 import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
+import org.eqcoin.rpc.NewEQCHive;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
-import org.eqcoin.rpc.TailInfo;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -48,12 +51,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+
 /**
  * @author Xun Wang
- * @date May 11, 2020
+ * @date May 13, 2020
  * @email 10509759@qq.com
  */
-class EQCHiveSyncNetworkClientTest {
+class EQCMinerNetworkClientTest {
 
 	/**
 	 * @throws java.lang.Exception
@@ -84,13 +88,13 @@ class EQCHiveSyncNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#registerSP(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#registerSP(org.eqcoin.rpc.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
 	final void testRegisterSP() throws Exception {
 		Info info = null;
-		info = EQCHiveSyncNetworkClient.registerSP(Util.SINGULARITY_SP);
+		info = EQCMinerNetworkClient.registerSP(Util.SINGULARITY_SP);
 		assertNotNull(info);
 		assertTrue(info.isSanity());
 		assertEquals(info.getCode(), Code.OK);
@@ -98,84 +102,39 @@ class EQCHiveSyncNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getSPList(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#getSPList(org.eqcoin.rpc.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
 	final void testGetSPList() throws Exception {
 		SPList spList = null;
-		spList = EQCHiveSyncNetworkClient.getSPList(Util.SINGULARITY_SP);
+		spList = EQCMinerNetworkClient.getSPList(Util.SINGULARITY_SP);
 		assertNotNull(spList);
 		assertTrue(spList.isSanity());
 		Log.info(spList.toString());
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getEQCHiveTail(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#broadcastNewEQCHive(org.eqcoin.rpc.NewEQCHive, org.eqcoin.rpc.SP)}.
+	 * @throws Exception 
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException 
 	 */
 	@Test
-	final void testGetEQCHiveTail() {
-		TailInfo tailInfo = null;
-		try {
-			tailInfo = EQCHiveSyncNetworkClient.getEQCHiveTail(Util.SINGULARITY_SP);
-			assertNotNull(tailInfo);
-			assertTrue(tailInfo.isSanity());
-			Log.info(tailInfo.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getEQCHive(org.eqcoin.util.ID, org.eqcoin.rpc.SP)}.
-	 */
-	@Test
-	final void testGetEQCHive() {
+	final void testBroadcastNewEQCHive() throws ClassNotFoundException, SQLException, Exception {
 		EQCHive eqcHive = null;
-		try {
-			eqcHive = EQCHiveSyncNetworkClient.getEQCHive(ID.FIVE, Util.SINGULARITY_SP);
-			assertNotNull(eqcHive);
-			assertTrue(eqcHive.isSanity());
-			Log.info(eqcHive.toString());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		NewEQCHive newEQCHive = new NewEQCHive();
+		newEQCHive.setEQCHive(EQCHiveH2.getInstance().getEQCHiveFile(ID.ZERO, false));
+		Info info = null;
+		info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHive, Util.SINGULARITY_SP);
+		assertNotNull(info);
+		assertTrue(info.isSanity());
+		assertEquals(info.getCode(), Code.OK);
+		Log.info(info.toString());
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getEQCRootProof(org.eqcoin.util.ID, org.eqcoin.rpc.SP)}.
-	 */
-	@Test
-	final void testGetEQCHiveRootProof() {
-		byte[] proof = null;
-		try {
-			proof = EQCHiveSyncNetworkClient.getEQCHiveRootProof(ID.FIVE, Util.SINGULARITY_SP);
-			assertNotNull(proof);
-			assertEquals(proof.length, Util.SHA3_512_LEN);
-			Log.info(Util.dumpBytes(proof, 16));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	@Test
-	final void testGetEQCHiveRoot() {
-		EQCHiveRoot eqcHiveRoot = null;
-		try {
-			eqcHiveRoot = EQCHiveSyncNetworkClient.getEQCHiveRoot(ID.FIVE, Util.SINGULARITY_SP);
-			assertNotNull(eqcHiveRoot);
-			assertTrue(eqcHiveRoot.isSanity());
-			Log.info(eqcHiveRoot.toString());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getFastestServer(org.eqcoin.rpc.SPList)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#getFastestServer(org.eqcoin.rpc.SPList)}.
 	 * @throws Exception 
 	 */
 	@Test
@@ -184,7 +143,7 @@ class EQCHiveSyncNetworkClientTest {
 		SPList spList = new SPList();
 		spList.addSP(Util.LOCAL_SP);
 		spList.addSP(Util.SINGULARITY_SP);
-		fastestSP = EQCHiveSyncNetworkClient.getFastestServer(spList);
+		fastestSP = EQCMinerNetworkClient.getFastestServer(spList);
 		assertNotNull(fastestSP);
 		assertTrue(fastestSP.isSanity());
 		Log.info(fastestSP.toString());

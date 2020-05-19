@@ -41,8 +41,10 @@ import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.NewEQCHive;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
+import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Util.SP_MODE;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 
 /**
@@ -63,7 +65,7 @@ public class EQCMinerNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()), Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCMinerNetwork.class, nettyTransceiver);
 			ping = System.currentTimeMillis();
-			info = new Info(client.registerSP(sp.getProtocol(O.class)));
+			info = new Info(client.registerSP(Util.LOCAL_SP.getProtocol(O.class)));
 			info.setPing(System.currentTimeMillis() - ping);
 		} catch (Exception e) {
 			info.setPing(-1);
@@ -86,7 +88,7 @@ public class EQCMinerNetworkClient extends EQCRPCClient {
 					new InetSocketAddress(InetAddress.getByName(sp.getIp()), Util.MINER_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()), Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCMinerNetwork.class, nettyTransceiver);
-			spList = new SPList(client.getSPList(sp.getProtocol(O.class)));
+			spList = new SPList(client.getSPList(new ID(SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCMINERNETWORK, SP_MODE.EQCTRANSACTIONNETWORK)).getProtocol(O.class)));
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 			throw e;

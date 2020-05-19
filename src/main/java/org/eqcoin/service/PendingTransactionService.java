@@ -135,4 +135,13 @@ public class PendingTransactionService extends EQCService {
 		instance = null;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.eqcoin.service.EQCService#start()
+	 */
+	@Override
+	public synchronized void start() {
+		getInstance();
+		super.start();
+	}
+	
 }

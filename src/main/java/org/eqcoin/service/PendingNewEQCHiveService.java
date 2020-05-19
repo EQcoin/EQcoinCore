@@ -71,6 +71,15 @@ public class PendingNewEQCHiveService extends EQCService {
 		}
 		return instance;
 	}
+	
+	/* (non-Javadoc)
+	 * @see org.eqcoin.service.EQCService#start()
+	 */
+	@Override
+	public synchronized void start() {
+		getInstance();
+		super.start();
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -108,9 +117,10 @@ public class PendingNewEQCHiveService extends EQCService {
 //				return;
 //			} else {
 			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
+			ID localTailHeight = Util.DB().getEQCHiveTailHeight();
 			// Here need do more job to check if the checkpoint is valid need add checkpoint
 			// transaction in NewBlock add isValid in NewBlock to handle this
-			if (newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight()) > 0
+			if (newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(localTailHeight) > 0
 					&& newBlockState.getNewEQCHive().getCheckPointHeight()
 							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
 					&& newBlockState.getNewEQCHive().getEQCHive().getEQCHiveRoot().isDifficultyValid()) {
@@ -124,6 +134,7 @@ public class PendingNewEQCHiveService extends EQCService {
 				// Begin handle PossibleSP
 				PossibleSPState possibleNodeState = new PossibleSPState();
 				possibleNodeState.setSp(newBlockState.getNewEQCHive().getSp());
+				Log.info("Begin offer possible SP: " + possibleNodeState.getSp());
 				PossibleSPService.getInstance().offerState(possibleNodeState);
 
 				// Call EQCServiceProvider valid the new block
@@ -133,7 +144,7 @@ public class PendingNewEQCHiveService extends EQCService {
 				EQCServiceProvider.getInstance().offerState(syncBlockState);
 				Log.info("New EQCHive is valid call SyncBlockService valid it");
 			} else {
-				Log.info("New EQCHive is invalid just discard it");
+				Log.info("New EQCHive's height: " + newBlockState.getNewEQCHive().getEQCHive().getHeight() + " is less than local tail: " + localTailHeight + " just discard it");
 			}
 //			}
 		} catch (Exception e) {

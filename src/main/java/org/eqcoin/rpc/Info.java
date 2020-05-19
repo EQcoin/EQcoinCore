@@ -47,7 +47,6 @@ public class Info extends IO {
 	private SP sp;
 	private Code code;
 	private String message;
-	private long ping;
 	
 	public <T> Info(T type) throws Exception {
 		super(type);
@@ -151,18 +150,4 @@ public class Info extends IO {
 		this.sp = sp;
 	}
 
-	/**
-	 * @return the ping
-	 */
-	public long getPing() {
-		return ping;
-	}
-
-	/**
-	 * @param ping the ping to set
-	 */
-	public void setPing(long ping) {
-		this.ping = ping;
-	}
-	
 }

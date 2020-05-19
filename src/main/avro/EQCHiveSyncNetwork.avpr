@@ -29,6 +29,11 @@
          "request": [{"name": "H", "type": "O"}],
          "response": "O"
     },
+   	"getEQCHiveRoot": {
+   	 	 // H means height
+         "request": [{"name": "H", "type": "O"}],
+         "response": "O"
+    },
    	"getEQCHive": {
    	 	 // H means height
          "request": [{"name": "H", "type": "O"}],

@@ -58,6 +58,7 @@ import java.sql.Savepoint;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -81,6 +82,7 @@ import org.eqcoin.crypto.MerkleTree;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.keystore.Keystore;
 import org.eqcoin.lock.Lock;
+import org.eqcoin.lock.LockMate;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.passport.EQcoinRootPassport;
 import org.eqcoin.passport.Passport;
@@ -90,7 +92,10 @@ import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
+import org.eqcoin.rpc.client.EQCHiveSyncNetworkClient;
 import org.eqcoin.rpc.client.EQCMinerNetworkClient;
+import org.eqcoin.rpc.client.EQCTransactionNetworkClient;
+import org.eqcoin.seed.EQcoinSeedRoot;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
 import org.eqcoin.transaction.TransferTxOut;
@@ -109,17 +114,19 @@ public final class Util {
 	 * Singularity - EQC's basic unit of measure. 1 EQC = 10000 singularity
 	 */
 	public final static BigInteger ABC = BigInteger.valueOf(10000);
-	
-	public final static byte[] MAGIC_HASH = new BigInteger("200189AC5AFA3CF07356C09C311B01619BC5513AF0792434F2F9CBB7E1473F39711981A4D8AB36CA2BEF35673EA7BF12F0673F6040659832E558FAEFBE4075E5", 16).toByteArray();
+
+	public final static byte[] MAGIC_HASH = new BigInteger(
+			"200189AC5AFA3CF07356C09C311B01619BC5513AF0792434F2F9CBB7E1473F39711981A4D8AB36CA2BEF35673EA7BF12F0673F6040659832E558FAEFBE4075E5",
+			16).toByteArray();
 
 	public final static byte[] SINGULARITY_HASH = {};
 
 	public final static BigInteger MAX_EQC = BigInteger.valueOf(210000000000L).multiply(ABC);
-	
+
 	public final static ID MAX_EQcoin = new ID(Util.MAX_EQC);
 
 	public final static Value MIN_EQC = new Value(BigInteger.valueOf(51).multiply(ABC));
-	
+
 //	public final static long SINGULARITY_TOTAL_SUPPLY = 16800000 * ABC;
 
 //	public final static long MINER_TOTAL_SUPPLY = 42000000000L * ABC;
@@ -127,22 +134,26 @@ public final class Util {
 //	public final static long EQCOIN_FOUNDATION_TOTAL_SUPPLY = 168000000000L * ABC;
 
 	public final static BigInteger TARGET_EQCHIVE_INTERVAL = BigInteger.valueOf(10000);
-	
-	public final static BigInteger BASIC_EQCHIVE_INTERVAL = TARGET_EQCHIVE_INTERVAL;//BigInteger.valueOf(600000);
+
+	public final static BigInteger BASIC_EQCHIVE_INTERVAL = TARGET_EQCHIVE_INTERVAL;// BigInteger.valueOf(600000);
 
 //	public final static long MINER_COINBASE_REWARD = 1 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
-	
-//	public final static long EQZIP_COINBASE_REWARD = 4 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
-	
-//	public final static long EQC_FEDERATION_COINBASE_REWARD = 19 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
-	
-	public final static BigInteger BASIC_COINBASE_REWARD = BigInteger.valueOf(1200).multiply(ABC);//MINER_COINBASE_REWARD + EQC_FEDERATION_COINBASE_REWARD;
 
-	// Here exists one bug when change the block_interval the Max_coinbase_height also changed need change it to determine according to if max supply - total supply = 0
+//	public final static long EQZIP_COINBASE_REWARD = 4 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
+
+//	public final static long EQC_FEDERATION_COINBASE_REWARD = 19 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
+
+	public final static BigInteger BASIC_COINBASE_REWARD = BigInteger.valueOf(1200).multiply(ABC);// MINER_COINBASE_REWARD
+																									// +
+																									// EQC_FEDERATION_COINBASE_REWARD;
+
+	// Here exists one bug when change the block_interval the Max_coinbase_height
+	// also changed need change it to determine according to if max supply - total
+	// supply = 0
 //	public final static long MAX_COINBASE_HEIGHT = MAX_EQC / BASIC_COINBASE_REWARD.longValue();
 
 //	public final static int TXFEE_RATE = 10;
-	
+
 	public final static byte DEFAULT_TXFEE_RATE = 10;
 
 	public final static int ZERO = 0;
@@ -150,19 +161,19 @@ public final class Util {
 	public final static int ONE = 1;
 
 	public final static int TWO = 2;
-	
+
 	public final static int THREE = 3;
-	
+
 	public final static int ELEVEN = 11;
 
 	public final static int SIXTEEN = 16;
 
 	public final static int HUNDRED = 100;
-	
+
 	public final static int HUNDREDPULS = 101;
-	
+
 	public final static int F01 = 401;
-	
+
 	public final static int THOUSANDPLUS = 1001;
 
 	public final static int HUNDRED_THOUSAND = 100000;
@@ -170,13 +181,13 @@ public final class Util {
 	public final static int MILLIAN = 1000000;
 
 	public final static int KILOBYTE = 1024;
-	
+
 	public final static int ONE_MB = KILOBYTE * KILOBYTE;
-	
+
 	public final static int MAX_EQCHIVE_SIZE = ONE_MB;
-	
-	public final static int MAX_NONCE = (int) Math.pow(2, 28);//268435455;
-	
+
+	public final static int MAX_NONCE = (int) Math.pow(2, 28);// 268435455;
+
 	public final static int HASH_LEN = 64;
 
 //	public final static String WINDOWS_PATH = "C:/EQCOIN";
@@ -188,20 +199,22 @@ public final class Util {
 	 * Set the default PATH value WINDOWS_PATH
 	 */
 	private static String CURRENT_PATH = System.getProperty("user.dir");
-	
+
 	public final static String WINDOWS = "C:";
-	
+
 	public final static String LINUX = "/usr";
 
 	/**
-	 * In Windows due to haven't the permission to access the Program File folder so have to save it to C but in Linux can access the CURRENT_PATH
+	 * In Windows due to haven't the permission to access the Program File folder so
+	 * have to save it to C but in Linux can access the CURRENT_PATH
 	 */
-	public final static String PATH = CURRENT_PATH + File.separator + "EQcoin";// System.getProperty("user.dir") + File.separator +
-																	// "EQCOIN";
+	public final static String PATH = CURRENT_PATH + File.separator + "EQcoin";// System.getProperty("user.dir") +
+																				// File.separator +
+	// "EQCOIN";
 //	static {
 //		PATH = System.getProperty("user.dir") + "/EQCOIN";
 //	}
-	
+
 	public final static String MAGIC_PATH = ".\\src\\main\\QuidditchHelixFlashForward";
 
 	public final static String KEYSTORE_PATH = PATH + File.separator + "EQcoin.keystore";
@@ -213,121 +226,129 @@ public final class Util {
 	public final static String AVRO_PATH = PATH + File.separator + "AVRO";
 
 	public final static String EQC_SUFFIX = ".EQC";
-	
+
 	public final static String DB_PATH = PATH + File.separator + "DB";
-	
+
 	public final static String HIVE_PATH = DB_PATH + File.separator + "HIVE/";
-	
+
 	public final static String H2_PATH = DB_PATH + File.separator + "H2";
-	
+
 	public final static String ROCKSDB_PATH = DB_PATH + File.separator + "ROCKSDB";
-	
+
 	public final static String H2_DATABASE_NAME = H2_PATH + File.separator + "EQcoin";
 
 	public final static String H2_DATABASE_FULL_NAME = H2_PATH + File.separator + "EQcoin.mv";
-	
-	/**  
-	 * Compressed publickey and ASN.1 DER signature's length specification
-	 *	ECC curve compressed publickey length(bytes)  signature length(bytes)
-	 *	   P256 							33 												70、71、72
-	 *	   P521 							67 			  								137、138、139
+
+	/**
+	 * Compressed publickey and ASN.1 DER signature's length specification ECC curve
+	 * compressed publickey length(bytes) signature length(bytes) P256 33 70、71、72
+	 * P521 67 137、138、139
 	 */
 	public final static int P256_PUBLICKEY_LEN = 33;
-	
+
 	public final static int P521_PUBLICKEY_LEN = 67;
-	
+
 	public final static BigInteger P256_POINT_LEN = BigInteger.valueOf(32);
 
 	public final static BigInteger P521_POINT_LEN = BigInteger.valueOf(66);
-	
+
 	public final static BigInteger P256_SIGNATURE_LEN = BigInteger.valueOf(64);
 
 	public final static BigInteger P521_SIGNATURE_LEN = BigInteger.valueOf(132);
 
 	public final static int MAX_SERIAL_NUMBER_LEN = 5;
-	
+
 	public final static BigInteger MAX_TXFEE_LEN = BigInteger.valueOf(6);
-	
+
 	public final static int BASIC_VALUE_NUMBER_LEN = 8;
 
 	public final static int INIT_ADDRESS_SERIAL_NUMBER = 0;
 
 	public final static ID DEFAULT_PROTOCOL_VERSION = ID.ZERO;
-	
+
 	public final static ID PROTOCOL_VERSION = DEFAULT_PROTOCOL_VERSION;
-	
+
 	private static Info info = null;
-	
+
 	public final static long DEFAULT_TIMEOUT = 3000;
-	
+
 	public final static int MAX_ADDRESS_LEN = 51;
-	
+
 	public final static int MIN_ADDRESS_LEN = 41;
-	
+
 	public final static int MAX_ADDRESS_AI_LEN = 33;
-	
+
 	public final static int MAX_T3_ADDRESS_CODE_LEN = 213;
-	
+
 	public final static int CRC32C_LEN = 4;
 
 	public final static int MAX_DIFFICULTY_MULTIPLE = 4;
-	
+
 	public final static BigInteger EUROPA = BigInteger.valueOf(1008);
-	
+
 	// Here exists one bug need change null hash to SHA3-512(EQCType.NULL_ARRAY)
-	public final static byte[] NULL_HASH = Arrays.copyOfRange(new BigInteger("C333A8150751C675CDE1312860731E54818F95EDC1563839501CE5F486DE1C79EA6675EECA26833E41341B5B5D1E72800CBBB13AE6AA289D11ACB4D4413B1B2D", 16).toByteArray(), 1, 65);
-	
+	public final static byte[] NULL_HASH = Arrays.copyOfRange(new BigInteger(
+			"C333A8150751C675CDE1312860731E54818F95EDC1563839501CE5F486DE1C79EA6675EECA26833E41341B5B5D1E72800CBBB13AE6AA289D11ACB4D4413B1B2D",
+			16).toByteArray(), 1, 65);
+
 	public final static byte[] SINGULARITY = EQCType.NULL_ARRAY;
-	
+
 	public final static String REGEX_IP = "";
-	
+
 	public final static String REGEX_VERSION = "";
-	
-	public final static SP SINGULARITY_SP = new SP().setProtocolVersion(PROTOCOL_VERSION).setFlag(SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCMINERNETWORK, SP_MODE.EQCTRANSACTIONNETWORK)).setIp("192.168.43.80");//"129.28.206.27";
-	
-	public final static SP LOCAL_SP = new SP().setProtocolVersion(PROTOCOL_VERSION).setFlag(SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCMINERNETWORK, SP_MODE.EQCTRANSACTIONNETWORK)).setIp("192.168.43.80");//"14.221.176.18";//"14.221.177.212";//"192.168.0.101";//"14.221.177.223";//"129.28.206.27";
-	
+
+	public final static SP SINGULARITY_SP = new SP().setProtocolVersion(PROTOCOL_VERSION)
+			.setFlag(
+					SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCMINERNETWORK, SP_MODE.EQCTRANSACTIONNETWORK))
+			.setIp("129.28.206.27");// "129.28.206.27";192.168.154.128
+
+	public final static SP LOCAL_SP = new SP().setProtocolVersion(PROTOCOL_VERSION)
+			.setFlag(
+					SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCMINERNETWORK, SP_MODE.EQCTRANSACTIONNETWORK))
+			.setIp("192.168.43.80");// "14.221.176.18";//"14.221.177.212";//"192.168.0.101";//"14.221.177.223";//"129.28.206.27";
+
 	public final static int MINER_NETWORK_PORT = 7799;
-	
+
 	public final static int SYNCBLOCK_NETWORK_PORT = 7997;
-	
+
 	public final static int TRANSACTION_NETWORK_PORT = 9977;
-	
+
 	public final static String SINGULARITY_A = "2Qiyc2CX7493YDHJWbNmnMgfLwDsbZA14VvUiCbYi3Hta9bpn51fRdadnCUk6rc14EnvgnuwHefC9iFDQjvnK33fREGaww";
-	
-	public final static String SINGULARITY_B= "2NCrNUPDT8XVHN8mZrEUz5buLPVgiSk9C4oXWokYg59L9eN76ig6AjuUe6BcQZ98K5DXqbAhxzQGwoMqshrrQ7Nno91JVR";
-	
-	public final static String SINGULARITY_C= "2M4mPKqM71cRHNHhafZE59LDtA43SAXpcnjKbW3v8wwrtCtu85meqpGwwy27nqKbLD99MnGmi7UK1VjURisKr74J1rQXES";
-	
+
+	public final static String SINGULARITY_B = "2NCrNUPDT8XVHN8mZrEUz5buLPVgiSk9C4oXWokYg59L9eN76ig6AjuUe6BcQZ98K5DXqbAhxzQGwoMqshrrQ7Nno91JVR";
+
+	public final static String SINGULARITY_C = "2M4mPKqM71cRHNHhafZE59LDtA43SAXpcnjKbW3v8wwrtCtu85meqpGwwy27nqKbLD99MnGmi7UK1VjURisKr74J1rQXES";
+
 	public final static byte MAX_COUNTER = 3;
-	
+
 	public final static String SHA3_512 = "SHA3-512";
-	
+
 	public final static String SHA3_256 = "SHA3-256";
-	
+
 	public final static int SHA3_256_LEN = 32;
-	
+
 	public final static int SHA3_512_LEN = 64;
 	// 2020-04-1 Here need do more job to calculate the detailed value
 	public final static BigInteger ASSET_PASSPORT_PROOF_SPACE_COST = BigInteger.valueOf(51);
-	
+
 	public final static BigInteger T1_LOCK_PROOF_SPACE_COST = BigInteger.valueOf(50);
-	
+
 	public final static BigInteger T2_LOCK_PROOF_SPACE_COST = BigInteger.valueOf(82);
-	
+
 	public static boolean IsDeleteTransactionInPool = false;
-	
+
 	public final static int PROOF_SIZE = 4;
-	
+
 //	static {
-	// 2020-04-19 If use this way initialize will break log output into console still don't konw how to slove it
+	// 2020-04-19 If use this way initialize will break log output into console
+	// still don't konw how to slove it
 //		SINGULARITY_A = (Keystore.getInstance().getUserProfiles() == null)?null:Keystore.getInstance().getUserProfiles().get(0).getReadableLock();
 //		
 //		SINGULARITY_B = (Keystore.getInstance().getUserProfiles() == null)?null:Keystore.getInstance().getUserProfiles().get(1).getReadableLock();
 //		
 //		SINGULARITY_C = (Keystore.getInstance().getUserProfiles() == null)?null:Keystore.getInstance().getUserProfiles().get(2).getReadableLock();
 //	}
-	
+
 //	public final static ID [] FIBONACCI = {
 //			new ID(1597),
 //			new ID(2584),
@@ -340,9 +361,8 @@ public final class Util {
 //			new ID(75025),
 //			new ID(121393)
 //	};
-	
-	public final static ID [] FIBONACCI = {
-			new ID(1597), // 17
+
+	public final static ID[] FIBONACCI = { new ID(1597), // 17
 			new ID(5702887), // 34
 			new ID(new BigInteger("1134903170")), // 45
 			new ID(new BigInteger("1548008755920")), // 60
@@ -352,23 +372,24 @@ public final class Util {
 			new ID(new BigInteger("3311648143516982017180081")), // 119
 			new ID(new BigInteger("1066340417491710595814572169")), // 131
 			new ID(new BigInteger("3807901929474025356630904134051")), // 148
-			new ID(new BigInteger("1206484255615496768210420703829205488386909032955899056732883572731058504300529011053")) // 404
+			new ID(new BigInteger(
+					"1206484255615496768210420703829205488386909032955899056732883572731058504300529011053")) // 404
 	};
-	
-	public final static ID[] PRIME101 = { new ID(2), new ID(3), new ID(5), new ID(7), new ID(11), new ID(13), new ID(17),
-			new ID(19), new ID(23), new ID(29), new ID(31), new ID(37), new ID(41), new ID(43), new ID(47), new ID(53),
-			new ID(59), new ID(61), new ID(67), new ID(71), new ID(73), new ID(79), new ID(83), new ID(89), new ID(97),
-			new ID(101), new ID(103), new ID(107), new ID(109), new ID(113), new ID(127), new ID(131), new ID(137),
-			new ID(139), new ID(149), new ID(151), new ID(157), new ID(163), new ID(167), new ID(173), new ID(179),
-			new ID(181), new ID(191), new ID(193), new ID(197), new ID(199), new ID(211), new ID(223), new ID(227),
-			new ID(229), new ID(233), new ID(239), new ID(241), new ID(251), new ID(257), new ID(263), new ID(269),
-			new ID(271), new ID(277), new ID(281), new ID(283), new ID(293), new ID(307), new ID(311), new ID(313),
-			new ID(317), new ID(331), new ID(337), new ID(347), new ID(349), new ID(353), new ID(359), new ID(367),
-			new ID(373), new ID(379), new ID(383), new ID(389), new ID(397), new ID(401), new ID(409), new ID(419),
-			new ID(421), new ID(431), new ID(433), new ID(439), new ID(443), new ID(449), new ID(457), new ID(461),
-			new ID(463), new ID(467), new ID(479), new ID(487), new ID(491), new ID(499), new ID(503), new ID(509),
-			new ID(521), new ID(523), new ID(541), new ID(547) };
-	
+
+	public final static ID[] PRIME101 = { new ID(2), new ID(3), new ID(5), new ID(7), new ID(11), new ID(13),
+			new ID(17), new ID(19), new ID(23), new ID(29), new ID(31), new ID(37), new ID(41), new ID(43), new ID(47),
+			new ID(53), new ID(59), new ID(61), new ID(67), new ID(71), new ID(73), new ID(79), new ID(83), new ID(89),
+			new ID(97), new ID(101), new ID(103), new ID(107), new ID(109), new ID(113), new ID(127), new ID(131),
+			new ID(137), new ID(139), new ID(149), new ID(151), new ID(157), new ID(163), new ID(167), new ID(173),
+			new ID(179), new ID(181), new ID(191), new ID(193), new ID(197), new ID(199), new ID(211), new ID(223),
+			new ID(227), new ID(229), new ID(233), new ID(239), new ID(241), new ID(251), new ID(257), new ID(263),
+			new ID(269), new ID(271), new ID(277), new ID(281), new ID(283), new ID(293), new ID(307), new ID(311),
+			new ID(313), new ID(317), new ID(331), new ID(337), new ID(347), new ID(349), new ID(353), new ID(359),
+			new ID(367), new ID(373), new ID(379), new ID(383), new ID(389), new ID(397), new ID(401), new ID(409),
+			new ID(419), new ID(421), new ID(431), new ID(433), new ID(439), new ID(443), new ID(449), new ID(457),
+			new ID(461), new ID(463), new ID(467), new ID(479), new ID(487), new ID(491), new ID(499), new ID(503),
+			new ID(509), new ID(521), new ID(523), new ID(541), new ID(547) };
+
 	public enum OS {
 		WINDOWS, MAC, LINUX
 	}
@@ -376,7 +397,7 @@ public final class Util {
 	public enum PERSISTENCE {
 		ROCKSDB, H2, RPC
 	}
-	
+
 	public enum SP_MODE {
 		EQCMINERNETWORK(1), EQCHIVESYNCNETWORK(2), EQCTRANSACTIONNETWORK(4);
 		private SP_MODE(int flag) {
@@ -404,30 +425,33 @@ public final class Util {
 			}
 			return sp_mode;
 		}
-		
+
 		public final static ID getFlag(SP_MODE... modes) {
 			int flag = 0;
-			for(SP_MODE sp_mode:modes) {
+			for (SP_MODE sp_mode : modes) {
 				flag += sp_mode.getFlag();
 			}
 			return new ID(flag);
 		}
-		
+
 	}
-	
+
 	private Util() {
 	}
 
 	public final static void init() throws Exception {
-		System.setProperty("sun.net.client.defaultConnectTimeout", "3000");  
+		System.setProperty("sun.net.client.defaultConnectTimeout", "3000");
 		System.err.close();
-	    System.setErr(System.out);
+		System.setErr(System.out);
 		createDir(PATH);
 		createDir(DB_PATH);
 		createDir(HIVE_PATH);
 		createDir(H2_PATH);
 		if (DB().getEQCHiveTailHeight() == null
-				/* && Keystore.getInstance().getUserAccounts().size() > 0 Will Remove when Cold Wallet ready */) {
+		/*
+		 * && Keystore.getInstance().getUserAccounts().size() > 0 Will Remove when Cold
+		 * Wallet ready
+		 */) {
 			Savepoint savepoint = null;
 			try {
 //				DB().getConnection().setAutoCommit(false);
@@ -436,13 +460,11 @@ public final class Util {
 				Log.info(eqcBlock.toString());
 				DB().saveEQCHive(eqcBlock);
 				DB().getConnection().commit();
-			} 
-			catch(Exception e) {
+			} catch (Exception e) {
 				DB().getConnection().rollback(savepoint);
 				Log.Error("rollback: " + e.getMessage());
 				throw e;
-			}
-			finally {
+			} finally {
 				DB().getConnection().setAutoCommit(true);
 			}
 		}
@@ -473,7 +495,7 @@ public final class Util {
 		BigDecimal begin = new BigDecimal(new BigInteger(1, data));
 		MathContext mc = new MathContext(Util.HUNDREDPULS, RoundingMode.HALF_EVEN);
 		BigDecimal a = null, b = null, c = null, d = null;
-		int bufferLen = ((data.length+1)*2+417) * multiple;
+		int bufferLen = ((data.length + 1) * 2 + 417) * multiple;
 		ByteBuffer byteBuffer = ByteBuffer.allocate(bufferLen);
 		// Put the original raw data
 		byteBuffer.put(data);
@@ -485,21 +507,20 @@ public final class Util {
 //			Log.info("Begin: " + begin.toPlainString());
 			random = begin.toBigInteger();
 			randomBytes = random.toByteArray();
-			partOfRandomBytes = new byte[(random.toByteArray().length/2)];
-			if(random.mod(ID.TWO).equals(ID.ZERO)) {
-				for(int j=0;j<partOfRandomBytes.length;++j) {
-					partOfRandomBytes[j] = randomBytes[2*j];
+			partOfRandomBytes = new byte[(random.toByteArray().length / 2)];
+			if (random.mod(ID.TWO).equals(ID.ZERO)) {
+				for (int j = 0; j < partOfRandomBytes.length; ++j) {
+					partOfRandomBytes[j] = randomBytes[2 * j];
 				}
-			}
-			else {
-				for(int j=0;j<partOfRandomBytes.length;++j) {
-					partOfRandomBytes[j] = randomBytes[2*j+1];
+			} else {
+				for (int j = 0; j < partOfRandomBytes.length; ++j) {
+					partOfRandomBytes[j] = randomBytes[2 * j + 1];
 				}
 			}
 			a = begin.divide(new BigDecimal(new BigInteger(1, partOfRandomBytes)), mc);
 			b = a.divide(new BigDecimal(FIBONACCI[2]), mc);
 			c = a.divide(new BigDecimal(FIBONACCI[10]), mc);
-			d = b.subtract(c).abs().multiply(new BigDecimal(PRIME101[(multiple - i)%HUNDREDPULS]), mc);
+			d = b.subtract(c).abs().multiply(new BigDecimal(PRIME101[(multiple - i) % HUNDREDPULS]), mc);
 
 			begin = begin.add(a).add(b).add(c).add(d);
 //			Log.info("i: " + i + " " + begin.toPlainString());
@@ -512,13 +533,13 @@ public final class Util {
 				byteBuffer.put(SINGULARITY);
 //				Log.info("F: " + f.toByteArray().length);
 				byteBuffer.put(f.toByteArray());
-				if(i < multiple) {
+				if (i < multiple) {
 					byteBuffer.put(SINGULARITY);
 				}
 			} else {
 				BigInteger e = new BigInteger(abc[0]);
 				byteBuffer.put(e.toByteArray());
-				if(i < multiple) {
+				if (i < multiple) {
 					byteBuffer.put(SINGULARITY);
 				}
 			}
@@ -532,15 +553,15 @@ public final class Util {
 		}
 		return result;
 	}
-	
+
 	public final static byte[] multipleExtend(final byte[] data, final int multiple) {
 		ByteBuffer byteBuffer = ByteBuffer.allocate((data.length + SINGULARITY.length) * multiple);
 		// Put the multiple extended data
 		for (int i = 0; i < multiple; ++i) {
-				byteBuffer.put(data);
-				if(i < multiple - 1) {
-					byteBuffer.put(SINGULARITY);
-				}
+			byteBuffer.put(data);
+			if (i < multiple - 1) {
+				byteBuffer.put(SINGULARITY);
+			}
 		}
 		byteBuffer.flip();
 		return byteBuffer.array();
@@ -556,13 +577,13 @@ public final class Util {
 		if (bytes == null) {
 			return null;
 		}
-		return	bigIntegerTo512HexString(new BigInteger(1, bytes));
+		return bigIntegerTo512HexString(new BigInteger(1, bytes));
 	}
-	
+
 	public final static String bytesToHexString(final byte[] bytes) {
-		return	dumpBytes(bytes, 16);
+		return dumpBytes(bytes, 16);
 	}
-	
+
 	public final static byte[] getDefaultTargetBytes() {
 		return new byte[] { (byte) 0xF4, (byte) 0x4F, (byte) 0xAB, (byte) 0xCD };
 	}
@@ -590,7 +611,7 @@ public final class Util {
 		if ((bytes[0] == 0) && (bytes[1] < 0)) {
 			target = new byte[] { bytes[1], bytes[2], bytes[3], bytes[4] };
 			offset = (bytes.length - 1) * 8 - 23;
-		} 
+		}
 		// Doesn't exists Leading zero
 		else {
 			target = new byte[] { bytes[0], bytes[1], bytes[2], bytes[3] };
@@ -614,8 +635,7 @@ public final class Util {
 //			}
 //			return intToBytes((bytesToInt(target) & 0x00FFFFFF) | (((offset * 8) & 0xFF) << 24));
 //		}
-		
-		
+
 //		String target = foo.toString(2);
 //		if(target.length() <= 24) {
 //			int value = new BigInteger(target, 2).intValue();
@@ -654,11 +674,11 @@ public final class Util {
 	public final static long bytesToLong(final byte[] bytes) {
 		return new BigInteger(1, bytes).longValue();
 	}
-	
+
 	public final static boolean isFileExists(final String pathname) {
 		boolean isExists = false;
-		File file =  new File(pathname);
-		if(file.length() > 0) {
+		File file = new File(pathname);
+		if (file.length() > 0) {
 			isExists = true;
 		}
 		return isExists;
@@ -740,7 +760,7 @@ public final class Util {
 				sb.append(" " + j++ + ":");
 			}
 			hex = Integer.toHexString(bytes[i] & 0xFF);
-			if(hex.length() == 1) {
+			if (hex.length() == 1) {
 				hex = "0" + hex;
 			}
 			sb.append(hex);
@@ -785,8 +805,10 @@ public final class Util {
 		byte[] result = null;
 		KeyGenerator kgen;
 		kgen = KeyGenerator.getInstance("AES");
-		// Can't use SecureRandom.getInstanceStrong() otherwise can't AESDecrypt because of
-		// javax.crypto.BadPaddingException: Given final block not properly padded. Such issues can arise if a bad key is used during decryption.
+		// Can't use SecureRandom.getInstanceStrong() otherwise can't AESDecrypt because
+		// of
+		// javax.crypto.BadPaddingException: Given final block not properly padded. Such
+		// issues can arise if a bad key is used during decryption.
 		SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
 		secureRandom.setSeed(password.getBytes());
 		kgen.init(256, secureRandom);
@@ -855,8 +877,9 @@ public final class Util {
 		transaction.setNonce(changeLog.getHeight().getNextID());
 		return transaction;
 	}
-	
-	public final static ZionCoinbaseTransaction generateZionCoinbaseTransaction(Lock minerLock, ChangeLog changeLog) throws Exception {
+
+	public final static ZionCoinbaseTransaction generateZionCoinbaseTransaction(Lock minerLock, ChangeLog changeLog)
+			throws Exception {
 		ZionCoinbaseTransaction transaction = new ZionCoinbaseTransaction();
 		TransferTxOut eqcFederalTxOut = new TransferTxOut();
 		ZionTxOut minerTxOut = new ZionTxOut();
@@ -879,46 +902,41 @@ public final class Util {
 		// @echo off
 		// If exists old status need clear it
 		Util.DB().saveEQCHiveTailHeight(ID.ZERO);
-		for(int i=0; i<2; ++i) {
+		for (int i = 0; i < 2; ++i) {
 			try {
 				Passport account = Util.DB().getPassport(new ID(i), Mode.GLOBAL);
-				if(account != null) {
+				if (account != null) {
 					Util.DB().deletePassport(new ID(i), Mode.GLOBAL);
 					Util.DB().deleteLock(new ID(i), Mode.GLOBAL);
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				Log.info("Try to remove old Passport and lock error occur: " + e.getMessage());
 			}
 		}
 		// Create PassportMerkleTree
-		ChangeLog changeLog = new ChangeLog(ID.ZERO,
-				new Filter(Mode.MINING));
+		ChangeLog changeLog = new ChangeLog(ID.ZERO, new Filter(Mode.MINING));
 
 		// Create EQCHive
 		eqcHive = new EQCHive(MAGIC_HASH, ID.ZERO, changeLog);
 		eqcHive.plantingEQcoinSeed();
 		eqcHive.getEQCHiveRoot().setTimestamp(new ID(0));
-		while(!eqcHive.getEQCHiveRoot().isDifficultyValid()) {
+		while (!eqcHive.getEQCHiveRoot().isDifficultyValid()) {
 			eqcHive.getEQCHiveRoot().setNonce(eqcHive.getEQCHiveRoot().getNonce().getNextID());
 		}
-		Savepoint savepoint = DB().getConnection().setSavepoint();
-		changeLog.updateGlobalState(eqcHive, savepoint);
+		changeLog.updateGlobalState(eqcHive, null);
 		Log.info("\n" + eqcHive.toString());
 		return eqcHive;
 	}
 
 	public final static Value cypherTotalSupply(ChangeLog changeLog) throws Exception {
-		if(changeLog.getHeight().equals(ID.ZERO)) {
+		if (changeLog.getHeight().equals(ID.ZERO)) {
 			return new Value(BASIC_COINBASE_REWARD);
-		}
-		else {
+		} else {
 			EQCHive eqcHive = new EQCHive(DB().getEQCHive(changeLog.getHeight().getPreviousID()));
 			Value totalSupply = eqcHive.getEQcoinSeed().getEQcoinSeedRoot().getTotalSupply();
-			if(totalSupply.compareTo(MAX_EQC) < 0) {
+			if (totalSupply.compareTo(MAX_EQC) < 0) {
 				return totalSupply.add(getCurrentCoinbaseReward(changeLog));
-			}
-			else {
+			} else {
 				return totalSupply;
 			}
 		}
@@ -936,29 +954,29 @@ public final class Util {
 		ID serialNumber_begin = new ID(changeLog.getHeight().subtract(BigInteger.valueOf(10)));
 		if (changeLog.getHeight().longValue() % 10 != 0) {
 //			Log.info(serialNumber_end.toString());
-			target = Util.DB().getEQCHiveRoot(serialNumber_end).getTarget();//EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
+			target = Util.DB().getEQCHiveRoot(serialNumber_end).getTarget();// EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
 //			Log.info(Util.bigIntegerTo128String(Util.targetBytesToBigInteger(target)));
 		} else {
-			Log.info(
-					"Old target: "
-							+ Util.bigIntegerTo512HexString(Util.targetBytesToBigInteger(
-									Util.DB().getEQCHiveRoot(serialNumber_end).getTarget()))
-							+ "\r\naverge time: "
-							+ (Util.DB().getEQCHiveRoot(serialNumber_end).getTimestamp().longValue()
-									- Util.DB().getEQCHiveRoot(serialNumber_begin).getTimestamp().longValue())
-									/ 9);
-			oldDifficulty = Util
-					.targetBytesToBigInteger(Util.DB().getEQCHiveRoot(serialNumber_end).getTarget());
-			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO, false);
-			BigInteger current_block_interval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval()).multiply(TARGET_EQCHIVE_INTERVAL);
+			Log.info("Old target: "
+					+ Util.bigIntegerTo512HexString(
+							Util.targetBytesToBigInteger(Util.DB().getEQCHiveRoot(serialNumber_end).getTarget()))
+					+ "\r\naverge time: " + (Util.DB().getEQCHiveRoot(serialNumber_end).getTimestamp().longValue()
+							- Util.DB().getEQCHiveRoot(serialNumber_begin).getTimestamp().longValue()) / 9);
+			oldDifficulty = Util.targetBytesToBigInteger(Util.DB().getEQCHiveRoot(serialNumber_end).getTarget());
+			EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) changeLog.getFilter().getPassport(ID.ZERO,
+					false);
+			BigInteger current_block_interval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
+					.multiply(TARGET_EQCHIVE_INTERVAL);
 			newDifficulty = oldDifficulty
-					.multiply(BigInteger
-							.valueOf((Util.DB().getEQCHiveRoot(serialNumber_end).getTimestamp().longValue()
-									- Util.DB().getEQCHiveRoot(serialNumber_begin).getTimestamp().longValue())))
+					.multiply(BigInteger.valueOf((Util.DB().getEQCHiveRoot(serialNumber_end).getTimestamp().longValue()
+							- Util.DB().getEQCHiveRoot(serialNumber_begin).getTimestamp().longValue())))
 					.divide(BigInteger.valueOf(9).multiply(current_block_interval));
-			// Compare if old difficulty divide new difficulty is bigger than MAX_DIFFICULTY_MULTIPLE
-			if(oldDifficulty.divide(newDifficulty).compareTo(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE)) > 0) {
-				Log.info("Due to old difficulty divide new difficulty(" + Util.bigIntegerTo512HexString(newDifficulty) +") = " + oldDifficulty.divide(newDifficulty).toString() + " is bigger than MAX_DIFFICULTY_MULTIPLE so here just divide MAX_DIFFICULTY_MULTIPLE");
+			// Compare if old difficulty divide new difficulty is bigger than
+			// MAX_DIFFICULTY_MULTIPLE
+			if (oldDifficulty.divide(newDifficulty).compareTo(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE)) > 0) {
+				Log.info("Due to old difficulty divide new difficulty(" + Util.bigIntegerTo512HexString(newDifficulty)
+						+ ") = " + oldDifficulty.divide(newDifficulty).toString()
+						+ " is bigger than MAX_DIFFICULTY_MULTIPLE so here just divide MAX_DIFFICULTY_MULTIPLE");
 				newDifficulty = oldDifficulty.divide(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE));
 			}
 			if (Util.targetBytesToBigInteger(Util.getDefaultTargetBytes()).compareTo(newDifficulty) >= 0) {
@@ -973,7 +991,8 @@ public final class Util {
 		return target;
 	}
 
-	public final static byte[] getMerkleTreeRoot(Vector<byte[]> bytes, boolean isHashing) throws NoSuchAlgorithmException {
+	public final static byte[] getMerkleTreeRoot(Vector<byte[]> bytes, boolean isHashing)
+			throws NoSuchAlgorithmException {
 		MerkleTree merkleTree = new MerkleTree(bytes, isHashing);
 		merkleTree.generateRoot();
 		return merkleTree.getRoot();
@@ -1007,7 +1026,7 @@ public final class Util {
 	public final static String getIP() {
 		InputStream ins = null;
 		String ip = "";
-		for(int i=0; i<3; ++i) {
+		for (int i = 0; i < 3; ++i) {
 			try {
 				URL url = new URL("http://www.cip.cc/");
 				URLConnection con = url.openConnection();
@@ -1062,23 +1081,23 @@ public final class Util {
 		String timeServerUrl = "time.windows.com";
 		InetAddress timeServerAddress;
 		TimeStamp timeStamp = null;
-			timeClient.setDefaultTimeout((int) DEFAULT_TIMEOUT);
-			timeServerAddress = InetAddress.getByName(timeServerUrl);
-			TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
-			timeStamp = timeInfo.getMessage().getTransmitTimeStamp();
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-			Log.info("Current time: " + dateFormat.format(timeStamp.getDate()));
+		timeClient.setDefaultTimeout((int) DEFAULT_TIMEOUT);
+		timeServerAddress = InetAddress.getByName(timeServerUrl);
+		TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
+		timeStamp = timeInfo.getMessage().getTransmitTimeStamp();
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		Log.info("Current time: " + dateFormat.format(timeStamp.getDate()));
 		return ((timeStamp != null) ? timeStamp.getDate().getTime() : 0);
 	}
 
 	public final static boolean isTimeCorrect() throws Exception {
 		boolean boolCorrect = true;
-		if(Math.abs(System.currentTimeMillis() - getNTPTIME()) >= DEFAULT_TIMEOUT) {
+		if (Math.abs(System.currentTimeMillis() - getNTPTIME()) >= DEFAULT_TIMEOUT) {
 			boolCorrect = false;
 		}
 		return boolCorrect;
 	}
-	
+
 	public final static boolean isNetworkAvailable() throws Exception {
 		boolean boolIsNetworkAvailable = false;
 		URL url = new URL("http://www.bing.com");
@@ -1091,7 +1110,7 @@ public final class Util {
 		httpURLConnection.disconnect();
 		return boolIsNetworkAvailable;
 	}
-	
+
 	public final static byte[] CRC32C(byte[] bytes) {
 		CRC32C crc32c = new CRC32C();
 		crc32c.update(bytes);
@@ -1100,7 +1119,7 @@ public final class Util {
 //		Log.info("" + crc32c.getValue());
 		return longToBytes(crc32c.getValue());
 	}
-	
+
 	public final static IEQCHive DB(PERSISTENCE persistence) throws ClassNotFoundException, SQLException {
 		IEQCHive eqcBlockChain = null;
 		switch (persistence) {
@@ -1110,11 +1129,11 @@ public final class Util {
 		}
 		return eqcBlockChain;
 	}
-	
+
 	public final static IEQCHive DB() throws ClassNotFoundException, SQLException {
 		return DB(PERSISTENCE.H2);
 	}
-	
+
 	public final static void cypherSingularityEQCHivePreProof() throws NoSuchAlgorithmException {
 		File file = new File(MAGIC_PATH);
 		Vector<byte[]> vector = new Vector<>();
@@ -1128,7 +1147,7 @@ public final class Util {
 			}
 		}
 		Vector<byte[]> reverse = new Vector<>();
-		for(int i=vector.size()-1; i>=0; --i) {
+		for (int i = vector.size() - 1; i >= 0; --i) {
 			reverse.add(vector.get(i));
 		}
 		merkleTree = new MerkleTree(reverse, true);
@@ -1140,10 +1159,10 @@ public final class Util {
 
 	public final static ID fibonacci(long number) {
 		ID a = ID.ONE, b = ID.ONE, c = ID.ZERO;
-		if(number <= 2) {
+		if (number <= 2) {
 			return ID.ONE;
 		}
-		for(int i=3; i<=number; ++i) {
+		for (int i = 3; i <= number; ++i) {
 			c = a.add(b);
 			a = b;
 			b = c;
@@ -1152,55 +1171,87 @@ public final class Util {
 	}
 
 	public final static boolean regex(String regex, String value) {
-		if(value == null || value.equals("")) {
+		if (value == null || value.equals("")) {
 			return false;
 		}
 		return value.matches(regex);
 	}
-	
+
 	public final static void syncSPList() throws ClassNotFoundException, SQLException, Exception {
-		SPList spList = DB().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK, SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCTRANSACTIONNETWORK));
+		Log.info("syncSPList, local SP: " + LOCAL_SP + " singularity SP: " + SINGULARITY_SP);
+		SPList spList = DB().getSPList(
+				SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK, SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCTRANSACTIONNETWORK));
 		SPList spList2 = null;
 		if (spList.isEmpty()) {
 			if (LOCAL_SP.equals(SINGULARITY_SP)) {
+				Log.info("This is SINGULARITY_SP and sp list is empty");
 				return;
 			}
 			spList = EQCMinerNetworkClient.getSPList(SINGULARITY_SP);
-			if (spList == null || spList.isEmpty()) {
-				return;
-			} else {
-				for (SP sp : spList.getSPList()) {
-					DB().saveSP(sp);
+			Log.info("Get sp list from SINGULARITY_SP: " + spList.toString());
+		}
+		if (!LOCAL_SP.equals(SINGULARITY_SP)) {
+			Log.info("Begin register SP: " + LOCAL_SP + " to SINGULARITY_SP: " + SINGULARITY_SP);
+			if (LOCAL_SP.isEQCTransactionNetwork()) {
+				if (EQCTransactionNetworkClient.registerSP(SINGULARITY_SP).getPing() > 0) {
+					Log.info("New EQCTransactionNetwork SP: " + LOCAL_SP + " register successful");
+				} else {
+					Log.info("New EQCTransactionNetwork SP: " + LOCAL_SP + " register failed");
+				}
+			} else if (LOCAL_SP.isEQCHiveSyncNetwork()) {
+				if (EQCHiveSyncNetworkClient.registerSP(SINGULARITY_SP).getPing() > 0) {
+					Log.info("New EQCHiveSyncNetwork SP: " + LOCAL_SP + " register successful");
+				} else {
+					Log.info("New EQCHiveSyncNetwork SP: " + LOCAL_SP + " register failed");
+				}
+			} else if (LOCAL_SP.isEQCMinerNetwork()) {
+				if (EQCMinerNetworkClient.registerSP(SINGULARITY_SP).getPing() > 0) {
+					Log.info("New EQCMinerNetwork SP: " + LOCAL_SP + " register successful");
+				} else {
+					Log.info("New EQCMinerNetwork SP: " + LOCAL_SP + " register failed");
 				}
 			}
 		}
 		for (SP sp : spList.getSPList()) {
-			if(!LOCAL_SP.equals(sp)) {
+			if (!LOCAL_SP.equals(sp)) {
 				try {
 					spList2 = EQCMinerNetworkClient.getSPList(sp);
 				} catch (Exception e) {
-					Log.Error(e.getMessage());
+					Util.updateDisconnectSPStatus(sp);
+					Log.Error("During get sp list from: " + sp + " error occur: " + e.getMessage());
 				}
 				if (spList2 != null) {
-					for (SP ip1 : spList2.getSPList()) {
-						EQCHiveH2.getInstance().saveSP(ip1);
+					for (SP sp1 : spList2.getSPList()) {
+						if (!LOCAL_SP.equals(sp1)) {
+							if (sp1.isEQCTransactionNetwork()) {
+								if (EQCTransactionNetworkClient.registerSP(sp1).getPing() > 0) {
+									Log.info("Received New EQCTransactionNetwork SP: " + sp1 + " save it to SPList");
+									Util.DB().saveSP(sp1);
+								} else {
+									Util.updateDisconnectSPStatus(sp1);
+								}
+							} else if (sp1.isEQCHiveSyncNetwork()) {
+								if (EQCHiveSyncNetworkClient.registerSP(sp1).getPing() > 0) {
+									Log.info("Received New EQCHiveSyncNetwork SP: " + sp1 + " save it to SPList");
+									Util.DB().saveSP(sp1);
+								} else {
+									Util.updateDisconnectSPStatus(sp1);
+								}
+							} else if (sp1.isEQCMinerNetwork()) {
+								if (EQCMinerNetworkClient.registerSP(sp1).getPing() > 0) {
+									Log.info("Received New EQCMinerNetwork SP: " + sp1 + " save it to SPList");
+									Util.DB().saveSP(sp1);
+								} else {
+									Util.updateDisconnectSPStatus(sp1);
+								}
+							}
+						}
 					}
 				}
 			}
 		}
-		spList2 = DB().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK, SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCTRANSACTIONNETWORK));
-		for (SP sp : spList2.getSPList()) {
-			// Here exist bugs need do more job to fix it need use new way to register sp because different sp support different network should use relevant ping
-			// Here doesn't need retry 3 times to make sure if the sp can access because of sometimes the sp maybe can't access due to any exception
-			// Here need register according to relevant SP's mode then choice different client to register
-			if (!LOCAL_SP.equals(sp)) {
-				if (EQCMinerNetworkClient.registerSP(sp).getPing() == -1) {
-					updateDisconnectSPStatus(sp);
-				}
-			}
-		}
 	}
-	
+
 	public final static void recoveryAccounts(ID height) throws ClassNotFoundException, SQLException, Exception {
 		// Here exists one bug
 //		// From height to checkpoint verify if Block is valid
@@ -1277,7 +1328,7 @@ public final class Util {
 ////			}
 ////		}
 	}
-	
+
 	public final static void regenerateAccountStatus() throws ClassNotFoundException, SQLException, Exception {
 		// If need here need do more job to support H2
 //		EQCBlockChainRocksDB.getInstance().clearTable(EQCBlockChainRocksDB.getInstance().getTableHandle(TABLE.ACCOUNT));
@@ -1291,25 +1342,23 @@ public final class Util {
 		long base = 1;
 		ChangeLog changeLog = null;
 		EQCHive eqcHive = null;
-		for(; base<=tail.longValue(); ++base) {
+		for (; base <= tail.longValue(); ++base) {
 			eqcHive = new EQCHive(Util.DB().getEQCHive(new ID(base)));
-			if(eqcHive != null) {
+			if (eqcHive != null) {
 				changeLog = new ChangeLog(new ID(base), new Filter(Mode.VALID));
-				if(eqcHive.isValid()) {
+				if (eqcHive.isValid()) {
 					changeLog.takeSnapshot();
 					changeLog.merge();
 					changeLog.clear();
 					Log.info("No. " + base + " verify passed");
 					Log.info("Current tail: " + base);
 //					Util.DB().saveEQCBlockTailHeight(new ID(base));
-				}
-				else {
+				} else {
 					Log.info("No. " + base + " verify failed");
 					break;
 				}
 				eqcHive = null;
-			}
-			else {
+			} else {
 				Log.info("No. " + base + "'s EQCHive is null just exit");
 			}
 		}
@@ -1317,28 +1366,34 @@ public final class Util {
 //			Util.DB().deleteEQCBlock(new ID(i));
 //			Log.info("Successful delete extra EQCHive No. " + i);
 //		}
-		
+
 	}
-	
-	public final static void recoveryAccountsStatusTo(ID height) throws ClassNotFoundException, SQLException, Exception {
-		// Here need use new method to recovery
-		//		Log.info("Begin recoveryAccountsStatusTo " + height);
-//		EQcoinSubchainHeader eQcoinSubchainHeader = Util.DB().getEQCHive(height, true).getEQcoinSubchain().getEQcoinSubchainHeader();
-//		Passport account = null;
-//		ID id = null;
-//		for(long i=1; i<=eQcoinSubchainHeader.getTotalPassportNumbers().longValue(); ++i) {
-//			id = new ID(i);
-//			account = Util.DB().getPassport(id, Mode.GLOBAL);
-//			Objects.requireNonNull(account);
-//			if(account.getUpdateHeight().compareTo(height) > 0) {
-//				Log.info("Accounts table's No. " + i + "'s update height:" + account.getUpdateHeight() + " bigger than new tail base:" + height + " recovery it's current height's history state from snapshot");
-//				account = EQCBlockChainH2.getInstance().getPassportSnapshot(id, height);
-//				Objects.requireNonNull(account);
-//				Util.DB().savePassport(account, Mode.GLOBAL);
-//			}
-//		}
+
+	public final static void recoveryGlobalStatusTo(ID height) throws Exception {
+		Log.info("Begin recovery passport global status to " + height);
+		EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(height);
+		Passport passport = null;
+		ID id = null;
+		for (long i = 0; i < eQcoinSeedRoot.getTotalPassportNumbers().longValue(); ++i) {
+			id = new ID(i);
+			passport = DB().getPassportSnapshot(id, height);
+			if (passport != null) {
+				Log.info("No." + i);
+				DB().savePassport(passport, Mode.GLOBAL);
+			}
+		}
+		Log.info("Begin recovery lock global status to " + height);
+		LockMate lockMate = null;
+		for (long i = 0; i < eQcoinSeedRoot.getTotalLockNumbers().longValue(); ++i) {
+			id = new ID(i);
+			lockMate = DB().getLockSnapshot(id, height);
+			if (lockMate != null) {
+				Log.info("No." + i);
+				DB().saveLock(lockMate, Mode.GLOBAL);
+			}
+		}
 	}
-	
+
 	public final static void updateDisconnectSPStatus(SP sp) {
 		try {
 			byte counter = 0;
@@ -1351,15 +1406,14 @@ public final class Util {
 					Log.info(sp + "'s discount counter is " + counter + " just update it's disconect state");
 					Util.DB().saveSPCounter(sp, counter);
 				}
-			}
-			else {
+			} else {
 				Log.info("Received register SP message from " + sp + " but can't access it have to discard it");
 			}
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 		}
 	}
-	
+
 	public final static Value getCurrentCoinbaseReward(ChangeLog changeLog) throws Exception {
 		Value currentCoinbaseReward = Value.ZERO;
 		BigInteger currentBlockInterval = BASIC_EQCHIVE_INTERVAL;
@@ -1373,21 +1427,22 @@ public final class Util {
 				BASIC_COINBASE_REWARD.multiply(currentBlockInterval).divide(BASIC_EQCHIVE_INTERVAL));
 		return currentCoinbaseReward;
 	}
-	
+
 	public final static Value getCurrentMinerCoinbaseReward(Value currentCoinbaseReward) {
 		return new Value(currentCoinbaseReward.multiply(BigInteger.valueOf(5)).divide(BigInteger.valueOf(100)));
 	}
-	
+
 	public final static Value getValue(double d) {
 		long loneValue = (long) (d * ABC.longValue());
 		return new Value(BigInteger.valueOf(loneValue));
 	}
-	
+
 	public final static BigInteger getCurrentEQCHiveInterval() throws Exception {
 		BigInteger currentEQCHiveInterval = BigInteger.ZERO;
 		EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) DB().getPassport(ID.ZERO, Mode.GLOBAL);
-		currentEQCHiveInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval()).multiply(TARGET_EQCHIVE_INTERVAL);
+		currentEQCHiveInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
+				.multiply(TARGET_EQCHIVE_INTERVAL);
 		return currentEQCHiveInterval;
 	}
-	
+
 }

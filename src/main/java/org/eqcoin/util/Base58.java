@@ -47,17 +47,18 @@ public class Base58 {
 	private static final BigInteger BASE58 = BigInteger.valueOf(58);
 
 	public static String encode(final byte[] bytes) {
+		BigInteger remainder = null;
 		BigInteger foo = new BigInteger(1, bytes);
 		StringBuilder sb = new StringBuilder();
 		while (foo.compareTo(BASE58) >= 0) {
-			BigInteger remainder = foo.mod(BASE58);
+			remainder = foo.mod(BASE58);
 			sb.insert(0, ALPHABET.charAt(remainder.intValue()));
 			foo = foo.subtract(remainder).divide(BASE58);
 		}
 		sb.insert(0, ALPHABET.charAt(foo.intValue()));
 		// Due to BigInteger ignore the leading zeroes of Hash
 		// So here just insert the leading zeroes of Hash into the Number 
-		// When length equal to 1 which means it is the type of Address which
+		// When length equal to 1 which means it is the type of lock which
 		// without leading zeroes doesn't need special handle. But when length bigger
 		// than 1 which means it is the Hash of Publickey many be exists leading zeroes
 		// need special handle.
@@ -73,9 +74,9 @@ public class Base58 {
 		return sb.toString();
 	}
 
-	public static byte[] decode(String input) throws Exception {
+	public static byte[] decode(String base58) throws Exception {
 		byte[] decode = null, bytes = null;
-		decode = bytes = decodeToBigInteger(input).toByteArray();
+		decode = bytes = decodeToBigInteger(base58).toByteArray();
 		// We may have got one more byte than we wanted, if the high bit of the
 		// next-to-last byte was not zero. This
 		// is because BigIntegers are represented with twos-compliment notation, thus if
@@ -83,16 +84,15 @@ public class Base58 {
 		// byte happens to be 1 another 8 zero bits will be added to ensure the number
 		// parses as positive. Detect
 		// that case here and chop it off.
-		boolean stripSignByte = bytes.length > 1 && bytes[0] == 0 && bytes[1] < 0;
+		boolean stripSignByte = bytes.length > 1 && bytes[0] == 0;
 //		Log.info("stripSignByte: " + stripSignByte);
 		// Count the leading zeroes, if any.
 		int leadingZeros = 0;
-		for (int i = 0; (i < input.length() && input.charAt(i) == ALPHABET.charAt(0)); ++i) {
-			leadingZeros++;
+		for(; (leadingZeros < base58.length() && base58.charAt(leadingZeros) == ALPHABET.charAt(0)); ++leadingZeros) {
 		}
-		// When length equal to 1 which means it is the type of Address which
+		// When length equal to 1 which means it is the type of lock which
 		// without leading zeroes doesn't need special handle. But when length bigger
-		// than 1 which means it is the Hash of Publickey many be exists leading zeroes
+		// than 1 which means it is the Hash of Publickey may be exists leading zeroes
 		// need special handle.
 		if((stripSignByte || leadingZeros > 0) && bytes.length > 1) {
 			decode = new byte[bytes.length - (stripSignByte ? 1 : 0) + leadingZeros];
@@ -101,17 +101,18 @@ public class Base58 {
 		return decode;
 	}
 
-	public static BigInteger decodeToBigInteger(String input) throws Exception {
-		BigInteger bi = BigInteger.ZERO;
+	public static BigInteger decodeToBigInteger(String base58) throws Exception {
+		BigInteger bigInteger = BigInteger.ZERO;
+		int maxLen = base58.length() - 1;
 		// Work backwards through the string.
-		for (int i = input.length() - 1; i >= 0; --i) {
-			int alphaIndex = ALPHABET.indexOf(input.charAt(i));
+		for (int i = maxLen; i >= 0; --i) {
+			int alphaIndex = ALPHABET.indexOf(base58.charAt(i));
 			if (alphaIndex == -1) {
-				throw new Exception("Illegal character " + input.charAt(i) + " at " + i);
+				throw new Exception("Illegal character " + base58.charAt(i) + " at " + i);
 			}
-			bi = bi.add(BigInteger.valueOf(alphaIndex).multiply(BASE58.pow(input.length() - 1 - i)));
+			bigInteger = bigInteger.add(BigInteger.valueOf(alphaIndex).multiply(BASE58.pow(maxLen - i)));
 		}
-		return bi;
+		return bigInteger;
 	}
 
 	public static boolean isBase58Char(char candidate) {

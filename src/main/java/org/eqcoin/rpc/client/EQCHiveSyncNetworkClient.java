@@ -48,6 +48,7 @@ import org.eqcoin.rpc.TailInfo;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Util.SP_MODE;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 
 /**
@@ -69,7 +70,7 @@ public class EQCHiveSyncNetworkClient extends EQCRPCClient {
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCHiveSyncNetwork.class, nettyTransceiver);
 			ping = System.currentTimeMillis();
-			info = new Info(client.registerSP(sp.getProtocol(O.class)));
+			info = new Info(client.registerSP(Util.LOCAL_SP.getProtocol(O.class)));
 			info.setPing(System.currentTimeMillis() - ping);
 		} catch (Exception e) {
 			info.setPing(-1);
@@ -92,7 +93,7 @@ public class EQCHiveSyncNetworkClient extends EQCRPCClient {
 					new InetSocketAddress(InetAddress.getByName(sp.getIp()), Util.MINER_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()), Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCMinerNetwork.class, nettyTransceiver);
-			spList = new SPList(client.getSPList(sp.getProtocol(O.class)));
+			spList = new SPList(client.getSPList(new ID(SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK, SP_MODE.EQCMINERNETWORK, SP_MODE.EQCTRANSACTIONNETWORK)).getProtocol(O.class)));
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 			throw e;
@@ -151,8 +152,8 @@ public class EQCHiveSyncNetworkClient extends EQCRPCClient {
 		return eqcHive;
 	}
 
-	public static byte[] getEQCRootProof(ID height, SP sp) throws Exception {
-		byte[] eqcRootProof = null;
+	public static byte[] getEQCHiveRootProof(ID height, SP sp) throws Exception {
+		byte[] eqcHiveRootProof = null;
 		NettyTransceiver nettyTransceiver = null;
 		EQCHiveSyncNetwork client = null;
 		try {
@@ -161,7 +162,7 @@ public class EQCHiveSyncNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCHiveSyncNetwork.class, nettyTransceiver);
-			eqcRootProof = client.getEQCHiveRootProof(Protocol.getProtocol(O.class, height.getEQCBits())).getO().array();
+			eqcHiveRootProof = client.getEQCHiveRootProof(Protocol.getProtocol(O.class, height.getEQCBits())).getO().array();
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 			throw e;
@@ -171,7 +172,30 @@ public class EQCHiveSyncNetworkClient extends EQCRPCClient {
 				Log.info("nettyTransceiver closed");
 			}
 		}
-		return eqcRootProof;
+		return eqcHiveRootProof;
+	}
+	
+	public static EQCHiveRoot getEQCHiveRoot(ID height, SP sp) throws Exception {
+		EQCHiveRoot eqcHiveRoot = null;
+		NettyTransceiver nettyTransceiver = null;
+		EQCHiveSyncNetwork client = null;
+		try {
+			nettyTransceiver = new NettyTransceiver(
+					new InetSocketAddress(InetAddress.getByName(sp.getIp()), Util.SYNCBLOCK_NETWORK_PORT), new OioClientSocketChannelFactory(
+			                Executors.newCachedThreadPool()),
+					Util.DEFAULT_TIMEOUT);
+			client = SpecificRequestor.getClient(EQCHiveSyncNetwork.class, nettyTransceiver);
+			eqcHiveRoot = new EQCHiveRoot(client.getEQCHiveRoot(Protocol.getProtocol(O.class, height.getEQCBits())));
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
+			throw e;
+		} finally {
+			if (nettyTransceiver != null) {
+				nettyTransceiver.close();
+				Log.info("nettyTransceiver closed");
+			}
+		}
+		return eqcHiveRoot;
 	}
 
 	public static SP getFastestServer(SPList spList) {

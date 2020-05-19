@@ -125,7 +125,7 @@ public class SyncService extends EQCService {
 	 */
 	@Override
 	public synchronized void start() {
-		// TODO Auto-generated method stub
+		getInstance();
 		super.start();
 		try {
 			sleeping(Util.getCurrentEQCHiveInterval().longValue()/10);

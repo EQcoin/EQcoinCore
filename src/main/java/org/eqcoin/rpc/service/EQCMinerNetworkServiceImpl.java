@@ -54,50 +54,7 @@ import org.eqcoin.util.Util;
  * @date Jun 29, 2019
  * @email 10509759@qq.com
  */
-public class EQCMinerNetworkServiceImpl implements EQCMinerNetwork {
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.avro.MinerNetwork#ping(com.eqchains.avro.IO)
-	 */
-	@Override
-	public O registerSP(O sp) {
-		Info info = null;
-		O o = null;
-		SP sp1 = null;
-		try {
-			sp1 = new SP(sp1);
-			Log.info("Received ping from: " + sp1);
-			if (sp1.isSanity()) {
-				PossibleSPState possibleNodeState = new PossibleSPState();
-				possibleNodeState.setSp(sp1);
-				possibleNodeState.setTime(System.currentTimeMillis());
-				PossibleSPService.getInstance().offerState(possibleNodeState);
-				info = Util.getDefaultInfo();
-			} else {
-				info = Util.getInfo(Code.WRONGPROTOCOL, null);
-			}
-			o = info.getProtocol(O.class);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		Log.info("Give ping response to " + sp1 + " info: " + info);
-		return o;
-	}
-
-	@Override
-	public O getSPList(O m) {
-		O minerList = null;
-		try {
-			minerList = Util.DB().getSPList(EQCType.parseID(m.o.array())).getProtocol(O.class);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return minerList;
-	}
+public class EQCMinerNetworkServiceImpl extends EQCRPCServiceImpl implements EQCMinerNetwork {
 
 	@Override
 	public O broadcastNewEQCHive(O e) {

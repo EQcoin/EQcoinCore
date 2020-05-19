@@ -38,11 +38,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Objects;
 
 import javax.print.attribute.standard.RequestingUserName;
 
 import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
+import org.eqcoin.rpc.Protocol;
 import org.eqcoin.seed.EQcoinSeed;
 import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCTypable;
@@ -56,7 +58,7 @@ import org.eqcoin.util.Util;
  * @date 9-12-2018
  * @email 10509759@qq.com
  */
-public class EQCHiveRoot extends EQCSerializable {
+public class EQCHiveRoot extends EQCSerializable implements Protocol {
 	/*
 	 * previous Hive proof |  target  | EQcoinSeed proof | 	 Height 	 |     timestamp 	 |       nonce  
    	 *		 64 bytes	     4 bytes     64 bytes  lengthen(>=1bytes) lengthen(>=6bytes)  lengthen(<=8bytes)   
@@ -87,32 +89,28 @@ public class EQCHiveRoot extends EQCSerializable {
 		super(is);
 	}
 	
+	public <T> EQCHiveRoot(T type) throws Exception {
+		super();
+		parse(type);
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		preProof = new byte[Util.HASH_LEN];
-		target = new byte[TARGET_LEN];
-		eqCoinSeedProof = new byte[Util.HASH_LEN];
-		try {
-			// Parse PreHash
-			preProof = EQCType.parseNBytes(is, Util.HASH_LEN);
-			// Parse Target
-			target = EQCType.parseNBytes(is, TARGET_LEN);
-			// Parse EQCoinSeedHash
-			eqCoinSeedProof = EQCType.parseNBytes(is, Util.HASH_LEN);
-			// Parse Height
-			height = new ID(EQCType.parseEQCBits(is));
-			// Parse Timestamp
-			timestamp = new ID(EQCType.parseEQCBits(is));
-			// Parse Nonce
-			nonce = new ID(EQCType.parseEQCBits(is));
-		} catch (IOException | NoSuchFieldException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error("During parse EQCHiveRoot error occur: " + e.getMessage());
-		}
+		// Parse PreHash
+		preProof = EQCType.parseNBytes(is, Util.HASH_LEN);
+		// Parse Target
+		target = EQCType.parseNBytes(is, TARGET_LEN);
+		// Parse EQCoinSeedHash
+		eqCoinSeedProof = EQCType.parseNBytes(is, Util.HASH_LEN);
+		// Parse Height
+		height = new ID(EQCType.parseEQCBits(is));
+		// Parse Timestamp
+		timestamp = new ID(EQCType.parseEQCBits(is));
+		// Parse Nonce
+		nonce = new ID(EQCType.parseEQCBits(is));
 	}
 
 //	public static boolean isValid(byte[] bytes) {
@@ -359,6 +357,7 @@ public class EQCHiveRoot extends EQCSerializable {
 		return true;
 	}
 	
+	// 20200514 here need check if the target is valid
 	public boolean isDifficultyValid() throws NoSuchAlgorithmException {
 		return (new BigInteger(1, getProof()).compareTo(Util.targetBytesToBigInteger(target)) <= 0);
 	}
@@ -422,10 +421,6 @@ public class EQCHiveRoot extends EQCSerializable {
 //		return bytes;
 //	}
 	
-	public O getO() {
-		return new O(ByteBuffer.wrap(this.getBytes()));
-	}
-
 	/**
 	 * @param eQcoinSeed the eQcoinSeed to set
 	 */
@@ -440,6 +435,33 @@ public class EQCHiveRoot extends EQCSerializable {
 	public EQCHiveRoot setChangeLog(ChangeLog changeLog) {
 		this.changeLog = changeLog;
 		return this;
+	}
+
+	@Override
+	public <T> void parse(T type) throws Exception {
+		Objects.requireNonNull(type);
+		byte[] bytes = null;
+		if(type instanceof O) {
+			bytes = ((O) type).getO().array();
+		}
+		else {
+			throw new IllegalStateException("Invalid Protocol type");
+		}
+		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+		parse(is);
+		EQCType.assertNoRedundantData(is);
+	}
+
+	@Override
+	public <T> T getProtocol(Class<T> type) throws Exception {
+		T protocol = null;
+		if(type.equals(O.class)) {
+			protocol = (T) new O(ByteBuffer.wrap(getBytes()));
+		}
+		else {
+			throw new IllegalStateException("Invalid Protocol type");
+		}
+		return protocol;
 	}
 	
 }

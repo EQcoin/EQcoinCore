@@ -47,6 +47,7 @@ import org.eqcoin.transaction.Transaction;
  * @email 10509759@qq.com
  */
 public abstract class IO extends EQCSerializable implements Protocol {
+	protected long ping;
 	
 	public IO() {
 		super();
@@ -101,6 +102,20 @@ public abstract class IO extends EQCSerializable implements Protocol {
 			throw new IllegalStateException("Invalid Protocol type");
 		}
 		return protocol;
+	}
+
+	/**
+	 * @return the ping
+	 */
+	public long getPing() {
+		return ping;
+	}
+
+	/**
+	 * @param ping the ping to set
+	 */
+	public void setPing(long ping) {
+		this.ping = ping;
 	}
 	
 }

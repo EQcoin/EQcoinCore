@@ -29,51 +29,50 @@
  */
 package org.eqcoin.rpc.service;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.avro.ipc.Server;
+import org.eqcoin.avro.O;
+import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.rpc.SP;
+import org.eqcoin.rpc.SPList;
+import org.eqcoin.serialization.EQCType;
+import org.eqcoin.service.PossibleSPService;
+import org.eqcoin.service.state.PossibleSPState;
 import org.eqcoin.util.Log;
+import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
- * @date Jun 29, 2019
+ * @date May 15, 2020
  * @email 10509759@qq.com
  */
-public abstract class EQCRPCService {
-	protected Server server;
-	protected final AtomicBoolean isRunning = new AtomicBoolean(false);
-
-	public synchronized void start() {
-		Log.info("Starting " + this.getClass().getSimpleName());
-		if (server != null) {
-			server.close();
+public class EQCRPCServiceImpl {
+	
+	public O registerSP(O sp) {
+		O info = null;
+		try {
+			PossibleSPState possibleSPState = new PossibleSPState();
+			possibleSPState.setSp(new SP(sp));
+			possibleSPState.setTime(System.currentTimeMillis());
+			Log.info("Begin offer possible SP: " + possibleSPState.getSp());
+			PossibleSPService.getInstance().offerState(possibleSPState);
+			info = Util.getDefaultInfo().getProtocol(O.class);
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
 		}
-	}
-	
-	public synchronized void stop() {
-		Log.info("Begin stop " + this.getClass().getSimpleName() + "'s NettyServer");
-		close();
-		Log.info(this.getClass().getSimpleName() + "'s NettyServer stopped...");
-	}
-	
-	private void close() {
-		if(server != null) {
-			server.close();
-			server = null;
-			isRunning.set(false);
-		}
-	}
-	
-	public final boolean isRunning() {
-		return isRunning.get();
+		return info;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#finalize()
-	 */
-	@Override
-	protected void finalize() throws Throwable {
-		close();
+	public O getSPList(O F) {
+		O o = null;
+		SPList spList = null;
+		try {
+			spList = Util.DB().getSPList(EQCType.parseID(F));
+			if(spList != null) {
+				o = spList.getProtocol(O.class);
+			}
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
+		}
+		return o;
 	}
 	
 }

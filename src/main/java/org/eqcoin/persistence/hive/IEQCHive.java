@@ -276,13 +276,13 @@ public interface IEQCHive {
 	public Passport getPassportSnapshot(ID passportID, ID height) throws Exception;
 
 	/**
-	 * Save relevant changed passport's old state in snapshot in H height. 
-	 * If in height H the passport was changed then the relevant passport have two
-	 * states in H. One is the old state which store in the global state another is
-	 * the new state which store in the mining/valid state. Before merge the new
-	 * state from mining/valid to global need backup the old state in the snapshot.
-	 * So when roll back to H can retrieve relevant passport in H's old state from
-	 * snapshot if any.
+	 * Save relevant changed passport's old state in snapshot in H height which is
+	 * relevant passport's state before H. If in height H the passport was changed
+	 * then the relevant passport have two states in H. One is the old state which
+	 * store in the global state another is the new state which store in the
+	 * mining/valid state. Before merge the new state from mining/valid to global
+	 * need backup the old state in the snapshot. So when roll back to H can
+	 * retrieve relevant passport in H's old state from snapshot if any.
 	 * 
 	 * Due to the new create passport in H only have one state so doen't need backup
 	 * it's old state. If from the check point height to tail height the passport

@@ -88,7 +88,7 @@ public final class MinerService extends EQCService {
 	private static MinerService instance;
 	private static ChangeLog changeLog;
 	private ID newEQCHiveHeight;
-	private AtomicBoolean isMining;
+	protected AtomicBoolean isMining;
 
 	private MinerService() {
 		super();
@@ -113,6 +113,7 @@ public final class MinerService extends EQCService {
 	 */
 	@Override
 	public synchronized void start() {
+		getInstance();
 		super.start();
 		worker.setPriority(Thread.MAX_PRIORITY);
 		startMining();
@@ -194,7 +195,6 @@ public final class MinerService extends EQCService {
 		Log.info("Begin mining new EQCHive local tail: " + tailHeight + " work thread state: " + worker.getState());
 
 		changeLog = new ChangeLog(newEQCHiveHeight, new Filter(Mode.MINING));
-		Util.DB().getConnection().commit();
 		savepoint = Util.DB().getConnection().setSavepoint();
 
 		newEQCHive = new EQCHive(Util.DB().getEQCHiveRootProof(tailHeight), newEQCHiveHeight, changeLog);
@@ -236,7 +236,7 @@ public final class MinerService extends EQCService {
 			if (!isRunning.get() || !isMining.get()) {
 				// Here must check if it has been stopped because of already received valid new
 				// EQCHive during mining
-				Log.info("The POW was finished but because of already received new EQCHive so 绅士的 exit");
+				Log.info("The POW was finished but because of already received new EQCHive so gentle exit");
 				return;
 			}
 
@@ -284,7 +284,9 @@ public final class MinerService extends EQCService {
 
 	private void resumeHalt() {
 		synchronized (name) {
+			Log.info("Begin resumeHalt");
 			name.notify();
+			Log.info("End resumeHalt");
 		}
 	}
 
@@ -295,4 +297,21 @@ public final class MinerService extends EQCService {
 		return newEQCHiveHeight;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.eqcoin.service.EQCService#pause()
+	 */
+	@Override
+	public void pause() {
+		synchronized (isPausing) {
+			Log.info(name + "Begining pause() thread state: " + worker.getState());
+			isPausing.set(true);
+		}
+		resumeHalt();
+		super.pause();
+	}
+	
+	public boolean isMining() {
+		return isMining.get();
+	}
+	
 }

@@ -7,7 +7,7 @@ package org.eqcoin.avro;
 
 @org.apache.avro.specific.AvroGenerated
 public interface EQCHiveSyncNetwork {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"EQCHiveSyncNetwork\",\"namespace\":\"org.eqcoin.avro\",\"types\":[{\"type\":\"record\",\"name\":\"O\",\"fields\":[{\"name\":\"o\",\"type\":\"bytes\"}]}],\"messages\":{\"registerSP\":{\"request\":[{\"name\":\"S\",\"type\":\"O\"}],\"response\":\"O\"},\"getSPList\":{\"request\":[{\"name\":\"F\",\"type\":\"O\"}],\"response\":\"O\"},\"getEQCHiveTail\":{\"request\":[],\"response\":\"O\"},\"getEQCHiveRootProof\":{\"request\":[{\"name\":\"H\",\"type\":\"O\"}],\"response\":\"O\"},\"getEQCHive\":{\"request\":[{\"name\":\"H\",\"type\":\"O\"}],\"response\":\"O\"}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"EQCHiveSyncNetwork\",\"namespace\":\"org.eqcoin.avro\",\"types\":[{\"type\":\"record\",\"name\":\"O\",\"fields\":[{\"name\":\"o\",\"type\":\"bytes\"}]}],\"messages\":{\"registerSP\":{\"request\":[{\"name\":\"S\",\"type\":\"O\"}],\"response\":\"O\"},\"getSPList\":{\"request\":[{\"name\":\"F\",\"type\":\"O\"}],\"response\":\"O\"},\"getEQCHiveTail\":{\"request\":[],\"response\":\"O\"},\"getEQCHiveRootProof\":{\"request\":[{\"name\":\"H\",\"type\":\"O\"}],\"response\":\"O\"},\"getEQCHiveRoot\":{\"request\":[{\"name\":\"H\",\"type\":\"O\"}],\"response\":\"O\"},\"getEQCHive\":{\"request\":[{\"name\":\"H\",\"type\":\"O\"}],\"response\":\"O\"}}}");
   /**
    */
   org.eqcoin.avro.O registerSP(org.eqcoin.avro.O S);
@@ -20,6 +20,9 @@ public interface EQCHiveSyncNetwork {
   /**
    */
   org.eqcoin.avro.O getEQCHiveRootProof(org.eqcoin.avro.O H);
+  /**
+   */
+  org.eqcoin.avro.O getEQCHiveRoot(org.eqcoin.avro.O H);
   /**
    */
   org.eqcoin.avro.O getEQCHive(org.eqcoin.avro.O H);
@@ -43,6 +46,10 @@ public interface EQCHiveSyncNetwork {
      * @throws java.io.IOException The async call could not be completed.
      */
     void getEQCHiveRootProof(org.eqcoin.avro.O H, org.apache.avro.ipc.Callback<org.eqcoin.avro.O> callback) throws java.io.IOException;
+    /**
+     * @throws java.io.IOException The async call could not be completed.
+     */
+    void getEQCHiveRoot(org.eqcoin.avro.O H, org.apache.avro.ipc.Callback<org.eqcoin.avro.O> callback) throws java.io.IOException;
     /**
      * @throws java.io.IOException The async call could not be completed.
      */

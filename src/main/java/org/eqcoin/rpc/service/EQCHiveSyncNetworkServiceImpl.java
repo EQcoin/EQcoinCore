@@ -55,33 +55,7 @@ import org.eqcoin.util.Util;
  * @date Jun 29, 2019
  * @email 10509759@qq.com
  */
-public class EQCHiveSyncNetworkServiceImpl implements EQCHiveSyncNetwork {
-
-	@Override
-	public O registerSP(O sp) {
-		O info = null;
-		try {
-			PossibleSPState possibleSPState = new PossibleSPState();
-			possibleSPState.setSp(new SP(sp));
-			possibleSPState.setTime(System.currentTimeMillis());
-			PossibleSPService.getInstance().offerState(possibleSPState);
-			info = Util.getDefaultInfo().getProtocol(O.class);
-		} catch (Exception e) {
-			Log.Error(e.getMessage());
-		}
-		return info;
-	}
-
-	@Override
-	public O getSPList(O m) {
-		O minerList = null;
-		try {
-			minerList = EQCHiveH2.getInstance().getSPList(EQCType.parseID(m.o.array())).getProtocol(O.class);
-		} catch (Exception e) {
-			Log.Error(e.getMessage());
-		}
-		return minerList;
-	}
+public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements EQCHiveSyncNetwork {
 
 	@Override
 	public O getEQCHiveTail() {
@@ -130,6 +104,21 @@ public class EQCHiveSyncNetworkServiceImpl implements EQCHiveSyncNetwork {
 			Log.Error(e.getMessage());
 		}
 		return rootProof;
+	}
+
+	@Override
+	public O getEQCHiveRoot(O H) {
+		O eqcHiveRoot = null;
+		EQCHiveRoot eqcHiveRoot2 = null;
+		try {
+			eqcHiveRoot2 = Util.DB().getEQCHiveRoot(new ID(H.getO().array()));
+			if(eqcHiveRoot2 != null) {
+				eqcHiveRoot = eqcHiveRoot2.getProtocol(O.class);
+			}
+		} catch (Exception e) {
+			Log.Error(e.getMessage());
+		}
+		return eqcHiveRoot;
 	}
 	
 }

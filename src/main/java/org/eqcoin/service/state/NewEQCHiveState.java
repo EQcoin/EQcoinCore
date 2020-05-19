@@ -41,7 +41,7 @@ public class NewEQCHiveState extends EQCServiceState {
 	
 	public NewEQCHiveState() throws Exception {
 		super(State.BROADCASTNEWEQCHIVE);
-		newEQCHive =  new NewEQCHive();;
+		newEQCHive =  new NewEQCHive();
 	}
 	/**
 	 * @return the newEQCHive

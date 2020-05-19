@@ -223,7 +223,6 @@ public class ChangeLog {
 	}
 	
 	public void buildPassportAndLivelyLockProofBase() throws Exception {
-		Log.info("Begin buildPassportAndLockProofBase");
 		Passport passport = null;
 		MerkleTree passportMerkleTree = null;
 		Vector<byte[]> passportList = new Vector<>();
@@ -285,7 +284,6 @@ public class ChangeLog {
 	}
 
 	public void buildForbiddenLockProofBase() throws Exception {
-		Log.info("Begin buildForbiddenLockProofBase");
 		LockMate lock = null;
 		MerkleTree merkleTree = null;
 		Vector<byte[]> forbiddenLockBytesList = new Vector<>();
@@ -371,14 +369,16 @@ public class ChangeLog {
 			Util.DB().saveEQCHiveTailHeight(eqcHive.getHeight());
 			Util.DB().deleteTransactionsInPool(eqcHive);
 			if(savepoint != null) {
+				Log.info("Begin commit at EQCHive No." + eqcHive.getHeight());
 				Util.DB().getConnection().commit();
+				Log.info("Commit successful at EQCHive No." + eqcHive.getHeight());
 			}
 		} catch (Exception e) {
 			Log.Error("During update global state error occur: " + e + " savepoint: " + savepoint);
 			if (savepoint != null) {
-				Log.info("Begin rollback");
+				Log.info("Begin rollback at EQCHive No." + eqcHive.getHeight());
 				Util.DB().getConnection().rollback(savepoint);
-				Log.info("Rollback successful");
+				Log.info("Rollback successful at EQCHive No." + eqcHive.getHeight());
 			}
 			throw e;
 		}

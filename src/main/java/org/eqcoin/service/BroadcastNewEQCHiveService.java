@@ -70,6 +70,15 @@ public class BroadcastNewEQCHiveService extends EQCService {
 	}
 
 	/* (non-Javadoc)
+	 * @see org.eqcoin.service.EQCService#start()
+	 */
+	@Override
+	public synchronized void start() {
+		getInstance();
+		super.start();
+	}
+
+	/* (non-Javadoc)
 	 * @see com.eqchains.service.EQCService#onDefault(com.eqchains.service.state.EQCServiceState)
 	 */
 	@Override
@@ -82,7 +91,7 @@ public class BroadcastNewEQCHiveService extends EQCService {
 				try {
 					Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getHeight() + " to SINGULARITY_SP");
 					Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), Util.SINGULARITY_SP);
-					Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive() + " to SINGULARITY_SP result: " + info.getCode());
+					Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getHeight() + " to SINGULARITY_SP result: " + info.getCode());
 				}
 				catch (Exception e) {
 					Log.Error(e.getMessage());

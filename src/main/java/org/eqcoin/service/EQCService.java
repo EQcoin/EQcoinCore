@@ -54,6 +54,7 @@ public abstract class EQCService implements Runnable {
 	protected Thread worker;
 	protected AtomicBoolean isRunning;
 	protected AtomicBoolean isPausing;
+	private Object isPaused;
 	protected AtomicBoolean isSleeping;
 	protected AtomicBoolean isWaiting;
 //	protected AtomicBoolean isStopped;
@@ -64,6 +65,7 @@ public abstract class EQCService implements Runnable {
 		pendingMessage = new PriorityBlockingQueue<>(Util.HUNDREDPULS);
 		isRunning = new AtomicBoolean(false);
 		isPausing = new AtomicBoolean(false);
+		isPaused = new Object();
 		isSleeping = new AtomicBoolean(false);
 		isWaiting = new AtomicBoolean(false);
 //		isStopped = new AtomicBoolean(true);
@@ -92,16 +94,15 @@ public abstract class EQCService implements Runnable {
 			worker = new Thread(this);
 			Log.info(name + " create new thread successful thread ID: " + worker.getId());
 			worker.setPriority(Thread.NORM_PRIORITY);
-//			worker.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-//				public void uncaughtException(Thread t, Throwable e) {
-//					Log.Error(name + "thread state: " + worker.getState() + " Uncaught Exception occur: " + e.getMessage());
-//					isStopped.set(true);
-//					Log.info(name + "beginning stop " + name);
-//					stop();
-//					Log.info(name + "beginning start " + name);
-//					start();
-//				}
-//			});
+			worker.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+				public void uncaughtException(Thread t, Throwable e) {
+					Log.Error(name + "thread state: " + worker.getState() + " Uncaught Exception occur: " + e.getMessage());
+					Log.info(name + "beginning stop " + name);
+					stop();
+					Log.info(name + "beginning start " + name);
+					start();
+				}
+			});
 			name = this.getClass().getSimpleName() + " thread ID: " + worker.getId() + " ";
 			worker.start();
 //			synchronized (isRunning) {
@@ -140,10 +141,19 @@ public abstract class EQCService implements Runnable {
 		offerState(new EQCServiceState(State.STOP));
 	}
 
+	// 20200516 here isn't synchronized exists bug need waiting till the service is really paused
 	public void pause() {
 		synchronized (isPausing) {
-			Log.info(name + "begining pause thread state: " + worker.getState());
+			Log.info(name + "Begining pause() thread state: " + worker.getState());
 			isPausing.set(true);
+		}
+		synchronized (isPaused) {
+			try {
+				isPaused.wait();
+				Log.info(name + "End of pause(), isPausing: " + isPausing.get());
+			} catch (InterruptedException e) {
+				Log.Error(e.getMessage());
+			}
 		}
 	}
 
@@ -159,12 +169,13 @@ public abstract class EQCService implements Runnable {
 						Log.info(name + "paused at " + phase[0]);
 					}
 					Log.info(name + "is pausing now thread state: " + worker.getState());
+					synchronized (isPaused) {
+						isPaused.notify();
+					}
 					isPausing.wait();
 					isPausing.set(false);
-					Log.info(name + "end of pause");
+					Log.info(name + "End of onPause(), isPausing: " + isPausing.get());
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 					Log.Error(e.getMessage());
 				}
 			}
@@ -173,7 +184,8 @@ public abstract class EQCService implements Runnable {
 
 	public void resumePause() {
 		synchronized (isPausing) {
-			Log.info(name + "resume pause thread state: " + worker.getState());
+			isPausing.set(false);
+			Log.info(name + "resumePause() thread state: " + worker.getState() + " isPausing: " + isPausing);
 			isPausing.notify();
 		}
 	}

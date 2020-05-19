@@ -29,18 +29,11 @@
  */
 package org.eqcoin.rpc.client;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.eqcoin.hive.EQCHive;
-import org.eqcoin.hive.EQCHiveRoot;
 import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
-import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
-import org.eqcoin.rpc.TailInfo;
-import org.eqcoin.util.ID;
-import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -50,10 +43,10 @@ import org.junit.jupiter.api.Test;
 
 /**
  * @author Xun Wang
- * @date May 11, 2020
+ * @date May 13, 2020
  * @email 10509759@qq.com
  */
-class EQCHiveSyncNetworkClientTest {
+class EQCTransactionNetworkClientTest {
 
 	/**
 	 * @throws java.lang.Exception
@@ -84,110 +77,76 @@ class EQCHiveSyncNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#registerSP(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#registerSP(org.eqcoin.rpc.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
 	final void testRegisterSP() throws Exception {
 		Info info = null;
-		info = EQCHiveSyncNetworkClient.registerSP(Util.SINGULARITY_SP);
+		info = EQCTransactionNetworkClient.registerSP(Util.SINGULARITY_SP);
 		assertNotNull(info);
 		assertTrue(info.isSanity());
 		assertEquals(info.getCode(), Code.OK);
-		Log.info(info.toString());
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getSPList(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getSPList(org.eqcoin.rpc.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
 	final void testGetSPList() throws Exception {
 		SPList spList = null;
-		spList = EQCHiveSyncNetworkClient.getSPList(Util.SINGULARITY_SP);
+		spList = EQCTransactionNetworkClient.getSPList(Util.SINGULARITY_SP);
 		assertNotNull(spList);
 		assertTrue(spList.isSanity());
-		Log.info(spList.toString());
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getEQCHiveTail(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#sendTransaction(org.eqcoin.transaction.Transaction, org.eqcoin.rpc.SP)}.
 	 */
 	@Test
-	final void testGetEQCHiveTail() {
-		TailInfo tailInfo = null;
-		try {
-			tailInfo = EQCHiveSyncNetworkClient.getEQCHiveTail(Util.SINGULARITY_SP);
-			assertNotNull(tailInfo);
-			assertTrue(tailInfo.isSanity());
-			Log.info(tailInfo.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	final void testSendTransaction() {
+		fail("Not yet implemented"); // TODO
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getEQCHive(org.eqcoin.util.ID, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getLockInfo(org.eqcoin.rpc.LockStatus, org.eqcoin.rpc.SP)}.
 	 */
 	@Test
-	final void testGetEQCHive() {
-		EQCHive eqcHive = null;
-		try {
-			eqcHive = EQCHiveSyncNetworkClient.getEQCHive(ID.FIVE, Util.SINGULARITY_SP);
-			assertNotNull(eqcHive);
-			assertTrue(eqcHive.isSanity());
-			Log.info(eqcHive.toString());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	final void testGetLockInfo() {
+		fail("Not yet implemented"); // TODO
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getEQCRootProof(org.eqcoin.util.ID, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getPendingTransactionList(org.eqcoin.util.ID, org.eqcoin.rpc.SP)}.
 	 */
 	@Test
-	final void testGetEQCHiveRootProof() {
-		byte[] proof = null;
-		try {
-			proof = EQCHiveSyncNetworkClient.getEQCHiveRootProof(ID.FIVE, Util.SINGULARITY_SP);
-			assertNotNull(proof);
-			assertEquals(proof.length, Util.SHA3_512_LEN);
-			Log.info(Util.dumpBytes(proof, 16));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	@Test
-	final void testGetEQCHiveRoot() {
-		EQCHiveRoot eqcHiveRoot = null;
-		try {
-			eqcHiveRoot = EQCHiveSyncNetworkClient.getEQCHiveRoot(ID.FIVE, Util.SINGULARITY_SP);
-			assertNotNull(eqcHiveRoot);
-			assertTrue(eqcHiveRoot.isSanity());
-			Log.info(eqcHiveRoot.toString());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	final void testGetPendingTransactionList() {
+		fail("Not yet implemented"); // TODO
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCHiveSyncNetworkClient#getFastestServer(org.eqcoin.rpc.SPList)}.
-	 * @throws Exception 
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#ping(org.eqcoin.rpc.SP)}.
 	 */
 	@Test
-	final void testGetFastestServer() throws Exception {
-		SP fastestSP = null;
-		SPList spList = new SPList();
-		spList.addSP(Util.LOCAL_SP);
-		spList.addSP(Util.SINGULARITY_SP);
-		fastestSP = EQCHiveSyncNetworkClient.getFastestServer(spList);
-		assertNotNull(fastestSP);
-		assertTrue(fastestSP.isSanity());
-		Log.info(fastestSP.toString());
+	final void testPing() {
+		fail("Not yet implemented"); // TODO
+	}
+
+	/**
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getTransactionIndexList(org.eqcoin.rpc.SP)}.
+	 */
+	@Test
+	final void testGetTransactionIndexList() {
+		fail("Not yet implemented"); // TODO
+	}
+
+	/**
+	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getTransactionList(org.eqcoin.rpc.TransactionIndexList, org.eqcoin.rpc.SP)}.
+	 */
+	@Test
+	final void testGetTransactionList() {
+		fail("Not yet implemented"); // TODO
 	}
 
 }

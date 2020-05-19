@@ -275,10 +275,11 @@ public class EQCHiveH2 implements IEQCHive {
 					+ ")");
 			
 			// Create EQcoin Network table
-			statement.execute("CREATE TABLE IF NOT EXISTS EQCNETWORK ("
+			statement.execute("CREATE TABLE IF NOT EXISTS SP_LIST ("
 					+ "key BIGINT PRIMARY KEY AUTO_INCREMENT, "
 					+ "ip  VARCHAR,"
 					+ "flag TINYINT,"
+					+ "protocol_version TINYINT,"
 					+ "counter TINYINT,"
 					+ "sync_time BIGINT"
 					+ ")");
@@ -636,7 +637,7 @@ public class EQCHiveH2 implements IEQCHive {
 		Passport passport = null;
 		
 		PreparedStatement preparedStatement = connection.prepareStatement(
-				"SELECT * FROM PASSPORT_SNAPSHOT WHERE id=? AND snapshot_height >=? ORDER BY snapshot_height LIMIT 1");
+				"SELECT * FROM PASSPORT_SNAPSHOT WHERE id=? AND snapshot_height >? ORDER BY snapshot_height LIMIT 1");
 		preparedStatement.setLong(1, passportID.longValue());
 		preparedStatement.setLong(2, height.longValue());
 		ResultSet resultSet = preparedStatement.executeQuery();
@@ -701,7 +702,7 @@ public class EQCHiveH2 implements IEQCHive {
 	public boolean isSPExists(SP sp) throws SQLException {
 		boolean isSucc = false;
 		PreparedStatement preparedStatement = null;
-			preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE ip=? AND flag=?");
+			preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE ip=? AND flag=?");
 			preparedStatement.setString(1, sp.getIp());
 			preparedStatement.setInt(2, sp.getFlag().intValue());
 		ResultSet resultSet = preparedStatement.executeQuery();
@@ -716,19 +717,21 @@ public class EQCHiveH2 implements IEQCHive {
 		int result = 0;
 		PreparedStatement preparedStatement = null;
 		if (isSPExists(sp)) {
-			preparedStatement = connection.prepareStatement("UPDATE EQCNETWORK SET flag = ?, counter = ? where ip = ?");
+			preparedStatement = connection.prepareStatement("UPDATE SP_LIST SET flag = ?, protocol_version = ?, counter = ? where ip = ?");
 			preparedStatement.setByte(1, sp.getFlag().byteValue());
-			preparedStatement.setByte(2, (byte) 0);
-			preparedStatement.setString(3, sp.getIp());
+			preparedStatement.setByte(2, sp.getProtocolVersion().byteValue());
+			preparedStatement.setByte(3, (byte) 0);
+			preparedStatement.setString(4, sp.getIp());
 			result = preparedStatement.executeUpdate();
 //					Log.info("UPDATE: " + result);
 		} else {
 			preparedStatement = connection
-					.prepareStatement("INSERT INTO EQCNETWORK (ip, flag, counter, sync_time) VALUES (?, ?, ?, ?)");
+					.prepareStatement("INSERT INTO SP_LIST (ip, flag, protocol_version, counter, sync_time) VALUES (?, ?, ?, ?, ?)");
 			preparedStatement.setString(1, sp.getIp());
 			preparedStatement.setByte(2, sp.getFlag().byteValue());
-			preparedStatement.setByte(3, (byte) 0);
-			preparedStatement.setLong(4, 0);
+			preparedStatement.setByte(3, sp.getProtocolVersion().byteValue());
+			preparedStatement.setByte(4, (byte) 0);
+			preparedStatement.setLong(5, 0);
 			result = preparedStatement.executeUpdate();
 //				Log.info("INSERT: " + result);
 		}
@@ -738,7 +741,7 @@ public class EQCHiveH2 implements IEQCHive {
 	public boolean deleteSP(SP sp) throws SQLException {
 		int result = 0;
 		PreparedStatement preparedStatement;
-		preparedStatement = connection.prepareStatement("DELETE FROM EQCNETWORK WHERE ip=?");
+		preparedStatement = connection.prepareStatement("DELETE FROM SP_LIST WHERE ip=?");
 		preparedStatement.setString(1, sp.getIp());
 		result = preparedStatement.executeUpdate();
 		Log.info("result: " + result);
@@ -753,26 +756,26 @@ public class EQCHiveH2 implements IEQCHive {
 		ResultSet resultSet = null;
 		byte flagValue = flag.byteValue();
 		if(flagValue == 3 || flagValue == 5 || flagValue == 6 || flagValue == 7) {
-			preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE flag=?");
+			preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE flag=?");
 			preparedStatement.setByte(1, flagValue);
 		}
 		else {
 			if(flagValue == 1) {
-				preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE flag=? or flag=? or flag=?  or flag=?");
+				preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE flag=? or flag=? or flag=?  or flag=?");
 				preparedStatement.setByte(1, (byte) 1);
 				preparedStatement.setByte(2, (byte) 3);
 				preparedStatement.setByte(3, (byte) 5);
 				preparedStatement.setByte(4, (byte) 7);
 			}
 			else if(flagValue == 2) {
-				preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE flag=? or flag=? or flag=?  or flag=?");
+				preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE flag=? or flag=? or flag=?  or flag=?");
 				preparedStatement.setByte(1, (byte) 2);
 				preparedStatement.setByte(2, (byte) 3);
 				preparedStatement.setByte(3, (byte) 6);
 				preparedStatement.setByte(4, (byte) 7);
 			}
 			else if(flagValue == 4) {
-				preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE flag=? or flag=? or flag=?  or flag=?");
+				preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE flag=? or flag=? or flag=?  or flag=?");
 				preparedStatement.setByte(1, (byte) 4);
 				preparedStatement.setByte(2, (byte) 5);
 				preparedStatement.setByte(3, (byte) 6);
@@ -784,6 +787,7 @@ public class EQCHiveH2 implements IEQCHive {
 			sp = new SP();
 			sp.setFlag(new ID(resultSet.getByte("flag")));
 			sp.setIp(resultSet.getString("ip"));
+			sp.setProtocolVersion(new ID(resultSet.getByte("protocol_version")));
 			spList.addSP(sp);
 		}
 		return spList;
@@ -845,7 +849,7 @@ public class EQCHiveH2 implements IEQCHive {
 		int result = 0;
 		PreparedStatement preparedStatement = null;
 		if (isSPExists(sp)) {
-			preparedStatement = connection.prepareStatement("UPDATE EQCNETWORK SET flag = ?, sync_time = ? where ip = ?");
+			preparedStatement = connection.prepareStatement("UPDATE SP_LIST SET flag = ?, sync_time = ? where ip = ?");
 			preparedStatement.setByte(1, sp.getFlag().byteValue());
 			preparedStatement.setLong(2, syncTime.longValue());
 			preparedStatement.setString(3, sp.getIp());
@@ -853,7 +857,7 @@ public class EQCHiveH2 implements IEQCHive {
 //					Log.info("UPDATE: " + result);
 		} else {
 			preparedStatement = connection
-					.prepareStatement("INSERT INTO EQCNETWORK (ip, flag, counter, sync_time) VALUES (?, ?, ?, ?)");
+					.prepareStatement("INSERT INTO SP_LIST (ip, flag, counter, sync_time) VALUES (?, ?, ?, ?)");
 			preparedStatement.setString(1, sp.getIp());
 			preparedStatement.setByte(2, sp.getFlag().byteValue());
 			preparedStatement.setByte(3, (byte) 0);
@@ -867,7 +871,7 @@ public class EQCHiveH2 implements IEQCHive {
 	@Override
 	public ID getSyncTime(SP sp) throws SQLException, Exception {
 		ID sync_time = null;
-		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE ip=?");
+		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE ip=?");
 		preparedStatement.setString(1, sp.getIp());
 		ResultSet resultSet = preparedStatement.executeQuery();
 		while (resultSet.next()) {
@@ -881,14 +885,14 @@ public class EQCHiveH2 implements IEQCHive {
 		int result = 0;
 		PreparedStatement preparedStatement = null;
 		if (isSPExists(sp)) {
-			preparedStatement = connection.prepareStatement("UPDATE EQCNETWORK SET flag = ?, counter = ? where ip = ?");
+			preparedStatement = connection.prepareStatement("UPDATE SP_LIST SET flag = ?, counter = ? where ip = ?");
 			preparedStatement.setByte(1, sp.getFlag().byteValue());
 			preparedStatement.setByte(2, counter);
 			preparedStatement.setString(3, sp.getIp());
 			result = preparedStatement.executeUpdate();
 //					Log.info("UPDATE: " + result);
 		} else {
-			preparedStatement = connection.prepareStatement("INSERT INTO EQCNETWORK (ip, flag, counter, sync_time) VALUES (?, ?, ?, ?)");
+			preparedStatement = connection.prepareStatement("INSERT INTO SP_LIST (ip, flag, counter, sync_time) VALUES (?, ?, ?, ?)");
 			preparedStatement.setString(1, sp.getIp());
 			preparedStatement.setByte(2, sp.getFlag().byteValue());
 			preparedStatement.setByte(3, counter);
@@ -902,7 +906,7 @@ public class EQCHiveH2 implements IEQCHive {
 	@Override
 	public byte getSPCounter(SP ip) throws SQLException, Exception {
 		byte counter = 0;
-		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM EQCNETWORK WHERE ip=?");
+		PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM SP_LIST WHERE ip=?");
 		preparedStatement.setString(1, ip.getIp());
 		ResultSet resultSet = preparedStatement.executeQuery();
 		while (resultSet.next()) {
@@ -1239,7 +1243,7 @@ public class EQCHiveH2 implements IEQCHive {
 		Lock lock = null;
 		byte[] publickey = null;
 		PreparedStatement preparedStatement = connection.prepareStatement(
-				"SELECT * FROM LOCK_SNAPSHOT WHERE id=? AND snapshot_height >=? ORDER BY snapshot_height LIMIT 1");
+				"SELECT * FROM LOCK_SNAPSHOT WHERE id=? AND snapshot_height >? ORDER BY snapshot_height LIMIT 1");
 		preparedStatement.setLong(1, lockID.longValue());
 		preparedStatement.setLong(2, height.longValue());
 		ResultSet resultSet = preparedStatement.executeQuery();

@@ -79,38 +79,22 @@ public class SPList extends IO {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	
 
 	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#parseHeader(java.io.ByteArrayInputStream)
+	 * @see org.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#parseBody(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
+	public void parse(ByteArrayInputStream is) throws Exception {
 		spList = EQCType.parseArray(is, new SP());
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#getHeaderBytes()
+	 * @see org.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
 	 */
 	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqchains.serialization.EQCInheritable#getBodyBytes()
-	 */
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		os.write(EQCType.eqcSerializableListToArray(spList));
 		return os;
 	}
@@ -141,6 +125,14 @@ public class SPList extends IO {
 	
 	public boolean isEmpty() {
 		return spList.isEmpty();
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "{\"SPList\":{\"spList\":\"" + spList + "\"}}";
 	}
 	
 }

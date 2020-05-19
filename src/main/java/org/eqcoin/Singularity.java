@@ -31,10 +31,17 @@ package org.eqcoin;
 
 import java.awt.RenderingHints.Key;
 
+import org.eqcoin.hive.EQCHive;
+import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.rpc.Info;
+import org.eqcoin.rpc.NewEQCHive;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.TailInfo;
 import org.eqcoin.rpc.client.EQCHiveSyncNetworkClient;
+import org.eqcoin.rpc.client.EQCMinerNetworkClient;
 import org.eqcoin.service.EQCServiceProvider;
+import org.eqcoin.service.MinerService;
+import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 import org.eqcoin.util.Util.SP_MODE;
@@ -52,6 +59,7 @@ public class Singularity {
 //			Log.info(Util.DB().getPassport(ID.ZERO, Mode.GLOBAL).toString());
 //			Log.info(Util.DB().getEQCHive(ID.SEVEN).toString());
 			Util.init();
+//			EQCHiveH2.getInstance().saveEQCHiveFile(new EQCHive(Util.DB().getEQCHive(ID.ZERO)));
 //			Log.info("TH: " + Util.DB().getEQCHiveTailHeight());
 			Util.IsDeleteTransactionInPool = true;
 			Util.LOCAL_SP.setIp(args[0]);

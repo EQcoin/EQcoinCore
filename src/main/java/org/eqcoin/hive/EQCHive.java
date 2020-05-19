@@ -359,12 +359,28 @@ public class EQCHive extends EQCSerializable {
 
 	@Override
 	public boolean isSanity() throws Exception {
-		if (eqcHiveRoot == null || !eqcHiveRoot.isSanity() || eQcoinSeed == null || eQcoinSeed.isSanity()) {
-			Log.Error("eqcHiveRoot is null or isn't sanity: " + eqcHiveRoot);
+		if (eqcHiveRoot == null) {
+			Log.Error("eqcHiveRoot == null");
 			return false;
 		}
-		if (eQcoinSeed == null || eQcoinSeed.isSanity()) {
-			Log.Error("eQcoinSeed is null or isn't sanity: " + eQcoinSeed);
+		if(!eqcHiveRoot.isSanity()) {
+			Log.Error("!eqcHiveRoot.isSanity()");
+			return false;
+		}
+		if(eQcoinSeed == null) {
+			Log.Error("eQcoinSeed == null");
+			return false;
+		}
+		if(!eQcoinSeed.isSanity()) {
+			Log.Error("!eQcoinSeed.isSanity()");
+			return false;
+		}
+		if(eQcoinSeed == null ) {
+			Log.Error("eQcoinSeed == null");
+			return false;
+		}
+		if (!eQcoinSeed.isSanity()) {
+			Log.Error("!eQcoinSeed.isSanity()");
 			return false;
 		}
 		return true;

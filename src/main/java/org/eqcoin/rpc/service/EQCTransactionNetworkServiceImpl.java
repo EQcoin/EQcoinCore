@@ -41,15 +41,19 @@ import org.eqcoin.lock.LockTool;
 import org.eqcoin.passport.Passport;
 import org.eqcoin.persistence.hive.EQCHiveH2;
 import org.eqcoin.rpc.Code;
+import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.LockInfo;
 import org.eqcoin.rpc.LockStatus;
 import org.eqcoin.rpc.Protocol;
+import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.TransactionIndexList;
 import org.eqcoin.rpc.TransactionList;
 import org.eqcoin.rpc.LockStatus.LOCKSTATUS;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.service.PendingTransactionService;
+import org.eqcoin.service.PossibleSPService;
 import org.eqcoin.service.state.PendingTransactionState;
+import org.eqcoin.service.state.PossibleSPState;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -61,7 +65,7 @@ import org.eqcoin.wallet.WalletStatus.Status;
  * @date Jun 30, 2019
  * @email 10509759@qq.com
  */
-public class EQCTransactionNetworkServiceImpl implements EQCTransactionNetwork {
+public class EQCTransactionNetworkServiceImpl extends EQCRPCServiceImpl implements EQCTransactionNetwork {
 
 	/* (non-Javadoc)
 	 * @see com.eqchains.avro.TransactionNetwork#ping(com.eqchains.avro.IO)
@@ -75,19 +79,6 @@ public class EQCTransactionNetworkServiceImpl implements EQCTransactionNetwork {
 			Log.Error(e.getMessage());
 		}
 		return info;
-	}
-
-	@Override
-	public O getSPList(O m) {
-		O minerList = null;
-		try {
-			minerList = EQCHiveH2.getInstance().getSPList(EQCType.parseID(m.o.array())).getProtocol(O.class);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return minerList;
 	}
 
 	/* (non-Javadoc)
@@ -196,12 +187,6 @@ public class EQCTransactionNetworkServiceImpl implements EQCTransactionNetwork {
 			Log.Error(e.getMessage());
 		}
 		return io;
-	}
-
-	@Override
-	public O registerSP(O S) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }
