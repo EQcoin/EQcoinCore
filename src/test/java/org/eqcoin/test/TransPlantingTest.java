@@ -27,58 +27,65 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.wallet.persistence;
+package org.eqcoin.test;
 
-import java.sql.Connection;
-import java.util.Vector;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.eqcoin.lock.Lock;
+import org.eqcoin.changelog.ChangeLog;
+import org.eqcoin.changelog.Filter;
+import org.eqcoin.passport.AssetPassport;
+import org.eqcoin.passport.Passport;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.transaction.Transaction;
+import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.util.ID;
-import org.eqcoin.wallet.WalletLock;
-import org.eqcoin.wallet.WalletPassport;
+import org.eqcoin.util.Log;
+import org.eqcoin.util.Util;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Xun Wang
- * @date May 5, 2020
+ * @date May 30, 2020
  * @email 10509759@qq.com
  */
-public interface EQCWallet {
+public class TransPlantingTest {
 	
-	public Connection getConnection() throws Exception;
+	private static ChangeLog changeLog;
 	
-	// Release the relevant database resource
-	public boolean close() throws Exception;
-
-	public boolean saveLock(WalletLock walletLock) throws Exception;
-
-	public WalletLock getLock(ID id) throws Exception;
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@BeforeAll
+	static void setUpBeforeClass() throws Exception {
+		Log.info("setUpBeforeClass");
+		Util.init();
+		Util.recoveryGlobalStateTo(ID.ZERO);
+		changeLog = new ChangeLog(ID.ONE, new Filter(Mode.MINING));
+		changeLog.setCoinbaseTransaction(Util.generateTransferCoinbaseTransaction(ID.ONE, changeLog));
+	}
 	
-//	public WalletLock getLock(Lock eqcLock, Mode mode) throws Exception;
-	
-	public Vector<WalletLock> getLockList() throws Exception;
-	
-	public boolean isLockExists(ID id) throws Exception;
-	
-	public ID isLockExists(Lock lock) throws Exception;
-
-	public boolean deleteLock(ID id) throws Exception;
-
-	public boolean savePassport(WalletPassport walletPassport) throws Exception;
-	
-	public WalletPassport getPassport(ID id) throws Exception;
-
-//	public Passport getPassportFromLockId(ID lockId, Mode mode) throws Exception;
-	
-	public boolean isPassportExists(ID id) throws Exception;
-	
-	public boolean deletePassport(ID id) throws Exception;
-
-	public boolean saveTransactionInPool(Transaction transaction) throws Exception;
-
-	public boolean deleteTransactionInPool(Transaction transaction) throws Exception;
-	
-	public Vector<Transaction> getPendingTransactionListInPool(ID id) throws Exception;
-	
+	@Test
+	void regresstionTest() {
+		try {
+			Passport passport = Util.GS().getPassportFromLockMateId(ID.ZERO);
+			Transaction transaction = TransFactory.Zion(0, 1000, TRANSACTION_PRIORITY.ASAP, 2);
+			transaction.init(changeLog);
+			assertTrue(transaction.planting());
+			passport = null;
+			passport = Util.GS().getPassport(new ID(2));
+			assertNotNull(passport);
+			assertTrue(passport instanceof AssetPassport);
+			assertEquals(passport.getId(), ID.TWO);
+			assertEquals(passport.getLockID(), ID.TWO);
+			assertEquals(passport.getBalance(), Util.getValue(1000));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 	
 }

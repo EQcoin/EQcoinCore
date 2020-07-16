@@ -66,11 +66,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.keystore.Keystore;
+import org.eqcoin.lock.LockMate;
+import org.eqcoin.lock.publickey.Publickey;
 import org.eqcoin.passport.EQcoinRootPassport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.rpc.NewEQCHive;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.NewEQCHiveState;
@@ -116,7 +118,8 @@ public final class MinerService extends EQCService {
 		getInstance();
 		super.start();
 		worker.setPriority(Thread.MAX_PRIORITY);
-		startMining();
+//		startMining();
+		isMining.set(true);
 		Log.info(name + "started");
 	}
 
@@ -190,21 +193,21 @@ public final class MinerService extends EQCService {
 		Savepoint savepoint = null;
 
 		// Begin making new EQCHive
-		tailHeight = Util.DB().getEQCHiveTailHeight();
+		tailHeight = Util.GS().getEQCHiveTailHeight();
 		newEQCHiveHeight = tailHeight.getNextID();
 		Log.info("Begin mining new EQCHive local tail: " + tailHeight + " work thread state: " + worker.getState());
 
 		changeLog = new ChangeLog(newEQCHiveHeight, new Filter(Mode.MINING));
-		savepoint = Util.DB().getConnection().setSavepoint();
+		savepoint = Util.GS().getConnection().setSavepoint();
 
-		newEQCHive = new EQCHive(Util.DB().getEQCHiveRootProof(tailHeight), newEQCHiveHeight, changeLog);
+		newEQCHive = new EQCHive(Util.GS().getEQCHiveRootProof(tailHeight), newEQCHiveHeight, changeLog);
 		newEQCHive.plantingEQcoinSeed();
 
 		Log.info("New EQCHive planting successful height: " + newEQCHiveHeight);
 //		Log.info(newEQCBlock.toString());
 		Log.info("Size: " + newEQCHive.getBytes().length);
-		Log.info("New EQCHive have " + newEQCHive.getEQcoinSeed().getNewTransactionList().size() + " new transactions");
-		Log.info("New EQCHive have " + changeLog.getForbiddenLockList().size() + " forbidden locks");
+		Log.info("New EQCHive have " + newEQCHive.getEQCoinSeed().getNewTransactionList().size() + " new transactions");
+		Log.info("New EQCHive have " + changeLog.getFilter().getForbiddenLockList().size() + " forbidden locks");
 
 		// Use this only for debug when after test will remove this
 		try {
@@ -248,7 +251,7 @@ public final class MinerService extends EQCService {
 
 			// Check if current local tail is the mining base in case which has been changed
 			// by EQCServiceProvider
-			if (newEQCHiveHeight.isNextID(Util.DB().getEQCHiveTailHeight())) { // Here must retrieve the lively tail height
+			if (newEQCHiveHeight.isNextID(Util.GS().getEQCHiveTailHeight())) { // Here must retrieve the lively tail height
 				Log.info("Still on the tail just broadcast it");
 				try {
 					// Send new EQCHive to EQCMinerNetwork and EQCHiveSyncNetwork if at here exists
@@ -265,7 +268,7 @@ public final class MinerService extends EQCService {
 				
 			} else {
 				Log.Error("Current mining height is: " + newEQCHiveHeight + " but local tail height changed to: "
-						+ Util.DB().getEQCHiveTailHeight() + " so have to discard this POW");
+						+ Util.GS().getEQCHiveTailHeight() + " so have to discard this POW");
 			}
 			Log.info("End synchronized (EQCService.class)");
 		}

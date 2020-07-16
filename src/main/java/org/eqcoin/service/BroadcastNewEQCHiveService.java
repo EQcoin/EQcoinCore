@@ -33,7 +33,7 @@ import java.io.IOException;
 
 import org.eqcoin.avro.O;
 import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
@@ -97,7 +97,7 @@ public class BroadcastNewEQCHiveService extends EQCService {
 					Log.Error(e.getMessage());
 				}
 			}
-			SPList spList = Util.DB().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK));
+			SPList spList = Util.MC().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK));
 			if(!spList.isEmpty()) {
 				for(SP sp:spList.getSPList()) {
 					if(!Util.LOCAL_SP.equals(sp)) {

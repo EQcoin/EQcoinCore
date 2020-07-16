@@ -128,10 +128,10 @@ public class ModerateOPTransaction extends Transaction {
 	
 	public String toInnerJson() {
 		return
-		"\"ModerateOPTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n"
+		"\"ModerateOPTransaction\":" + "\n{\n" + statusInnerJson() + ",\n"
 				+ operation.toInnerJson() + ",\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
-				+ "\"EQCWitness\":" + eqcWitness.toInnerJson() 
+				+ "\"EQCWitness\":" + witness.toInnerJson() 
 				+ "\n" + "}";
 	}
 	
@@ -164,7 +164,10 @@ public class ModerateOPTransaction extends Transaction {
 			Log.Error("!operation.isSanity()");
 			return false;
 		}
-		
+		if(!getTxFee().isSanity()) {
+			Log.Error("!getTxFee().isSanity()");
+			return false;
+		}
 		return true;
 	}
 	

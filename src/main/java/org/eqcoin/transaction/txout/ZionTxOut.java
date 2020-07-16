@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.transaction;
+package org.eqcoin.transaction.txout;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,14 +43,16 @@ import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
  * @date Sep 28, 2018
  * @email 10509759@qq.com
  */
-public class ZionTxOut extends Tx {
+public class ZionTxOut extends EQCSerializable {
 	protected Lock lock;
+	protected Value value;
 	
 	public ZionTxOut(byte[] bytes) throws Exception {
 		super(bytes);
@@ -83,21 +85,11 @@ public class ZionTxOut extends Tx {
 		value = EQCType.parseValue(is);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#getBodyBytes()
-	 */
 	@Override
-	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			os.write(lock.getBytes());
-			os.write(value.getEQCBits());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		return os.toByteArray();
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
+		os.write(lock.getBytes());
+		os.write(value.getEQCBits());
+		return os;
 	}
 
 	/* (non-Javadoc)
@@ -105,7 +97,27 @@ public class ZionTxOut extends Tx {
 	 */
 	@Override
 	public boolean isSanity() throws Exception {
-		return ((lock != null) && lock.isSanity() && (value != null) && value.isSanity() && value.compareTo(Util.MIN_EQC) >= 0);
+		if(lock == null) {
+			Log.Error("lock == null");
+			return false;
+		}
+		if(!lock.isSanity()) {
+			Log.Error("!lock.isSanity()");
+			return false;
+		}
+		if(value == null) {
+			Log.Error("value == null");
+			return false;
+		}
+		if(!value.isSanity()) {
+			Log.Error("!value.isSanity()");
+			return false;
+		}
+		if(value.compareTo(Util.MIN_BALANCE) <0) {
+			Log.Error(value + " < " + Util.MIN_BALANCE);
+			return false;
+		}
+		return true;
 	}
 
 	public String toInnerJson() {
@@ -115,15 +127,6 @@ public class ZionTxOut extends Tx {
 			lock.toInnerJson() + ",\n" +
 			"\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
 		"}";
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Tx#init()
-	 */
-	@Override
-	protected void init() {
-		super.init();
-		passportId = null;
 	}
 
 	/**
@@ -138,6 +141,20 @@ public class ZionTxOut extends Tx {
 	 */
 	public void setLock(Lock lock) {
 		this.lock = lock;
+	}
+
+	/**
+	 * @return the value
+	 */
+	public Value getValue() {
+		return value;
+	}
+
+	/**
+	 * @param value the value to set
+	 */
+	public void setValue(Value value) {
+		this.value = value;
 	}
 	
 }

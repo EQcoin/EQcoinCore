@@ -30,19 +30,19 @@
 package org.eqcoin.service;
 
 import org.apache.commons.lang3.Validate;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.keystore.Keystore;
 import org.eqcoin.passport.EQcoinRootPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.PendingTransactionState;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.Transaction.TransactionShape;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -57,7 +57,7 @@ public class PendingTransactionService extends EQCService {
 		super();
 		EQcoinRootPassport eQcoinRootPassport;
 		try {
-			eQcoinRootPassport = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
+			eQcoinRootPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
 			txFeeRate = new Value(eQcoinRootPassport.getTxFeeRate());
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
@@ -89,11 +89,10 @@ public class PendingTransactionService extends EQCService {
 			pendingTransactionState = (PendingTransactionState) state;
 			transaction = new Transaction().setTransactionShape(TransactionShape.RPC).Parse(pendingTransactionState.getTransaction());
 			transaction.setTxFeeRate(txFeeRate);
-			passport = Util.DB().getPassport(transaction.getTxIn().getPassportId(), Mode.GLOBAL);
-			if(passport == null) {
-				Log.info("Transaction with id " + transaction.getTxIn().getPassportId() + "'s relevant Passport doesn't exists just discard it");
-				return;
+			if(!transaction.getWitness().isMeetPreCondition()) {
+				Log.info("Doesn't meet pre condition just discard it");
 			}
+			passport = transaction.getWitness().getPassport();
 			if(transaction.getNonce().compareTo(passport.getNonce()) < 0) {
 				Log.info("Transaction's nonce " + transaction.getNonce() + " less than relevant Account's Asset's nonce " + passport.getNonce() + " just discard it");
 				return;
@@ -108,12 +107,12 @@ public class PendingTransactionService extends EQCService {
 			// Here doesn't extra check to make sure nonce is continuously due to EQCBlockChainH2.getInstance().getTransactionMaxNonce may not synchronized
 			
 			if(!transaction.isSanity()) {
-				Log.info("Transaction with id " + transaction.getTxIn().getPassportId() + " isn't sanity just discard it");
+				Log.info("Transaction with ID " + passport.getId() + " isn't sanity just discard it");
 				return;
 			}
 			
-			Util.DB().saveTransactionInPool(transaction);
-			Log.info("Transaction with ID " + transaction.getTxIn().getPassportId()  + " and nonce " + transaction.getNonce() + " is sanity just save it");
+			Util.MC().saveTransactionInPool(transaction);
+			Log.info("Transaction with ID " + passport.getId()  + " and nonce " + transaction.getNonce() + " is sanity just save it");
 		
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

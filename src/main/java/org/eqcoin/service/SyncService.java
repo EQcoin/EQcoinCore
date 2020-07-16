@@ -33,7 +33,7 @@ import java.util.Vector;
 
 import org.eqcoin.avro.O;
 import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
 import org.eqcoin.rpc.TransactionIndex;
@@ -88,7 +88,7 @@ public class SyncService extends EQCService {
 //			}
 			
 			// Sync Transaction
-			SPList spList = Util.DB().getSPList(SP_MODE.getFlag(SP_MODE.EQCTRANSACTIONNETWORK));
+			SPList spList = Util.MC().getSPList(SP_MODE.getFlag(SP_MODE.EQCTRANSACTIONNETWORK));
 			spList.addSP(Util.SINGULARITY_SP);
 			TransactionIndexList transactionIndexList = null;
 			TransactionIndexList needSyncList = null;
@@ -100,7 +100,7 @@ public class SyncService extends EQCService {
 				if(transactionIndexList != null) {
 					Log.info("Begin sync Transaction");
 					for(TransactionIndex transactionIndex:transactionIndexList.getTransactionIndexList()) {
-						if(!EQCHiveH2.getInstance().isTransactionExistsInPool(transactionIndex)) {
+						if(!Util.MC().isTransactionExistsInPool(transactionIndex)) {
 							needSyncList.addTransactionIndex(transactionIndex);
 						}
 					}
@@ -108,7 +108,7 @@ public class SyncService extends EQCService {
 				transactionList = EQCTransactionNetworkClient.getTransactionList(needSyncList, sp);
 				if(transactionList != null) {
 					for(Transaction transaction:transactionList.getTransactionList()) {
-						EQCHiveH2.getInstance().saveTransactionInPool(transaction);
+						Util.MC().saveTransactionInPool(transaction);
 					}
 				}
 			}

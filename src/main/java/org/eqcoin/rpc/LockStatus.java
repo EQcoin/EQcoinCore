@@ -49,16 +49,19 @@ public class LockStatus extends IO {
 	public enum LOCKSTATUS {
 		READABLELOCK, ID;
 		public static LOCKSTATUS get(int ordinal) {
-			LOCKSTATUS lockInfoType = null;
+			LOCKSTATUS lockStatus = null;
 			switch (ordinal) {
 			case 0:
-				lockInfoType = LOCKSTATUS.READABLELOCK;
+				lockStatus = LOCKSTATUS.READABLELOCK;
 				break;
 			case 1:
-				lockInfoType = LOCKSTATUS.ID;
+				lockStatus = LOCKSTATUS.ID;
 				break;
 			}
-			return lockInfoType;
+			if(lockStatus == null) {
+				throw new IllegalStateException("Invalid lock status: " + lockStatus);
+			}
+			return lockStatus;
 		}
 		public byte[] getEQCBits() {
 			return EQCType.intToEQCBits(this.ordinal());

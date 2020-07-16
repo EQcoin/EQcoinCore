@@ -41,9 +41,11 @@ import org.eqcoin.passport.Passport;
 import org.eqcoin.passport.storage.UpdateHeight;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction.TransactionType;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -124,14 +126,14 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 		}
 		return true;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.Transaction#isTxInSanity()
 	 */
 	@Override
-	protected boolean isTxInSanity() {
-		if(txIn != null) {
-			Log.Error("txIn != null");
+	protected boolean isStatusSanity() {
+		if(status != null) {
+			Log.Error("status != null");
 			return false;
 		}
 		return true;
@@ -151,8 +153,8 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 			Log.Error("!eqCoinFederalTxOut.isSanity()");
 			return false;
 		}
-		if(!(eqCoinFederalTxOut.getValue().compareTo(Util.MIN_EQC) >= 0)) {
-			Log.Error("!(eqCoinFederalTxOut.getValue().compareTo(Util.MIN_EQC) >= 0)");
+		if(!(eqCoinFederalTxOut.getValue().compareTo(Util.MIN_BALANCE) >= 0)) {
+			Log.Error("!(eqCoinFederalTxOut.getValue().compareTo(Util.MIN_BALANCE) >= 0)");
 			return false;
 		}
 		if(eqCoinMinerTxOut == null) {
@@ -167,8 +169,8 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 			Log.Error("!eqCoinMinerTxOut.isSanity()");
 			return false;
 		}
-		if(!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_EQC) >= 0)) {
-			Log.Error("!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_EQC) >= 0)");
+		if(!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_BALANCE) >= 0)) {
+			Log.Error("!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_BALANCE) >= 0)");
 			return false;
 		}
 		if(eqCoinFederalTxOut.getLock().equals(eqCoinMinerTxOut.getLock())) {
@@ -184,16 +186,16 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	@Override
 	protected void derivedPlanting() throws Exception {
 		Passport passport = null;
-		LockMate lock = null;
+		LockMate lockMate = null;
 		// Planting CoinbaseTransaction's relevant Passport
 		// Planting EQcoin Federal's Passport
-		lock = new LockMate();
-		lock.setLock(eqCoinFederalTxOut.getLock());
-		lock.setId(changeLog.getNextLockId());
-		lock.setChangeLog(changeLog).planting();
+		lockMate = new LockMate();
+		lockMate.setLock(eqCoinFederalTxOut.getLock());
+		lockMate.setId(changeLog.getNextLockId());
+		lockMate.setChangeLog(changeLog).planting();
 		EQcoinRootPassport eqcFederalPassport = new EQcoinRootPassport();
 		eqcFederalPassport.setId(changeLog.getNextPassportId());
-		eqcFederalPassport.setLockID(lock.getId());
+		eqcFederalPassport.setLockID(lockMate.getId());
 		eqcFederalPassport.setProtocolVersion(Util.PROTOCOL_VERSION);
 		eqcFederalPassport.setBlockInterval(Util.BASIC_EQCHIVE_INTERVAL.divide(Util.TARGET_EQCHIVE_INTERVAL).byteValue());
 		eqcFederalPassport.setTxFeeRate((byte) Util.DEFAULT_TXFEE_RATE);
@@ -203,33 +205,28 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 		eqcFederalPassport.getStorage().addStateVariable(new UpdateHeight());
 		eqcFederalPassport.setChangeLog(changeLog).planting();
 		// Planting Miner's Passport
-		lock = null;
-		lock = new LockMate();
-		lock.setLock(eqCoinMinerTxOut.getLock());
-		lock.setId(changeLog.getNextLockId());
-		lock.setChangeLog(changeLog).planting();
+		lockMate = null;
+		lockMate = new LockMate();
+		lockMate.setLock(eqCoinMinerTxOut.getLock());
+		lockMate.setId(changeLog.getNextLockId());
+		lockMate.setChangeLog(changeLog).planting();
 		passport = null;
 		passport = new AssetPassport();
 		passport.setId(changeLog.getNextPassportId());
-		passport.setLockID(lock.getId());
+		passport.setLockID(lockMate.getId());
 		passport.deposit(eqCoinMinerTxOut.getValue());
 		passport.setChangeLog(changeLog).planting();
 	}
 	
 	public String toInnerJson() {
 		return
-		"\"ZeroZionCoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
+		"\"ZeroZionCoinbaseTransaction\":"
 		+ "\"EQcoinFederalTxOut\":" + "\n" + eqCoinFederalTxOut.toInnerJson() + "\n,"
 		+ "\"EQcoinMinerTxOut\":" + "\n" + eqCoinMinerTxOut.toInnerJson() + "\n,"
 		+ "\"Nonce\":" + "\"" + nonce + "\"" + 
 		"\n}";
 	}
 
-	@Override
-	public Value getBillingLength() {
-		return Value.ZERO;
-	}
-	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#parseHeader(java.io.ByteArrayInputStream, com.eqcoin.blockchain.transaction.Transaction.TransactionShape)
 	 */
@@ -297,8 +294,8 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#isEQCWitnessSanity()
 	 */
 	@Override
-	protected boolean isEQCWitnessSanity() {
-		if(eqcWitness != null) {
+	protected boolean isWitnessSanity() {
+		if(witness != null) {
 			Log.Error("eqcWitness != null");
 			return false;
 		}
@@ -317,7 +314,8 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#initPlanting()
 	 */
 	@Override
-	protected void initPlanting() throws Exception {
+	protected boolean isMeetPreCondition() throws Exception {
+		return true;
 	}
 
 	/* (non-Javadoc)
@@ -327,17 +325,7 @@ public class ZeroZionCoinbaseTransaction extends Transaction {
 	public String toString() {
 		return "ZeroZionCoinbaseTransaction [eqCoinFederalTxOut=" + eqCoinFederalTxOut + ", eqCoinMinerTxOut="
 				+ eqCoinMinerTxOut + ", transactionType=" + transactionType + ", nonce=" + nonce
-				+ ", txIn=" + txIn + ", eqcWitness=" + eqcWitness + ", operationList=" + operation + ", changeLog="
-				+ changeLog + ", txInPassport=" + txInPassport + ", txInLock=" + txInLockMate + ", transactionShape="
-				+ transactionShape + ", txFeeRate=" + txFeeRate + ", lockType=" + lockType + "]";
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#getTxFee()
-	 */
-	@Override
-	public Value getTxFee() throws Exception {
-		return Value.ZERO;
+				+ statusInnerJson() + ", eqcWitness=" + witness + ", operationList=" + operation + "]";
 	}
 	
 }

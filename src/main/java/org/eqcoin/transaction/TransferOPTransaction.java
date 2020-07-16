@@ -42,7 +42,7 @@ import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.passport.AssetPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQcoinSeed;
+import org.eqcoin.seed.EQCoinSeed;
 import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction.TransactionType;
@@ -52,6 +52,7 @@ import org.eqcoin.transaction.operation.Operation.OP;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -78,12 +79,12 @@ public class TransferOPTransaction extends TransferTransaction {
 	public String toInnerJson() {
 		return
 		"\"TransferOPTransaction\":" + "\n{\n" 
-				+ txIn.toInnerJson() + ",\n"
+				+ statusInnerJson() + ",\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
 				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
 				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ operation.toInnerJson() + ",\n"
-				+ eqcWitness.toInnerJson()
+				+ witness.toInnerJson()
 				+ "\n" + "}";
 	}
 	

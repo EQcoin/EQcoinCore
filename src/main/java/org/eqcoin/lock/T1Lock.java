@@ -34,9 +34,9 @@ import java.io.ByteArrayOutputStream;
 
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -50,7 +50,7 @@ public class T1Lock extends Lock {
 	 */
 	@Override
 	protected void init() {
-		lockType = LockType.T1;
+		type = LockType.T1;
 	}
 
 	public T1Lock() {
@@ -70,7 +70,7 @@ public class T1Lock extends Lock {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		lockProof = EQCType.parseNBytes(is, Util.SHA3_256_LEN);
+		proof = EQCType.parseNBytes(is, Util.SHA3_256_LEN);
 	}
 
 	/* (non-Javadoc)
@@ -78,7 +78,7 @@ public class T1Lock extends Lock {
 	 */
 	@Override
 	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
-		os.write(lockProof);
+		os.write(proof);
 		return os;
 	}
 	
@@ -91,19 +91,19 @@ public class T1Lock extends Lock {
 	 */
 	@Override
 	public boolean isSanity() {
-		if(lockType == null) {
+		if(type == null) {
 			Log.Error("lockType == null");
 			return false;
 		}
-		if(lockType != LockType.T1) {
+		if(type != LockType.T1) {
 			Log.Error("lockType != LockType.T1");
 			return false;
 		}
-		if(lockProof == null) {
+		if(proof == null) {
 			Log.Error("lockProof == null");
 			return false;
 		}
-		if(lockProof.length != Util.SHA3_256_LEN) {
+		if(proof.length != Util.SHA3_256_LEN) {
 			Log.Error("lockProof.length != Util.SHA3_256_LEN");
 			return false;
 		}
@@ -112,8 +112,8 @@ public class T1Lock extends Lock {
 	
 	public String toInnerJson() {
 		return "\"T1Lock\":" + "{\n" 
-				+ "\"LockType\":" + lockType + ",\n"
-				+ "\"PublickeyHash\":" + "\"" + Util.bytesTo512HexString(lockProof) + "\""
+				+ "\"LockType\":" + type + ",\n"
+				+ "\"PublickeyHash\":" + "\"" + Util.bytesTo512HexString(proof) + "\""
 				+ "\n" + "}";
 	}
 	

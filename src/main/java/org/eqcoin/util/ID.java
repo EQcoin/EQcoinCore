@@ -79,9 +79,10 @@ public class ID extends BigInteger implements Protocol {
 		super(EQCType.eqcBitsToBigInteger(bytes).toByteArray());
 	}
 	
-	public <T> ID(T type) throws Exception{
+	public <T> ID(final T type) throws Exception{
 		super(BigInteger.ZERO.toByteArray());
 		parse(type);
+		EQCType.assertNotNegative(this);
 	}
 	
 	/**
@@ -89,7 +90,7 @@ public class ID extends BigInteger implements Protocol {
 	 */
 	public ID(final BigInteger value) {
 		super(value.toByteArray());
-		EQCType.assertNotNegative(value);
+		EQCType.assertNotNegative(this);
 	}
 	
 	/**
@@ -97,7 +98,7 @@ public class ID extends BigInteger implements Protocol {
 	 */
 	public ID(final long value) {
 		super(BigInteger.valueOf(value).toByteArray());
-		EQCType.assertNotNegative(value);
+		EQCType.assertNotNegative(this);
 	}
 	
 	/**
@@ -142,7 +143,7 @@ public class ID extends BigInteger implements Protocol {
 	 * @see java.math.BigInteger#add(java.math.BigInteger)
 	 */
 	@Override
-	public ID add(BigInteger val) {
+	public ID add(final BigInteger val) {
 		return new ID(super.add(val));
 	}
 
@@ -150,7 +151,7 @@ public class ID extends BigInteger implements Protocol {
 	 * @see java.math.BigInteger#subtract(java.math.BigInteger)
 	 */
 	@Override
-	public ID subtract(BigInteger val) {
+	public ID subtract(final BigInteger val) {
 		// TODO Auto-generated method stub
 		return new ID(super.subtract(val));
 	}
@@ -159,7 +160,7 @@ public class ID extends BigInteger implements Protocol {
 	 * @see java.math.BigInteger#multiply(java.math.BigInteger)
 	 */
 	@Override
-	public ID multiply(BigInteger val) {
+	public ID multiply(final BigInteger val) {
 		// TODO Auto-generated method stub
 		return new ID(super.multiply(val));
 	}
@@ -168,7 +169,7 @@ public class ID extends BigInteger implements Protocol {
 	 * @see java.math.BigInteger#divide(java.math.BigInteger)
 	 */
 	@Override
-	public ID divide(BigInteger val) {
+	public ID divide(final BigInteger val) {
 		// TODO Auto-generated method stub
 		return new ID(super.divide(val));
 	}
@@ -182,11 +183,11 @@ public class ID extends BigInteger implements Protocol {
 	 * @see org.eqcoin.rpc.Protocol#parse(java.lang.Object)
 	 */
 	@Override
-	public <T> void parse(T type) throws Exception {
+	public <T> void parse(final T type) throws Exception {
 	}
 
 	@Override
-	public <T> T getProtocol(Class<T> type) throws Exception {
+	public <T> T getProtocol(final Class<T> type) throws Exception {
 		T protocol = null;
 		if(type.equals(O.class)) {
 			protocol = (T) new O(ByteBuffer.wrap(EQCType.bigIntegerToEQCBits(this)));

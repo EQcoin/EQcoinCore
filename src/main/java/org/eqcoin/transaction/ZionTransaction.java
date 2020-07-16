@@ -37,12 +37,14 @@ import java.util.Vector;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.passport.AssetPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQcoinSeed;
+import org.eqcoin.seed.EQCoinSeed;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction.TransactionType;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -174,10 +176,16 @@ public class ZionTransaction extends TransferTransaction {
 	 */
 	@Override
 	protected Value getProofLength() throws Exception {
-		Value proofLength = Value.ZERO;
+		Value proofLength = null;
 		for(ZionTxOut aiTxOut:txOutList) {
-			proofLength = proofLength.add(Util.ASSET_PASSPORT_PROOF_SPACE_COST);
-			proofLength = proofLength.add(aiTxOut.getLock().getProofLength());
+			if(proofLength == null) {
+				proofLength = new Value(Util.ASSET_PASSPORT_PROOF_SPACE_COST);
+				proofLength = proofLength.add(aiTxOut.getLock().getProofLength());
+			}
+			else {
+				proofLength = proofLength.add(Util.ASSET_PASSPORT_PROOF_SPACE_COST);
+				proofLength = proofLength.add(aiTxOut.getLock().getProofLength());
+			}
 		}
 		return proofLength;
 	}
@@ -224,9 +232,14 @@ public class ZionTransaction extends TransferTransaction {
 	 */
 	@Override
 	public Value getTxOutValues() {
-		Value totalTxOut = Value.ZERO;
+		Value totalTxOut = null;
 		for (ZionTxOut txOut : txOutList) {
-			totalTxOut = totalTxOut.add(txOut.getValue());
+			if(totalTxOut == null) {
+				totalTxOut = new Value(txOut.getValue());
+			}
+			else {
+				totalTxOut = totalTxOut.add(txOut.getValue());
+			}
 		}
 		return totalTxOut;
 	}

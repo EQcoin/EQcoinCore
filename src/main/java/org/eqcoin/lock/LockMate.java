@@ -32,11 +32,14 @@ package org.eqcoin.lock;
 import java.io.ByteArrayOutputStream;
 
 import org.eqcoin.changelog.ChangeLog;
+import org.eqcoin.lock.publickey.Publickey;
 import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
+import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
+import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
@@ -46,18 +49,51 @@ import org.eqcoin.util.Log;
 public class LockMate extends EQCSerializable {
 	
 	private ID id;
+	private boolean isIDUpdated;
 	private Lock lock;
+	private boolean isLockUpdated;
+	private byte status;
+	private boolean isStatusUpdated;
 	private Publickey publickey;
+	private boolean isPublickeyUpdated;
 	private ChangeLog changeLog;
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#init()
-	 */
-	@Override
-	protected void init() {
-		publickey = new Publickey();
-	}
+	public enum STATUS {
+		MASTER((byte)0), SUB((byte)1), LIVELY((byte)253), FORBIDDEN((byte)2);
+		
+		private STATUS(byte status) {
+			this.status = status;
+		}
 
+		private byte status;
+
+		public byte getStatus() {
+			return status;
+		}
+
+		public static STATUS get(int statusValue) {
+			STATUS status = null;
+			switch (statusValue) {
+			case 1:
+				status = MASTER;
+				break;
+			case 2:
+				status = SUB;
+				break;
+			case 4:
+				status = LIVELY;
+				break;
+			case 6:
+				status = FORBIDDEN;
+				break;
+			default:
+				throw new IllegalStateException("Invalid STATUS value: " + statusValue);
+			}
+			return status;
+		}
+		
+	}
+	
 	public LockMate() {}
 	
 	/* (non-Javadoc)
@@ -100,11 +136,7 @@ public class LockMate extends EQCSerializable {
 			Log.Error("!eqcLock.isSanity()");
 			return false;
 		}
-		if(publickey == null) {
-			Log.Error("eqcPublickey == null");
-			return false;
-		}
-		if(!publickey.isSanity()) {
+		if((publickey != null) && !publickey.isSanity()) {
 			Log.Error("!eqcPublickey.isSanity()");
 			return false;
 		}
@@ -123,6 +155,7 @@ public class LockMate extends EQCSerializable {
 	 */
 	public void setId(ID id) {
 		this.id = id;
+		isIDUpdated = true;
 	}
 
 	/**
@@ -137,6 +170,7 @@ public class LockMate extends EQCSerializable {
 	 */
 	public void setLock(Lock lock) {
 		this.lock = lock;
+		isLockUpdated = true;
 	}
 
 	/**
@@ -151,6 +185,7 @@ public class LockMate extends EQCSerializable {
 	 */
 	public void setPublickey(Publickey publickey) {
 		this.publickey = publickey;
+		isPublickeyUpdated = true;
 	}
 	
 	/* (non-Javadoc)
@@ -167,7 +202,7 @@ public class LockMate extends EQCSerializable {
 		return "\"LockMate\":" + "{\n" + 
 				"\"ID\":" + "\"" + id + "\"" + ",\n" +
 				lock.toInnerJson() + ",\n" +
-				publickey.toInnerJson() +
+				((publickey!=null)?publickey.toInnerJson():null) +
 				"\n}";
 	}
 
@@ -181,6 +216,95 @@ public class LockMate extends EQCSerializable {
 	
 	public void planting() throws Exception {
 		changeLog.getFilter().saveLock(this);
+	}
+	
+	public void setMaster() {
+		status &= STATUS.MASTER.getStatus();
+//		isStatusUpdated = true;
+	}
+	
+	public void setSub() {
+		status |= STATUS.SUB.getStatus();
+		isStatusUpdated = true;
+	}
+	
+	public void setLively() {
+		status &= STATUS.LIVELY.getStatus();
+		isStatusUpdated = true;
+	}
+	
+	public void setForbidden() {
+		status |= STATUS.FORBIDDEN.getStatus();
+		isStatusUpdated = true;
+	}
+	
+	public boolean isMaster() {
+		return (status & Util.BIT_0) == 0;
+	}
+	
+	public boolean isSub() {
+		return (status & Util.BIT_0) == 1;
+	}
+	
+	public boolean isLively() {
+		return (status & Util.BIT_1) == 0;
+	}
+	
+	public boolean isForbidden() {
+		return (status & Util.BIT_1) == 1;
+	}
+
+	/**
+	 * @return the status
+	 */
+	public byte getStatus() {
+		return status;
+	}
+
+	/**
+	 * @param status the status to set
+	 */
+	public void setStatus(byte status) {
+		this.status = status;
+		isStatusUpdated = true;
+	}
+
+	/**
+	 * @return the isIDUpdated
+	 */
+	public boolean isIDUpdated() {
+		return isIDUpdated;
+	}
+
+	/**
+	 * @return the isLockUpdated
+	 */
+	public boolean isLockUpdated() {
+		return isLockUpdated;
+	}
+
+	/**
+	 * @return the isStatusUpdated
+	 */
+	public boolean isStatusUpdated() {
+		return isStatusUpdated;
+	}
+
+	/**
+	 * @return the isPublickeyUpdated
+	 */
+	public boolean isPublickeyUpdated() {
+		return isPublickeyUpdated;
+	}
+	
+	public void sync() {
+		isLockUpdated = true;
+		isStatusUpdated = true;
+		isPublickeyUpdated = true;
+	}
+	
+	public boolean isSync() {
+		return isLockUpdated && isStatusUpdated && isPublickeyUpdated;
 	}
 	
 }

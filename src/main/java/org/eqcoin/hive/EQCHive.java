@@ -31,41 +31,16 @@ package org.eqcoin.hive;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Objects;
 import java.util.Vector;
-
-import javax.naming.InitialContext;
-import javax.print.attribute.Size2DSyntax;
 
 import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
-import org.eqcoin.changelog.Statistics;
-import org.eqcoin.crypto.MerkleTree;
-import org.eqcoin.keystore.Keystore;
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.persistence.hive.EQCHiveH2;
-import org.eqcoin.seed.EQCSeed;
-import org.eqcoin.seed.EQcoinSeed;
-import org.eqcoin.seed.EQcoinSeedRoot;
+import org.eqcoin.seed.EQCoinSeed;
 import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.service.MinerService;
 import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.TransferCoinbaseTransaction;
-import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.TxIn;
-import org.eqcoin.transaction.ZionTxOut;
-import org.eqcoin.transaction.operation.ChangeLock;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -77,7 +52,7 @@ import org.eqcoin.util.Util;
  */
 public class EQCHive extends EQCSerializable {
 	private EQCHiveRoot eqcHiveRoot;
-	private EQcoinSeed eQcoinSeed;
+	private EQCoinSeed eqCoinSeed;
 	private ChangeLog changeLog;
 
 	// The min size of the EQCHeader's is 142 bytes. 
@@ -92,7 +67,7 @@ public class EQCHive extends EQCSerializable {
 		// Parse EqcHeader
 		eqcHiveRoot = new EQCHiveRoot(is);
 		// Parse EQcoinSeed
-		eQcoinSeed.parse(is);
+		eqCoinSeed.parse(is);
 	}
 	
 	public EQCHive() {
@@ -101,13 +76,14 @@ public class EQCHive extends EQCSerializable {
 
 	protected void init() {
 		eqcHiveRoot = new EQCHiveRoot();
-		eQcoinSeed = new EQcoinSeed();
+		eqCoinSeed = new EQCoinSeed();
 	}
 
 	public EQCHive(byte[] preProof, ID currentHeight, ChangeLog changeLog) throws Exception {
 		super();
 		this.changeLog = changeLog;
-		eQcoinSeed.setChangeLog(changeLog);
+		changeLog.setCurrentEQCHive(this);
+		eqCoinSeed.setChangeLog(changeLog);
 		// Create EQC block header
 		eqcHiveRoot.setPreProof(preProof);
 		eqcHiveRoot.setHeight(currentHeight);
@@ -151,7 +127,7 @@ public class EQCHive extends EQCSerializable {
 		return
 
 		"\"EQCHive\":{\n" + eqcHiveRoot.toInnerJson() + ",\n" +
-		eQcoinSeed.toInnerJson() + "\n" +
+		eqCoinSeed.toInnerJson() + "\n" +
 		 "}";
 	}
 
@@ -163,17 +139,15 @@ public class EQCHive extends EQCSerializable {
 		 */
 		
 		// Retrieve all transactions from transaction pool
-		Vector<Transaction> pendingTransactionList = new Vector<Transaction>();
-		pendingTransactionList.addAll(Util.DB().getTransactionListInPool());
+		Vector<Transaction> pendingTransactionList = Util.MC().getTransactionListInPool();
 		Log.info("Current have " + pendingTransactionList.size() + " pending Transactions.");
 				
 		/**
 		 * Begin handle EQcoinSeed
 		 */
-		eQcoinSeed.plantingTransaction(pendingTransactionList);
+		eqCoinSeed.plantingTransaction(pendingTransactionList);
 		
-		// Set EQCHeader's Root's hash
-		eqcHiveRoot.setEQCoinSeedProof(eQcoinSeed.getProof());
+		eqcHiveRoot.setEQCoinSeedProof(eqCoinSeed.getProof());
 		
 	}
 
@@ -335,7 +309,7 @@ public class EQCHive extends EQCSerializable {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			os.write(eqcHiveRoot.getBytes());
-			os.write(eQcoinSeed.getBytes());
+			os.write(eqCoinSeed.getBytes());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -367,19 +341,19 @@ public class EQCHive extends EQCSerializable {
 			Log.Error("!eqcHiveRoot.isSanity()");
 			return false;
 		}
-		if(eQcoinSeed == null) {
+		if(eqCoinSeed == null) {
 			Log.Error("eQcoinSeed == null");
 			return false;
 		}
-		if(!eQcoinSeed.isSanity()) {
+		if(!eqCoinSeed.isSanity()) {
 			Log.Error("!eQcoinSeed.isSanity()");
 			return false;
 		}
-		if(eQcoinSeed == null ) {
+		if(eqCoinSeed == null ) {
 			Log.Error("eQcoinSeed == null");
 			return false;
 		}
-		if (!eQcoinSeed.isSanity()) {
+		if (!eqCoinSeed.isSanity()) {
 			Log.Error("!eQcoinSeed.isSanity()");
 			return false;
 		}
@@ -409,7 +383,7 @@ public class EQCHive extends EQCSerializable {
 			}
 
 			// Check if EQcoinSeed is valid
-			if (!eQcoinSeed.isValid()) {
+			if (!eqCoinSeed.isValid()) {
 				Log.Error("EQcoinSeed is invalid.");
 				return false;
 			}
@@ -472,7 +446,9 @@ public class EQCHive extends EQCSerializable {
 //				return false;
 //			}
 			// Verify EQCHeader
-			if (!eqcHiveRoot.setChangeLog(changeLog).setEQcoinSeed(eQcoinSeed).isValid()) {
+//			if (!eqcHiveRoot.setChangeLog(changeLog).setEQCoinSeed(eqCoinSeed).isValid()) {
+			// Here maybe need do more job
+			if (!eqcHiveRoot.isValid()) {
 				Log.Error("EQCHeader is invalid!");
 				return false;
 			}
@@ -496,17 +472,17 @@ public class EQCHive extends EQCSerializable {
 	}
 
 	/**
-	 * @return the EQcoinSeed
+	 * @return the EQCoinSeed
 	 */
-	public EQcoinSeed getEQcoinSeed() {
-		return eQcoinSeed;
+	public EQCoinSeed getEQCoinSeed() {
+		return eqCoinSeed;
 	}
 
 	/**
-	 * @param eQcoinSeed the eQcoinSeed to set
+	 * @param eqCoinSeed the eqCoinSeed to set
 	 */
-	public void setEQcoinSeed(EQcoinSeed eQcoinSeed) {
-		this.eQcoinSeed = eQcoinSeed;
+	public void setEQCoinSeed(EQCoinSeed eqCoinSeed) {
+		this.eqCoinSeed = eqCoinSeed;
 	}
 
 	/**
@@ -514,8 +490,8 @@ public class EQCHive extends EQCSerializable {
 	 */
 	public void setChangeLog(ChangeLog changeLog) {
 		this.changeLog = changeLog;
-		eQcoinSeed.setChangeLog(changeLog);
-		changeLog.setCoinbaseTransaction(eQcoinSeed.getEQcoinSeedRoot().getCoinbaseTransaction());
+		eqCoinSeed.setChangeLog(changeLog);
+		changeLog.setCurrentEQCHive(this);
 	}
 	
 }

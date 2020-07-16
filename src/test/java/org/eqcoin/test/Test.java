@@ -60,7 +60,6 @@ import org.eqcoin.avro.EQCHiveSyncNetwork;
 import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.crypto.EQCECCPublicKey;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.hive.EQCHiveRoot;
@@ -70,8 +69,9 @@ import org.eqcoin.keystore.UserProfile;
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.persistence.hive.EQCHiveH2;
-import org.eqcoin.persistence.hive.IEQCHive;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.Protocol;
@@ -82,8 +82,7 @@ import org.eqcoin.rpc.client.EQCMinerNetworkClient;
 import org.eqcoin.rpc.client.EQCTransactionNetworkClient;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.TransferTxOut;
-import org.eqcoin.transaction.TxIn;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.Base58;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -353,7 +352,7 @@ public class Test {
 
 	public static void testUserAccount() {
 		UserProfile account;
-		account = Keystore.getInstance().createUserProfile("nju2006", "abc", ECCTYPE.P521);
+		account = Keystore.getInstance().createUserProfile("nju2006", "abc", ECCTYPE.P521, "0");
 		Log.info(account.toString());
 //		Log.info(Keystore.getInstance().getUserProfiles().get(0).toString());
 	}
@@ -714,7 +713,7 @@ public class Test {
 		for (int i = 0; i < 2; ++i) {
 			EQCHive eqcBlock;
 			try {
-				eqcBlock = new EQCHive(EQCHiveH2.getInstance().getEQCHive(new ID(BigInteger.valueOf(i)))); 
+				eqcBlock = new EQCHive(GlobalStateH2.getInstance().getEQCHive(new ID(BigInteger.valueOf(i)))); 
 				Log.info(eqcBlock.toString());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -726,37 +725,33 @@ public class Test {
 	}
 
 	public static void testToString() {
-		TxIn txIn = new TxIn();
-		txIn.setPassportId(ID.ZERO);
-		txIn.setValue(Util.getValue(25));
+//		TxIn txIn = new TxIn();
+//		txIn.setPassportId(ID.ZERO);
+//		txIn.setValue(Util.getValue(25));
 		Lock key = null;
 		try {
-			key = LockTool.readableLockToEQCLock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
+//			key = LockTool.readableLockToEQCLock(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		Log.info(txIn.toString());
+//		Log.info(txIn.toString());
 		Log.info(key.toString());
 		// Create Transaction
 		TransferTransaction transaction = new TransferTransaction();
 		TransferTxOut txOut = new TransferTxOut();
 		txOut.setPassportId(ID.ONE);
 		txOut.setValue(Util.getValue(25));
-		transaction.setTxIn(txIn);
 		transaction.addTxOut(txOut);
 		Log.info(transaction.toString());
 		try {
 			EQCHive transactions = new EQCHive();
-			transactions.getEQcoinSeed().addTransaction(transaction);
-			transactions.getEQcoinSeed().addTransaction(transaction);
-			transactions.getEQcoinSeed().addTransaction(transaction);
+			transactions.getEQCoinSeed().addTransaction(transaction);
+			transactions.getEQCoinSeed().addTransaction(transaction);
+			transactions.getEQCoinSeed().addTransaction(transaction);
 			Log.info(transactions.toString());
-			EQCHive eqcBlock;
-			eqcBlock = Util.recoverySingularityStatus();
-			Log.info(eqcBlock.toString());
+			Util.recoverySingularityStatus();
 //			eqcBlock.setTransactions(transactions);
-			Log.info(eqcBlock.toString());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -961,7 +956,7 @@ public class Test {
 	}
 
 	public static void testDisplayUserProfiles() {
-		Vector<UserProfile> userAccounts = Keystore.getInstance().getUserProfiles();
+		Vector<UserProfile> userAccounts = Keystore.getInstance().getUserProfileList();
 		for (UserProfile userAccount : userAccounts) {
 			Log.info(userAccount.toString());
 		}
@@ -969,7 +964,7 @@ public class Test {
 
 	public static void testInterface() {
 		try {
-			IEQCHive eqcBlockChain = EQCHiveH2.getInstance();
+			GlobalState eqcBlockChain = GlobalStateH2.getInstance();
 		} catch (ClassNotFoundException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1186,23 +1181,23 @@ public class Test {
 
 	public static void testVerifyAddress() {
 		try {
-			byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(0).getPrivateKey(), "abc");
-			byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(0).getPublicKey(), "abc");
+			byte[] privateKey = Util.AESDecrypt(Keystore.getInstance().getUserProfileList().get(0).getPrivateKey(), "abc");
+			byte[] publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfileList().get(0).getPublicKey(), "abc");
 			String key;
 			key = LockTool.generateReadableLock(LockType.T2, publickey);
-			Log.info(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
+//			Log.info(Keystore.getInstance().getUserProfiles().get(0).getReadableLock());
 			Log.info(key);
-			if (LockTool.verifyReadableLockAndPublickey(Keystore.getInstance().getUserProfiles().get(0).getReadableLock(),
-					publickey)) {
-				Log.info("Publickey verify passed");
-			} else {
-				Log.info("Publickey verify failed");
-			}
-			if (LockTool.verifyReadableLockCRC32C(Keystore.getInstance().getUserProfiles().get(0).getReadableLock())) {
-				Log.info("crc passed");
-			} else {
-				Log.info("crc failed");
-			}
+//			if (LockTool.verifyReadableLockAndPublickey(Keystore.getInstance().getUserProfiles().get(0).getReadableLock(),
+//					publickey)) {
+//				Log.info("Publickey verify passed");
+//			} else {
+//				Log.info("Publickey verify failed");
+//			}
+//			if (LockTool.verifyReadableLockCRC32C(Keystore.getInstance().getUserProfiles().get(0).getReadableLock())) {
+//				Log.info("crc passed");
+//			} else {
+//				Log.info("crc failed");
+//			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1212,7 +1207,7 @@ public class Test {
 	public static void testBase582() {
 		byte[] publickey = null;
 		try {
-			publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(0).getPublicKey(), "abc");
+			publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfileList().get(0).getPublicKey(), "abc");
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -1557,7 +1552,7 @@ public class Test {
 //		Log.info(header.toString());
 		byte[] publickey = null;
 		try {
-			publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(1).getPublicKey(), "abc");
+			publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfileList().get(1).getPublicKey(), "abc");
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -1582,7 +1577,7 @@ public class Test {
 	public static void testVerrifyAddressTime() {
 		byte[] publickey = null;
 		try {
-			publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfiles().get(1).getPublicKey(), "abc");
+			publickey = Util.AESDecrypt(Keystore.getInstance().getUserProfileList().get(1).getPublicKey(), "abc");
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -1592,8 +1587,8 @@ public class Test {
 		int n = 10000;
 		for (int i = 0; i < n; ++i) {
 			try {
-				LockTool.verifyReadableLockAndPublickey(
-						Keystore.getInstance().getUserProfiles().get(1).getReadableLock(), publickey);
+//				LockTool.verifyReadableLockAndPublickey(
+//						Keystore.getInstance().getUserProfiles().get(1).getReadableLock(), publickey);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1604,11 +1599,11 @@ public class Test {
 	}
 
 	public static void testAddressCRC32C() {
-		Log.info(Keystore.getInstance().getUserProfiles().get(2).getReadableLock());
+//		Log.info(Keystore.getInstance().getUserProfiles().get(2).getReadableLock());
 		try {
-			if (LockTool.verifyReadableLockCRC32C(Keystore.getInstance().getUserProfiles().get(2).getReadableLock())) {
-				Log.info("Passed");
-			}
+//			if (LockTool.verifyReadableLockCRC32C(Keystore.getInstance().getUserProfiles().get(2).getReadableLock())) {
+//				Log.info("Passed");
+//			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1631,11 +1626,11 @@ public class Test {
 	public static void testVerifyBlock() {
 		ID id;
 		try {
-			id = Util.DB().getEQCHiveTailHeight();
+			id = Util.GS().getEQCHiveTailHeight();
 			for (int i = 1; i < id.intValue(); ++i) {
 				ChangeLog changeLog = new ChangeLog(new ID(i),
 						new Filter(Mode.MINING));
-				EQCHive eqcBlock = new EQCHive(Util.DB().getEQCHive(new ID(i)));
+				EQCHive eqcBlock = new EQCHive(Util.GS().getEQCHive(new ID(i)));
 				try {
 					eqcBlock.isValid();
 				} catch (Exception e) {
@@ -1762,7 +1757,7 @@ public class Test {
 	public static void dumpPassport(long lastId) {
 		for (long i = 0; i < lastId; ++i) {
 			try {
-				Log.info(Util.DB().getPassport(new ID(i), Mode.GLOBAL).toString());
+				Log.info(Util.GS().getPassport(new ID(i)).toString());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1770,10 +1765,10 @@ public class Test {
 		}
 	}
 
-	public static void dumpLock(long lastId) {
+	public static void dumpLockMate(long lastId) {
 		for (long i = 0; i < lastId; ++i) {
 			try {
-				Log.info(Util.DB().getLock(new ID(i), Mode.GLOBAL).toString());
+				Log.info(Util.GS().getLockMate(new ID(i)).toString());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

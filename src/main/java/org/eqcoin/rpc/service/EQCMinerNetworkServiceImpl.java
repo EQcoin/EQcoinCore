@@ -33,7 +33,7 @@ import org.apache.avro.AvroRemoteException;
 import org.eqcoin.avro.EQCMinerNetwork;
 import org.eqcoin.avro.O;
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.NewEQCHive;

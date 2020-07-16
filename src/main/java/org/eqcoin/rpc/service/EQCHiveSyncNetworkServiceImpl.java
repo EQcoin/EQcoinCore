@@ -34,12 +34,12 @@ import java.nio.ByteBuffer;
 import org.apache.avro.AvroRemoteException;
 import org.eqcoin.avro.EQCHiveSyncNetwork;
 import org.eqcoin.avro.O;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.hive.EQCHiveRoot;
 import org.eqcoin.passport.EQcoinRootPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.rpc.Protocol;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.TailInfo;
@@ -64,10 +64,10 @@ public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements 
 		EQcoinRootPassport eQcoinSubchainPassport = null;
 		try {
 			tailInfo = new TailInfo();
-			tailInfo.setHeight(Util.DB().getEQCHiveTailHeight());
-			eQcoinSubchainPassport = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
+			tailInfo.setHeight(Util.GS().getEQCHiveTailHeight());
+			eQcoinSubchainPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
 			tailInfo.setCheckPointHeight(eQcoinSubchainPassport.getCheckPointHeight());
-			tailInfo.setTailProof(Util.DB().getEQCHiveRootProof(tailInfo.getHeight()));
+			tailInfo.setTailProof(Util.GS().getEQCHiveRootProof(tailInfo.getHeight()));
 			tailInfo.setSp(Util.LOCAL_SP);
 			io = tailInfo.getProtocol(O.class);
 		} catch (Exception e) {
@@ -81,7 +81,7 @@ public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements 
 		O hive = null;
 		byte[] eqcHive = null;
 		try {
-			eqcHive = Util.DB().getEQCHive(new ID(h.getO().array()));
+			eqcHive = Util.GS().getEQCHive(new ID(h.getO().array()));
 			if(eqcHive != null) {
 				hive = Protocol.getProtocol(O.class, eqcHive);
 			}
@@ -96,7 +96,7 @@ public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements 
 		O rootProof = null;
 		byte[] eqcRootProof = null;
 		try {
-			eqcRootProof = Util.DB().getEQCHiveRootProof(new ID(h.getO().array()));
+			eqcRootProof = Util.GS().getEQCHiveRootProof(new ID(h.getO().array()));
 			if(eqcRootProof != null) {
 				rootProof = Protocol.getProtocol(O.class, eqcRootProof);
 			}
@@ -111,7 +111,7 @@ public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements 
 		O eqcHiveRoot = null;
 		EQCHiveRoot eqcHiveRoot2 = null;
 		try {
-			eqcHiveRoot2 = Util.DB().getEQCHiveRoot(new ID(H.getO().array()));
+			eqcHiveRoot2 = Util.GS().getEQCHiveRoot(new ID(H.getO().array()));
 			if(eqcHiveRoot2 != null) {
 				eqcHiveRoot = eqcHiveRoot2.getProtocol(O.class);
 			}

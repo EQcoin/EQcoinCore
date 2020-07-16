@@ -53,7 +53,7 @@ public class EQcoinRootPassport extends ExpendablePassport {
 	 */
 	// Here maybe need more design only record the height and hash isn't enough If need record the history ?
 	private ID protocolVersion;
-	// height of protocol
+	// height of protocol when reached this height the relevant protocol version should equal to protocolVersion
 	private byte maxBlockSize;
 	private byte blockInterval;
 	// Here maybe need more design only record the txFeeRate isn't enough? If need record the history ?
@@ -134,13 +134,10 @@ public class EQcoinRootPassport extends ExpendablePassport {
 		return os;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eqcoin.passport.ExpendablePassport#getStorageBytes()
-	 */
 	@Override
-	public byte[] getStorageBytes() throws Exception {
+	public byte[] getStorageState() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		os.write(super.getStorageBytes());
+		os.write(super.getStorageState());
 		os.write(protocolVersion.getEQCBits());
 		os.write(new byte[] {maxBlockSize});
 		os.write(new byte[] {blockInterval});

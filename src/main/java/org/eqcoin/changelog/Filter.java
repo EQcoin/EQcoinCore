@@ -39,9 +39,10 @@ import java.util.Vector;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.lock.Publickey;
+import org.eqcoin.lock.publickey.Publickey;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -52,21 +53,18 @@ import org.eqcoin.util.Util;
  * @date Jun 16, 2019
  * @email 10509759@qq.com
  */
+@Deprecated
 public class Filter {
 	private ChangeLog changeLog;
 	private Mode mode;
 	private Connection connection;
-
-	public enum Mode {
-		GLOBAL, MINING, VALID
-	}
 
 	public Filter(Mode mode) throws ClassNotFoundException, SQLException, Exception {
 		if(mode == Mode.GLOBAL) {
 			throw new IllegalStateException("Filter's mode only support MINING and VALID");
 		}
 		this.mode = mode;
-		connection = Util.DB().getConnection();
+		connection = Util.GS().getConnection();
 		// In case before close the app crashed or abnormal interruption so here just
 		// clear the table
 		clear();
@@ -102,22 +100,22 @@ public class Filter {
 //	}
 
 	public void savePassport(Passport passport) throws ClassNotFoundException, SQLException, Exception {
-		Util.DB().savePassport(passport, mode);
+		Util.GS().savePassport(passport, mode);
 	}
 
 	public Passport getPassport(ID id, boolean isFiltering) throws Exception {
 		Passport passport = null;
 		// Check if Account already loading in filter
 		if(isFiltering) {
-			passport = Util.DB().getPassport(id, mode);
+			passport = Util.GS().getPassport(id, mode);
 		}
 		if (passport == null)  {
 			// The first time loading account need loading the previous block's snapshot but
 			// doesn't include No.0 EQCHive
 			if (changeLog.getHeight().compareTo(ID.ZERO) > 0) {
-				ID tailHeight = Util.DB().getEQCHiveTailHeight();
+				ID tailHeight = Util.GS().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
-					passport = Util.DB().getPassport(id, Mode.GLOBAL);
+					passport = Util.GS().getPassport(id, Mode.GLOBAL);
 					// here if need check the lock create height?
 //					if(!(account != null && account.getCreateHeight().compareTo(changeLog.getHeight()) < 0 && account.getLockCreateHeight().compareTo(changeLog.getHeight()) < 0 && account.getId().compareTo(changeLog.getPreviousTotalAccountNumbers()) <= 0)) {
 //						Log.Error("Account exists but doesn't valid" + account);
@@ -125,50 +123,76 @@ public class Filter {
 //					}
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
 					// Load relevant Account from snapshot
-					passport = EQCHiveH2.getInstance().getPassportSnapshot(new ID(id),
+					passport = GlobalStateH2.getInstance().getPassportSnapshot(new ID(id),
 							changeLog.getHeight());
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCHiveTailHeight());
+							+ Util.GS().getEQCHiveTailHeight());
 				}
 			} else {
-				passport = EQCHiveH2.getInstance().getPassportSnapshot(new ID(id), ID.ZERO);
+				passport = GlobalStateH2.getInstance().getPassportSnapshot(new ID(id), ID.ZERO);
 			}
 		}
 		return passport;
 	}
 	
-	public Passport getPassportFromLockId(ID lockId) throws Exception {
+	public Passport getPassportFromLockId(ID id, boolean isFiltering) throws Exception {
 		Passport passport = null;
-		passport = Util.DB().getPassportFromLockId(lockId, mode);
+		// Check if Passport already loading in filter
+		if(isFiltering) {
+			passport = Util.GS().getPassportFromLockId(id, mode);
+		}
+		if (passport == null)  {
+			// The first time loading account need loading the previous block's snapshot but
+			// doesn't include No.0 EQCHive
+			if (changeLog.getHeight().compareTo(ID.ZERO) > 0) {
+				ID tailHeight = Util.GS().getEQCHiveTailHeight();
+				if (changeLog.getHeight().isNextID(tailHeight)) {
+					passport = Util.GS().getPassportFromLockId(id, Mode.GLOBAL);
+					// here if need check the lock create height?
+//					if(!(account != null && account.getCreateHeight().compareTo(changeLog.getHeight()) < 0 && account.getLockCreateHeight().compareTo(changeLog.getHeight()) < 0 && account.getId().compareTo(changeLog.getPreviousTotalAccountNumbers()) <= 0)) {
+//						Log.Error("Account exists but doesn't valid" + account);
+//						account = null;
+//					}
+				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
+					// Load relevant Passport from snapshot
+					passport = Util.GS().getPassportSnapshotFromLockId(id, changeLog.getHeight());
+				} else {
+					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
+							+ Util.GS().getEQCHiveTailHeight());
+				}
+			} else {
+				passport = Util.GS().getPassportSnapshotFromLockId(new ID(id), ID.ZERO);
+			}
+		}
 		return passport;
 	}
 	
 	public void saveLock(LockMate lock) throws ClassNotFoundException, SQLException, Exception {
-		Util.DB().saveLock(lock, mode);
+//		Util.GS().saveLock(lock);
 	}
 
 	public LockMate getLock(ID id, boolean isFiltering) throws Exception {
 		LockMate lock = null;
 		// Check if Lock already loading in filter
 		if(isFiltering) {
-			lock = Util.DB().getLock(id, mode);
+			lock = Util.GS().getLock(id);
 		}
 		if (lock == null)  {
-				ID tailHeight = Util.DB().getEQCHiveTailHeight();
+				ID tailHeight = Util.GS().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
-					lock = Util.DB().getLock(id, Mode.GLOBAL);
+					lock = Util.GS().getLock(id);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
 					if(id.compareTo(changeLog.getPreviousTotalLockNumbers()) <= 0) {
-						lock =  EQCHiveH2.getInstance().getLockSnapshot(id,
+						lock =  GlobalStateH2.getInstance().getLockSnapshot(id,
 								changeLog.getHeight());
 						if(lock == null) {
-							lock = Util.DB().getLock(id, Mode.GLOBAL);
+							lock = Util.GS().getLock(id);
 						}
 					}
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCHiveTailHeight());
+							+ Util.GS().getEQCHiveTailHeight());
 				}
 		}
 		return lock;
@@ -178,38 +202,38 @@ public class Filter {
 		ID lockId = null;
 		// Check if Lock already loading in filter
 		if(isFiltering) {
-			lockId = Util.DB().isLockExists(eqcLock, mode);
+			lockId = Util.GS().isLockExists(eqcLock, mode);
 		}
 		if (lockId == null)  {
-				ID tailHeight = Util.DB().getEQCHiveTailHeight();
+				ID tailHeight = Util.GS().getEQCHiveTailHeight();
 				if (changeLog.getHeight().isNextID(tailHeight)) {
-					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
+					lockId = Util.GS().isLockExists(eqcLock, Mode.GLOBAL);
 				} else if (changeLog.getHeight().compareTo(tailHeight) <= 0) {
-					lockId = Util.DB().isLockExists(eqcLock, Mode.GLOBAL);
+					lockId = Util.GS().isLockExists(eqcLock, Mode.GLOBAL);
 					if(lockId != null && lockId.compareTo(changeLog.getPreviousTotalLockNumbers()) >= 0) {
 						lockId = null;
 					}
 				} else {
 					throw new IllegalStateException("Wrong height " + changeLog.getHeight() + " tail height "
-							+ Util.DB().getEQCHiveTailHeight());
+							+ Util.GS().getEQCHiveTailHeight());
 				}
 		}
 		return lockId;
 	}
 	
 	public void merge() throws Exception {
-		Util.DB().mergeLock(mode);
-		Util.DB().mergePassport(mode);
+		Util.GS().mergeLock(mode);
+		Util.GS().mergePassport(mode);
 	}
 
 	public void takeSnapshot() throws Exception {
-		Util.DB().takeLockSnapshot(mode, changeLog);
-		Util.DB().takePassportSnapshot(mode, changeLog);
+		Util.GS().takeLockSnapshot(mode, changeLog.getHeight());
+		Util.GS().takePassportSnapshot(mode, changeLog.getHeight());
 	}
 
 	public void clear() throws ClassNotFoundException, SQLException, Exception {
-		Util.DB().clearLock(mode);
-		Util.DB().clearPassport(mode);
+		Util.GS().clearLock(mode);
+		Util.GS().clearPassport(mode);
 	}
 
 	/**
@@ -230,4 +254,8 @@ public class Filter {
 		return connection;
 	}
 
+	public Vector<LockMate> getForbiddenLockList() throws ClassNotFoundException, SQLException, Exception{
+		return Util.GS().getForbiddenLockList(mode);
+	}
+	
 }

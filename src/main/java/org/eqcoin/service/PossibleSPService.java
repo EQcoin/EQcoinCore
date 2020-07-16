@@ -34,7 +34,7 @@ import java.util.Vector;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.SPList;
 import org.eqcoin.rpc.client.EQCHiveSyncNetworkClient;
 import org.eqcoin.rpc.client.EQCMinerNetworkClient;
@@ -89,14 +89,14 @@ public final class PossibleSPService extends EQCService {
 				Log.info(possibleSPState.getSp().getIp() + " is SINGULARITY_SP just return");
 				return;
 			}
-			if(Util.DB().isSPExists(possibleSPState.getSp())) {
+			if(Util.MC().isSPExists(possibleSPState.getSp())) {
 				Log.info(possibleSPState.getSp().getIp() + " already in the SP list just return");
 				return;
 			}
 			if(possibleSPState.getSp().isEQCTransactionNetwork()) {
 				if(EQCTransactionNetworkClient.registerSP(possibleSPState.getSp()).getPing() > 0) {
 					Log.info("Received New EQCTransactionNetwork SP: " + possibleSPState.getSp() + " save it to SPList");
-					Util.DB().saveSP(possibleSPState.getSp());
+					Util.MC().saveSP(possibleSPState.getSp());
 				}
 				else {
 					Util.updateDisconnectSPStatus(possibleSPState.getSp());
@@ -105,7 +105,7 @@ public final class PossibleSPService extends EQCService {
 			else if(possibleSPState.getSp().isEQCHiveSyncNetwork()) {
 				if(EQCHiveSyncNetworkClient.registerSP(possibleSPState.getSp()).getPing() > 0) {
 					Log.info("Received New EQCHiveSyncNetwork SP: " + possibleSPState.getSp() + " save it to SPList");
-					Util.DB().saveSP(possibleSPState.getSp());
+					Util.MC().saveSP(possibleSPState.getSp());
 				}
 				else {
 					Util.updateDisconnectSPStatus(possibleSPState.getSp());
@@ -114,7 +114,7 @@ public final class PossibleSPService extends EQCService {
 			else	if(possibleSPState.getSp().isEQCMinerNetwork()) {
 				if(EQCMinerNetworkClient.registerSP(possibleSPState.getSp()).getPing() > 0) {
 					Log.info("Received New EQCMinerNetwork SP: " + possibleSPState.getSp() + " save it to SPList");
-					Util.DB().saveSP(possibleSPState.getSp());
+					Util.MC().saveSP(possibleSPState.getSp());
 				}
 				else {
 					Util.updateDisconnectSPStatus(possibleSPState.getSp());

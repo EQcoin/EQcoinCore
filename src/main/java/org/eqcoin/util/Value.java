@@ -27,52 +27,104 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.lock;
+package org.eqcoin.util;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 
+import org.eqcoin.serialization.EQCInheritable;
+import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
- * @date Apr 10, 2020
+ * @date Mar 31, 2020
  * @email 10509759@qq.com
  */
-public class T1Publickey extends Publickey {
+public class Value extends BigInteger {
+//	public static final Value ZERO = new Value(0);
 	
-	public T1Publickey() {
-	}
-
-	public T1Publickey(ByteArrayInputStream is) throws Exception {
-		parse(is);
-	}
+//	public Value() {
+//		super(BigInteger.ZERO.toByteArray());
+//	}
 	
-	public void parse(ByteArrayInputStream is) throws Exception {
-		// Parse publicKey
-		publickey = EQCType.parseNBytes(is, Util.P256_PUBLICKEY_LEN);
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.lock.EQCPublickey#isSanity()
+	/**
+	 * @param EQCBits
 	 */
-	@Override
-	public boolean isSanity() {
-		if(publickey == null) {
-			Log.Error("publickey == null");
+	public Value(final byte[] bytes) {
+		super(EQCType.eqcBitsToBigInteger(bytes).toByteArray());
+		EQCType.assertPositive(this);
+	}
+	
+	/**
+	 * @param long
+	 */
+	public Value(final long value) {
+		super(BigInteger.valueOf(value).toByteArray());
+		EQCType.assertPositive(this);
+	}
+	
+	/**
+	 * @param BigInteger
+	 */
+	public Value(final BigInteger value) {
+		super(value.toByteArray());
+		EQCType.assertPositive(this);
+	}
+	
+	public boolean isSanity() throws Exception {
+		if(this.compareTo(Value.ZERO) <= 0) {
+			Log.Error(this + " <= 0");
 			return false;
 		}
-		if(publickey.length == Util.P256_PUBLICKEY_LEN) {
-			Log.Error("publickey.length == Util.P256_PUBLICKEY_LEN");
+		if(this.compareTo(Util.MAX_EQC) > 0) {
+			Log.Error(this + " > " + Util.MAX_EQC);
 			return false;
 		}
 		return true;
 	}
 	
-	public String toInnerJson() {
-		return "\"T1Publickey\":" + "\"" + Util.bytesTo512HexString(publickey) + "\"";
+	/**
+	 * @return current serial number's EQCBits
+	 */
+	public byte[] getEQCBits() {
+		return EQCType.bigIntegerToEQCBits(this);
+	}
+
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#add(java.math.BigInteger)
+	 */
+	@Override
+	public Value add(BigInteger val) {
+		return new Value(super.add(val));
+	}
+
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#subtract(java.math.BigInteger)
+	 */
+	@Override
+	public Value subtract(BigInteger val) {
+		// TODO Auto-generated method stub
+		return new Value(super.subtract(val));
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#multiply(java.math.BigInteger)
+	 */
+	@Override
+	public Value multiply(BigInteger val) {
+		// TODO Auto-generated method stub
+		return new Value(super.multiply(val));
+	}
+
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#divide(java.math.BigInteger)
+	 */
+	@Override
+	public Value divide(BigInteger val) {
+		// TODO Auto-generated method stub
+		return new Value(super.divide(val));
 	}
 	
 }

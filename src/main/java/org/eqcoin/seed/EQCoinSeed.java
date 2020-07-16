@@ -38,54 +38,62 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Vector;
 
+import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Statistics;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.lock.Publickey;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.T2Lock;
+import org.eqcoin.lock.publickey.Publickey;
 import org.eqcoin.passport.AssetPassport;
 import org.eqcoin.passport.EQcoinRootPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
 import org.eqcoin.transaction.TransferOPTransaction;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.transaction.ZeroZionCoinbaseTransaction;
 import org.eqcoin.transaction.ZionCoinbaseTransaction;
-import org.eqcoin.transaction.ZionTxOut;
 import org.eqcoin.transaction.Transaction.TransactionShape;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
  * @date July 31, 2019
  * @email 10509759@qq.com
  */
-public class EQcoinSeed extends EQCSeed {
+public class EQCoinSeed extends EQCSerializable {
+	protected EQCoinSeedRoot eqCoinSeedRoot;
+	protected Vector<Transaction> newTransactionList;
+	// This is the new Transaction list's total size which should less than MAX_EQCHIVE_SIZE.
+	protected int newTransactionListLength;
+	protected ChangeLog changeLog;
+	
 	/* (non-Javadoc)
 	 * @see com.eqchains.blockchain.subchain.EQCSubchain#init()
 	 */
 	@Override
 	public void init() {
-		super.init();
-		eqcSeedRoot = new EQcoinSeedRoot();
+		newTransactionList = new Vector<>();
+		eqCoinSeedRoot = new EQCoinSeedRoot();
 	}
 
-	public EQcoinSeed() {
+	public EQCoinSeed() {
 		super();
 	}
 
-	public EQcoinSeed(byte[] bytes) throws Exception {
+	public EQCoinSeed(byte[] bytes) throws Exception {
 		super(bytes);
 	}
 	
-	public EQcoinSeed(ByteArrayInputStream is) throws Exception {
+	public EQCoinSeed(ByteArrayInputStream is) throws Exception {
 		super(is);
 	}
 
@@ -98,11 +106,11 @@ public class EQcoinSeed extends EQCSeed {
 	
 	public void addCoinbaseTransaction(Transaction coinbaseTransaction) throws ClassNotFoundException, SQLException, Exception {
 		// Add Coinbase Transaction
-		((EQcoinSeedRoot) eqcSeedRoot).setCoinbaseTransaction(coinbaseTransaction);
+		eqCoinSeedRoot.setCoinbaseTransaction(coinbaseTransaction);
 	}
 	
-	public EQcoinSeedRoot getEQcoinSeedRoot() {
-		return (EQcoinSeedRoot) eqcSeedRoot;
+	public EQCoinSeedRoot getEQCoinSeedRoot() {
+		return eqCoinSeedRoot;
 	}
 	
 	@Override
@@ -111,7 +119,7 @@ public class EQcoinSeed extends EQCSeed {
 			
 			// Verify CoinBaseTransaction
 			// Here need check if need exist CoinbaseTransaction
-			TransferCoinbaseTransaction coinbaseTransaction = (TransferCoinbaseTransaction) getEQcoinSeedRoot().getCoinbaseTransaction();
+			TransferCoinbaseTransaction coinbaseTransaction = (TransferCoinbaseTransaction) getEQCoinSeedRoot().getCoinbaseTransaction();
 			if(!coinbaseTransaction.isSanity()) {
 				Log.Error("CoinBaseTransaction isn't sanity: " + coinbaseTransaction);
 				return false;
@@ -143,44 +151,24 @@ public class EQcoinSeed extends EQCSeed {
 				}
 			}
 			
-			// Check if Transactions' size < 1 MB
+			// Check if Transactions' size < 1 MB 
+			// 20200616 here need change to current EQCHive size
 			if (newTransactionListLength > Util.ONE_MB) {
 				Log.Error("EQcoinSubchain's length is invalid");
 				return false;
 			}
 			
-			// Deposit txFee
-			if(changeLog.getTxFee().compareTo(Value.ZERO) > 0) {
-				Log.info("Current EQCHive's txFee is: " + changeLog.getTxFee());
-				Value minerTxFee = changeLog.getTxFee().multiply(Value.valueOf(5)).divide(Value.valueOf(100));
-				Value eqCoinFederalTxFee = changeLog.getTxFee().subtract(minerTxFee);
-				Passport eqCoinFederalPassport = changeLog.getFilter().getPassport(ID.ZERO, true);
-				Passport minerPassport = null;
-				if(changeLog.getCoinbaseTransaction() instanceof TransferCoinbaseTransaction) {
-					TransferCoinbaseTransaction transferCoinbaseTransaction = (TransferCoinbaseTransaction) changeLog.getCoinbaseTransaction();
-					minerPassport = changeLog.getFilter().getPassport(transferCoinbaseTransaction.getEqCoinMinerTxOut().getPassportId(), true);
-				}
-				else {
-					ZionCoinbaseTransaction zionCoinbaseTransaction = (ZionCoinbaseTransaction) changeLog.getCoinbaseTransaction();
-					// Here may need do more job
-					ID minerLockId = changeLog.getFilter().isLockExists(zionCoinbaseTransaction.getEqCoinMinerTxOut().getLock(), true);
-					minerPassport = changeLog.getFilter().getPassportFromLockId(minerLockId);
-				}
-				eqCoinFederalPassport.deposit(eqCoinFederalTxFee);
-				minerPassport.deposit(minerTxFee);
-				eqCoinFederalPassport.setChangeLog(changeLog).planting();
-				minerPassport.setChangeLog(changeLog).planting();
-			}
-			
-			// Verify new EQcoinSeed finished just audit if relevant Statistics data is valid
-			changeLog.getStatistics().generateStatistics(this);
-			if (!changeLog.getStatistics().isValid(this)) {
-				Log.Error("Statistics is invalid!");
-				return false;
-			}
-			
-			// Check if EQcoinSeedRoot is valid include verify relevant root according to ChangeLog
-			if(!eqcSeedRoot.isValid()) {
+//			// Verify new EQcoinSeed finished just audit if relevant Statistics data is valid
+//			changeLog.getStatistics().generateStatistics(this);
+//			if (!changeLog.getStatistics().isValid(this)) {
+//				Log.Error("Statistics is invalid!");
+//				return false;
+//			}
+//			
+			// Check if EQcoinSeedRoot is valid include verify relevant root according to
+			// ChangeLog and verify new EQcoinSeed finished just audit if relevant
+			// Statistics data is valid
+			if(!eqCoinSeedRoot.isValid()) {
 				Log.Error("EQcoinSeedRoot is invalid!");
 				return false;
 			}
@@ -193,17 +181,9 @@ public class EQcoinSeed extends EQCSeed {
 		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqchains.blockchain.subchain.EQCSubchain#parseHeader(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		eqcSeedRoot = new EQcoinSeedRoot(is);
-	}
-
 	public String toInnerJson() {
 		return
-				"\"EQcoinSeed\":{\n" + eqcSeedRoot.toInnerJson() + ",\n" +
+				"\"EQcoinSeed\":{\n" + eqCoinSeedRoot.toInnerJson() + ",\n" +
 				"\"NewTransactionList\":" + 
 				"\n{\n" +
 				"\"Size\":\"" + newTransactionList.size() + "\",\n" +
@@ -215,11 +195,11 @@ public class EQcoinSeed extends EQCSeed {
 		// Here need sort all transactions from transaction pool
 		
 		Transaction coinbaseTransaction = null;
-		if(changeLog.getHeight().equals(ID.ZERO)) {
+ 		if(changeLog.getHeight().equals(ID.ZERO)) {
 			ZeroZionCoinbaseTransaction zeroZionCoinbaseTransaction = new ZeroZionCoinbaseTransaction();
 
 			ZionTxOut txOut = new ZionTxOut();
-			txOut.setLock(LockTool.readableLockToEQCLock(Util.SINGULARITY_A));
+ 			txOut.setLock(LockTool.readableLockToEQCLock(Util.SINGULARITY_A));
 			Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
 			txOut.setValue(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward));
 			zeroZionCoinbaseTransaction.setEqCoinFederalTxOut(txOut);
@@ -236,11 +216,9 @@ public class EQcoinSeed extends EQCSeed {
 			} 
 			// Add CoinBase into EQcoinSeedHeader
 			addCoinbaseTransaction(coinbaseTransaction);
-			// Here need do more job to analysis if exist a better way
-			changeLog.setCoinbaseTransaction(coinbaseTransaction);
 		}
 		else {
-			EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(changeLog.getHeight().getPreviousID());
+			EQCoinSeedRoot eQcoinSeedRoot = Util.GS().getEQCoinSeedRoot(changeLog.getHeight().getPreviousID());
 			if(eQcoinSeedRoot.getTotalSupply().compareTo(Util.MAX_EQC) <= 0) {
 				// Create CoinBase Transaction
 				coinbaseTransaction = Util.generateTransferCoinbaseTransaction(ID.ONE, changeLog);
@@ -250,17 +228,15 @@ public class EQcoinSeed extends EQCSeed {
 				}
 				// Add CoinBase into EQcoinSeedHeader
 				addCoinbaseTransaction(coinbaseTransaction);
-				// Here need do more job to analysis if exist a better way
-				changeLog.setCoinbaseTransaction(coinbaseTransaction);
 			}
 		}
 		
 		// Handle every pending Transaction
 		for (Transaction transaction : transactionList) {
 			// Add Transaction into EQcoinSeed
-			if ((getNewTransactionListLength()
-					+ transaction.getBytes().length) <= Util.MAX_EQCHIVE_SIZE) {
-				Log.info("Add new Transaction which Passport ID: " + transaction.getTxIn().getPassportId() + " Nonce: " + transaction.getNonce());
+			if ((newTransactionListLength
+					+ transaction.getBytes().length) <= Util.MAX_EQCHIVE_SIZE) { // Here need change to retrieve from EQCoinPassport
+				Log.info("Add new Transaction with nonce: " + transaction.getNonce());
 				
 				try {
 					// Init Transaction
@@ -268,14 +244,14 @@ public class EQcoinSeed extends EQCSeed {
 					
 					// Check if Transaction is sanity and valid then planting
 					if (!transaction.planting()) {
-						EQCHiveH2.getInstance().deleteTransactionInPool(transaction);
+						Util.MC().deleteTransactionInPool(transaction);
 						Log.Error("Transaction is invalid planting failed: " + transaction);
 						continue;
 					}
 					
 				}
 				catch (Exception e) {
-					EQCHiveH2.getInstance().deleteTransactionInPool(transaction);
+					Util.MC().deleteTransactionInPool(transaction);
 					Log.Error("During add new transacton exception occur:" + e + " just discard it: "
 							+ transaction.toString());
 					continue;
@@ -289,48 +265,17 @@ public class EQcoinSeed extends EQCSeed {
 			}
 		}
 		
-		// Deposit txFee
-		if(changeLog.getTxFee().compareTo(Value.ZERO) > 0) {
-			Log.info("Current EQCHive's txFee is: " + changeLog.getTxFee());
-			Value minerTxFee = changeLog.getTxFee().multiply(Value.valueOf(5)).divide(Value.valueOf(100));
-			Value eqCoinFederalTxFee = changeLog.getTxFee().subtract(minerTxFee);
-			Passport eqCoinFederalPassport = changeLog.getFilter().getPassport(ID.ZERO, true);
-			Passport minerPassport = null;
-			if(changeLog.getCoinbaseTransaction() instanceof TransferCoinbaseTransaction) {
-				TransferCoinbaseTransaction transferCoinbaseTransaction = (TransferCoinbaseTransaction) changeLog.getCoinbaseTransaction();
-				minerPassport = changeLog.getFilter().getPassport(transferCoinbaseTransaction.getEqCoinMinerTxOut().getPassportId(), true);
-			}
-			else {
-				ZionCoinbaseTransaction zionCoinbaseTransaction = (ZionCoinbaseTransaction) changeLog.getCoinbaseTransaction();
-				// Here may need do more job
-				ID minerLockId = changeLog.getFilter().isLockExists(zionCoinbaseTransaction.getEqCoinMinerTxOut().getLock(), true);
-				minerPassport = changeLog.getFilter().getPassportFromLockId(minerLockId);
-			}
-			eqCoinFederalPassport.deposit(eqCoinFederalTxFee);
-			minerPassport.deposit(minerTxFee);
-			eqCoinFederalPassport.setChangeLog(changeLog).planting();
-			minerPassport.setChangeLog(changeLog).planting();
-		}
-		
 		// Planting new EQcoinSeed finished just check if relevant Statistics data is valid
-		changeLog.getStatistics().generateStatistics(this);
-		if (!changeLog.getStatistics().isValid(this)) {
+		if (!changeLog.isStatisticsValid()) {
 			Log.Error("Statistics is invalid!");
 			throw new IllegalStateException("Statistics is invalid!");
 		}
-
-		// Generate relevant root
-		changeLog.buildProofBase();
-		changeLog.generateProofRoot();
 		
 		// Update EQcoinSeedRoot
-		EQcoinSeedRoot eQcoinSeedRoot = (EQcoinSeedRoot) eqcSeedRoot;
-		eQcoinSeedRoot.setTotalTransactionNumbers(changeLog.getStatistics().getTotalTransactionNumbers());
-		eQcoinSeedRoot.setTotalSupply(changeLog.getStatistics().getTotalSupply());
-		eQcoinSeedRoot.setTotalLockNumbers(changeLog.getTotalLockNumbers());
-		eQcoinSeedRoot.setTotalPassportNumbers(changeLog.getTotalPassportNumbers());
-		eQcoinSeedRoot.setPassportProofRoot(changeLog.getPassportProofRoot());
-		eQcoinSeedRoot.setForbiddenLockProofRoot(changeLog.getForbiddenLockProofRoot());
+		eqCoinSeedRoot.setTotalTransactionNumbers(changeLog.getTotalTransactionNumbers());
+		eqCoinSeedRoot.setTotalSupply(changeLog.getTotalSupply());
+		eqCoinSeedRoot.setTotalLockNumbers(changeLog.getTotalLockNumbers());
+		eqCoinSeedRoot.setTotalPassportNumbers(changeLog.getTotalPassportNumbers());
 		
 	}
 	
@@ -340,9 +285,55 @@ public class EQcoinSeed extends EQCSeed {
 	
 	public byte[] getProof() throws Exception {
 		Vector<byte[]> vector = new Vector<>();
-		vector.add(eqcSeedRoot.getBytes());
+		vector.add(eqCoinSeedRoot.getBytes());
 		vector.add(getNewTransactionListProofRoot());
 		return Util.getMerkleTreeRoot(vector, true);
 	}
+	
+	protected String _getNewTransactionList() {
+		String tx = null;
+		if (newTransactionList != null && newTransactionList.size() > 0) {
+			tx = "\n[\n";
+			if (newTransactionList.size() > 1) {
+				for (int i = 0; i < newTransactionList.size() - 1; ++i) {
+					tx += newTransactionList.get(i) + ",\n";
+				}
+			}
+			tx += newTransactionList.get(newTransactionList.size() - 1);
+			tx += "\n]";
+		} else {
+			tx = "[]";
+		}
+		return tx;
+	}
+	
+	public byte[] getNewTransactionListProofRoot() throws Exception {
+		if(newTransactionList.isEmpty()) {
+			return EQCType.NULL_ARRAY;
+		}
+		else {
+			Vector<byte[]> transactions = new Vector<byte[]>();
+			for (Transaction transaction : newTransactionList) {
+				transactions.add(transaction.getBytes());
+				transaction.setTransactionShape(TransactionShape.SEED);
+			}
+			return Util.getMerkleTreeRoot(transactions, true);
+		}
+	}
+	
+	/**
+	 * @param changeLog the changeLog to set
+	 */
+	public void setChangeLog(ChangeLog changeLog) {
+		this.changeLog = changeLog;
+		eqCoinSeedRoot.setChangeLog(changeLog);
+	}
 
+	/**
+	 * @return the newTransactionList
+	 */
+	public Vector<Transaction> getNewTransactionList() {
+		return newTransactionList;
+	}
+	
 }

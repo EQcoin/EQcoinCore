@@ -29,24 +29,20 @@
  */
 package org.eqcoin.changelog;
 
-import java.io.ByteArrayOutputStream;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.sql.Savepoint;
-import java.util.Vector;
 
-import org.eqcoin.crypto.MerkleTree;
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.lock.LockMate;
 import org.eqcoin.passport.EQcoinRootPassport;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQcoinSeedRoot;
+import org.eqcoin.persistence.globalstate.GlobalState.Statistics;
+import org.eqcoin.seed.EQCoinSeed;
+import org.eqcoin.seed.EQCoinSeedRoot;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * ChangeLog store the changed Lock&Passport's new state during accounting or
@@ -63,39 +59,25 @@ import org.eqcoin.util.Util;
  * @date Mar 11, 2019
  * @email 10509759@qq.com
  */
+@Deprecated
 public class ChangeLog {
 	/**
 	 * Current EQCHive's height which is the base for the new EQCHive
 	 */
 	private ID height;
-	
-//	private Vector<byte[]> livelyLockBaseList;
-//	private byte[] livelyLockProofRoot;
-	private ID totalLockNumbers;
+	private Value totalSupply;
 	private ID previousTotalLockNumbers;
-	
-	private Vector<byte[]> passportBaseList;
-	private byte[] passportProofRoot;
-	private ID totalPassportNumbers;
+	private ID totalLockNumbers;
 	private ID previousTotalPassportNumbers;
-	
-//	private ID totalNewPassportNumbers;
-	private Vector<LockMate> forbiddenLockList;
-	private Vector<byte[]> forbiddenLockBaseList;
-	private byte[] forbiddenLockProofRoot;
-	
+	private ID totalPassportNumbers;
 	private Filter filter;
-	private EQcoinSeedRoot preEQcoinSeedRoot;
-	private Transaction coinbaseTransaction;
-	private Statistics statistics;
+	private EQCoinSeedRoot preEQcoinSeedRoot;
+	private EQCHive currentEQCHive;
 	private Value txFeeRate;
-	private Value txFee;
 
 	public ChangeLog(ID height, Filter filter) throws Exception {
 		super();
-		EQCHive previousEQCHive = null;
 		
-		statistics = new Statistics(this);
 //		totalNewPassportNumbers = ID.ZERO;
 		filter.setChangeLog(this);
 		this.height = height;
@@ -117,7 +99,7 @@ public class ChangeLog {
 			txFeeRate = new Value(Util.DEFAULT_TXFEE_RATE);
 		}
 		else {
-			preEQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(height.getPreviousID());
+			preEQcoinSeedRoot = Util.GS().getEQCoinSeedRoot(height.getPreviousID());
 			// Here exists one bug prevous total supply also need retrieve from previous EQCHive
 			previousTotalLockNumbers = preEQcoinSeedRoot.getTotalLockNumbers();
 			previousTotalPassportNumbers = preEQcoinSeedRoot.getTotalPassportNumbers();
@@ -127,12 +109,8 @@ public class ChangeLog {
 		
 		totalLockNumbers = previousTotalLockNumbers;
 		totalPassportNumbers = previousTotalPassportNumbers;
+		totalSupply = Util.cypherTotalSupply(this);
 		this.filter = filter;
-		passportBaseList = new Vector<>();
-		forbiddenLockList = new Vector<>();
-		forbiddenLockBaseList = new Vector<>();
-		forbiddenLockProofRoot = EQCType.NULL_ARRAY;
-		txFee = Value.ZERO;
 	}
 	
 	/**
@@ -217,106 +195,6 @@ public class ChangeLog {
 		this.height = height;
 	}
 
-	public void buildProofBase() throws Exception {
- 		buildPassportAndLivelyLockProofBase();
-		buildForbiddenLockProofBase();
-	}
-	
-	public void buildPassportAndLivelyLockProofBase() throws Exception {
-		Passport passport = null;
-		MerkleTree passportMerkleTree = null;
-		Vector<byte[]> passportList = new Vector<>();
-		LockMate lock = null;
-		MerkleTree livelyLockMerkleTree = null;
-		Vector<byte[]> livelyLockList = new Vector<>();
-		ByteArrayOutputStream os = null;
-		
-		for (long i = 0; i < totalPassportNumbers.longValue(); ++i) {
-			// Build passport proof base
-			os = new ByteArrayOutputStream();
-			passport = filter.getPassport(new ID(i), true);
-			lock = filter.getLock(new ID(passport.getLockID()), true);
-			passport.getBytes(os);
-			lock.getBodyBytes(os);
-			passportList.add(os.toByteArray());
-			if((i%Util.KILOBYTE) == 0) {
-				passportMerkleTree = new MerkleTree(passportList, true);
-				passportMerkleTree.generateRoot();
-				passportBaseList.add(passportMerkleTree.getRoot());
-				passportMerkleTree = null;
-				passportList = new Vector<>();
-			}
-//			// Build lively lock proof base
-// 			lock = filter.getLock(new ID(passport.getLockID()), true);
-//			livelyLockList.add(lock.getBytes());
-//			if((i%Util.KILOBYTE) == 0) {
-//				livelyLockMerkleTree = new MerkleTree(livelyLockList, true);
-//				livelyLockMerkleTree.generateRoot();
-//				livelyLockBaseList.add(livelyLockMerkleTree.getRoot());
-//				livelyLockMerkleTree = null;
-//				livelyLockList = new Vector<>();
-//			}
-		}
-
-		passportMerkleTree = new MerkleTree(passportList, true);
-		passportMerkleTree.generateRoot();
-		passportBaseList.add(passportMerkleTree.getRoot());
-		
-//		livelyLockMerkleTree = new MerkleTree(livelyLockList, true);
-//		livelyLockMerkleTree.generateRoot();
-//		livelyLockBaseList.add(livelyLockMerkleTree.getRoot());
-		
-	}
-	
-	public void generateLivelyLockAndPassportProofRoot() throws NoSuchAlgorithmException {
-		MerkleTree merkleTree = new MerkleTree(passportBaseList, false);
-		merkleTree.generateRoot();
-		passportProofRoot = merkleTree.getRoot();
-	}
-	
-	public void generateProofRoot() throws NoSuchAlgorithmException {
-		generateLivelyLockAndPassportProofRoot();
-		generateForbiddenLockProofRoot();
-	}
-	
-	public byte[] getPassportProofRoot() {
-		return passportProofRoot;
-	}
-
-	public void buildForbiddenLockProofBase() throws Exception {
-		LockMate lock = null;
-		MerkleTree merkleTree = null;
-		Vector<byte[]> forbiddenLockBytesList = new Vector<>();
-		
-		for (int i = 0; i <forbiddenLockList.size(); ++i) {
-			lock = forbiddenLockList.get(i);
-			forbiddenLockBytesList.add(lock.getBytes());
-			if((i%Util.KILOBYTE) == 0) {
-				merkleTree = new MerkleTree(forbiddenLockBytesList, true);
-				merkleTree.generateRoot();
-				forbiddenLockBaseList.add(merkleTree.getRoot());
-				merkleTree = null;
-				forbiddenLockBytesList = new Vector<>();
-			}
-		}
-		merkleTree = new MerkleTree(forbiddenLockBytesList, true);
-		merkleTree.generateRoot();
-		if(merkleTree.getRoot() != null) {
-			// Exists forbidden lock just generate it's root
-			forbiddenLockBaseList.add(merkleTree.getRoot());
-		}
-	}
-	
-	public void generateForbiddenLockProofRoot() throws NoSuchAlgorithmException {
-		MerkleTree merkleTree = new MerkleTree(forbiddenLockBaseList, false);
-		merkleTree.generateRoot();
-		forbiddenLockProofRoot = merkleTree.getRoot();
-	}
-	
-	public byte[] getForbiddenLockProofRoot() {
-		return forbiddenLockProofRoot;
-	}
-	
 	public void merge() throws Exception {
 		filter.merge();
 	}
@@ -325,28 +203,27 @@ public class ChangeLog {
 		filter.clear();
 	}
 	
-//	public ID getPassportID(Passport address) throws ClassNotFoundException, SQLException, Exception {
-//		return filter.getPassportID(address);
-//	}
-
+	@Deprecated
 	public byte[] getEQCHeaderHash(ID height) throws Exception {
-		return Util.DB().getEQCHiveRootProof(height);
+		return Util.GS().getEQCHiveRootProof(height);
 	}
 	
+	@Deprecated
 	public byte[] getEQCHeaderBuddyHash(ID height) throws Exception {
 		byte[] hash = null;
 		EQCType.assertNotBigger(height, this.height);
 		if(height.compareTo(this.height) < 0) {
-			hash = Util.DB().getEQCHiveRootProof(height);
+			hash = Util.GS().getEQCHiveRootProof(height);
 		}
 		else {
-			hash = Util.DB().getEQCHiveRootProof(height.getPreviousID());
+			hash = Util.GS().getEQCHiveRootProof(height.getPreviousID());
 		}
 		return hash;
 	}
 	
+	@Deprecated
 	public byte[] getEQCHive(ID height, boolean isSegwit) throws Exception {
-		return Util.DB().getEQCHive(height);
+		return Util.GS().getEQCHive(height);
 	}
 	
 	public void takeSnapshot() throws Exception {
@@ -362,25 +239,30 @@ public class ChangeLog {
 	
 	public void updateGlobalState(EQCHive eqcHive, Savepoint savepoint) throws Exception {
 		try {
-			Util.DB().saveEQCHive(eqcHive);
+			Util.GS().saveEQCHive(eqcHive);
 			takeSnapshot();
 			merge();
 			clear();
-			Util.DB().saveEQCHiveTailHeight(eqcHive.getHeight());
-			Util.DB().deleteTransactionsInPool(eqcHive);
+			Util.GS().saveEQCHiveTailHeight(eqcHive.getHeight());
+			Util.MC().deleteTransactionsInPool(eqcHive);
 			if(savepoint != null) {
 				Log.info("Begin commit at EQCHive No." + eqcHive.getHeight());
-				Util.DB().getConnection().commit();
+				Util.GS().getConnection().commit();
 				Log.info("Commit successful at EQCHive No." + eqcHive.getHeight());
 			}
 		} catch (Exception e) {
 			Log.Error("During update global state error occur: " + e + " savepoint: " + savepoint);
 			if (savepoint != null) {
 				Log.info("Begin rollback at EQCHive No." + eqcHive.getHeight());
-				Util.DB().getConnection().rollback(savepoint);
+				Util.GS().getConnection().rollback(savepoint);
 				Log.info("Rollback successful at EQCHive No." + eqcHive.getHeight());
 			}
 			throw e;
+		}
+		finally {
+			if(savepoint != null) {
+				Util.GS().getConnection().releaseSavepoint(savepoint);
+			}
 		}
 	}
 	
@@ -418,34 +300,6 @@ public class ChangeLog {
 	}
 
 	/**
-	 * @return the statistics
-	 */
-	public Statistics getStatistics() {
-		return statistics;
-	}
-
-	/**
-	 * @return the forbiddenLockList
-	 */
-	public Vector<LockMate> getForbiddenLockList() {
-		return forbiddenLockList;
-	}
-
-	/**
-	 * @param coinbaseTransaction the coinbaseTransaction to set
-	 */
-	public void setCoinbaseTransaction(Transaction coinbaseTransaction) {
-		this.coinbaseTransaction = coinbaseTransaction;
-	}
-
-	/**
-	 * @return the coinbaseTransaction
-	 */
-	public Transaction getCoinbaseTransaction() {
-		return coinbaseTransaction;
-	}
-
-	/**
 	 * @return the txFeeRate
 	 */
 	public Value getTxFeeRate() {
@@ -453,18 +307,83 @@ public class ChangeLog {
 	}
 	
 	/**
-	 * @return the txFee
+	 * @return the currentEQCHive
 	 */
-	public Value getTxFee() {
-		return txFee;
+	public EQCHive getCurrentEQCHive() {
+		return currentEQCHive;
 	}
-	
-	public void depositTxFee(Value value) {
-		txFee = txFee.add(value);
+
+	/**
+	 * @param currentEQCHive the currentEQCHive to set
+	 */
+	public void setCurrentEQCHive(EQCHive currentEQCHive) {
+		this.currentEQCHive = currentEQCHive;
 	}
-	
-	public void withdrewTxFee(Value value) {
-		txFee = txFee.subtract(value);
+
+	public boolean isStatisticsValid() throws Exception {
+		// Check if total new lock numbers equal to total new passport numbers + total new updated Lock numbers
+		EQCoinSeedRoot preEQcoinSeedRoot = null;
+		ID totalNewLockNumbers = null;
+		ID totalNewPassportNumbers = null;
+		ID preTotalTransactionNumbers = null;
+		ID totalLockNumbers = null;
+		ID totalPassportNumbers = null;
+		if(height.equals(ID.ZERO)) {
+			totalNewLockNumbers = ID.TWO;
+			totalNewPassportNumbers = ID.TWO;
+			preTotalTransactionNumbers = ID.ZERO;
+			totalLockNumbers = ID.TWO;
+			totalPassportNumbers = ID.TWO;
+		}
+		else {
+			preEQcoinSeedRoot = Util.GS().getEQCoinSeedRoot(height.getPreviousID()); 
+			totalNewLockNumbers = this.totalLockNumbers.subtract(preEQcoinSeedRoot.getTotalLockNumbers());
+			totalNewPassportNumbers = this.totalPassportNumbers.subtract(preEQcoinSeedRoot.getTotalPassportNumbers());
+			preTotalTransactionNumbers = preEQcoinSeedRoot.getTotalTransactionNumbers();
+			totalLockNumbers = Util.GS().getTotalLockNumbers(filter.getMode());
+			totalPassportNumbers = Util.GS().getTotalPassportNumbers(filter.getMode());
+		}
+
+		// 20200530 here need do more job
+//		if(!totalNewLockNumbers.equals(totalNewPassportNumbers.add(new ID(changeLog.getForbiddenLockList().size())))) {
+//			Log.Error("TotalNewLockNumbers doesn't equal to totalNewPassportNumbers + totalNewUpdateLockNumbers. This is invalid.");
+//			return false;
+//		}
+		
+		Statistics statistics = Util.GS().getStatistics(filter.getMode());
+		
+		// Check if total supply is valid
+		if(!totalSupply.equals(statistics.getTotalSupply())) {
+			Log.Error("TotalSupply is invalid expected: " + totalSupply + " but actual: " + statistics.getTotalSupply());
+			return false;
+		}
+		
+		// Check if total transaction numbers is valid
+		if(!statistics.getTotalTransactionNumbers().equals(preTotalTransactionNumbers.add(new ID(currentEQCHive.getEQCoinSeed().getNewTransactionList().size())))) {
+			Log.Error("TotalTransactionNumbers is invalid expected: " + statistics.getTotalTransactionNumbers() + " but actual: " + preTotalTransactionNumbers.add(new ID(currentEQCHive.getEQCoinSeed().getNewTransactionList().size())));
+			return false;
+		}
+		
+		// Check if total lock numbers is valid
+		if(!this.totalLockNumbers.equals(totalLockNumbers)) {
+			Log.Error("Total lock numbers is invalid expected: " + this.totalLockNumbers + " but actual: " + totalLockNumbers);
+			return false;
+		}
+		
+		// Check if total passport numbers is valid
+		if(!this.totalPassportNumbers.equals(totalPassportNumbers)) {
+			Log.Error("Total passport numbers is invalid expected: " + this.totalPassportNumbers + " but actual: " + totalPassportNumbers);
+			return false;
+		}
+		
+		return true;
+	}
+
+	/**
+	 * @return the totalSupply
+	 */
+	public Value getTotalSupply() {
+		return totalSupply;
 	}
 	
 }

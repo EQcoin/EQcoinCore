@@ -87,7 +87,7 @@ public class ChangeCheckPoint extends Operation {
 	 */
 	@Override
 	public boolean isMeetPreconditions() throws Exception {
-		if(!transaction.getTxIn().getPassportId().equals(ID.ONE)) {
+		if(!transaction.getWitness().getPassport().getId().equals(ID.ONE)) {
 			Log.Error("Only Passport one can execute ChangeCheckPointOP");
 			return false;
 		}

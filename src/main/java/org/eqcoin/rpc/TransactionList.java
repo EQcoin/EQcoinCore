@@ -7,7 +7,6 @@ import java.util.Vector;
 import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.Util;

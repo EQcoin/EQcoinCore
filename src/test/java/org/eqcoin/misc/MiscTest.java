@@ -42,7 +42,6 @@ import java.sql.SQLException;
 
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.keystore.Keystore;
 import org.eqcoin.keystore.UserProfile;
@@ -50,12 +49,13 @@ import org.eqcoin.keystore.Keystore.ECCTYPE;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.passport.AssetPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 import org.junit.jupiter.api.Test;
 
 
@@ -97,7 +97,7 @@ public class MiscTest {
 	   void snapshot() throws Exception {
 		   Passport account;
 		try {
-			account = EQCHiveH2.getInstance().getPassportSnapshot(ID.TWO.getNextID(), ID.ONE);
+			account = GlobalStateH2.getInstance().getPassportSnapshot(ID.TWO.getNextID(), ID.ONE);
 //			 assertEquals(account.getAsset(Asset.EQCOIN).getBalanceUpdateHeight(), ID.ONE);
 		} catch (NoSuchFieldException | IllegalStateException | ClassNotFoundException | SQLException | IOException e) {
 			// TODO Auto-generated catch block
@@ -127,15 +127,23 @@ public class MiscTest {
 //		}
 	   }
 	   
-	   @Test
+	/**
+	 * Due to the relevant snapshot will be deleted before check point so only
+	 * support self re-verify EQCHive from check point to tail. This test will re
+	 * write all relevant global state. So also can use this recovery global state
+	 * to specific height. Due to self verify is a pseudo-demand so doesn't support
+	 * this in future. If want re verify locally need recovery global state to
+	 * specific height then valid each EQCHive.
+	 */
+	@Test
 	   void verifyEQCHive() {
 		   ID id;
 		try {
-			id = Util.DB().getEQCHiveTailHeight();
+			id = Util.GS().getEQCHiveTailHeight();
 			Log.info("Current tail height: " + id);
 			 for(int i=1; i<=id.intValue(); ++i) {
 			   ChangeLog changeLog = new ChangeLog(new ID(i), new Filter(Mode.MINING));
-			   EQCHive eqcBlock = new EQCHive(Util.DB().getEQCHive(new ID(i)));
+			   EQCHive eqcBlock = new EQCHive(Util.GS().getEQCHive(new ID(i)));
 			   eqcBlock.setChangeLog(changeLog);
 			   Log.info("Begin verify No." + i + " EQCHive");
 			   Log.info("\n" + eqcBlock.toString());
@@ -151,7 +159,7 @@ public class MiscTest {
 	   
 	   @Test
 	   void verifyPublickey2Address() {
-		   UserProfile userAccount = Keystore.getInstance().getUserProfiles().get(0);
+		   UserProfile userAccount = Keystore.getInstance().getUserProfileList().get(0);
 		   byte[] publickey = null;
 		try {
 			publickey = Util.AESDecrypt(userAccount.getPublicKey(), "abc");
@@ -167,7 +175,7 @@ public class MiscTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		   assertEquals(readableAddress, userAccount.getReadableLock());
+//		   assertEquals(readableAddress, userAccount.getReadableLock());
 	   }
 	   
 	   @Test
@@ -201,8 +209,8 @@ public class MiscTest {
 					long begin = System.currentTimeMillis();
 					Log.info("" + begin);
 					for (int i = 0; i < 100000; ++i) {
-						Passport passport= Util.DB().getPassport(ID.ONE, Mode.GLOBAL);
-						EQCHiveH2.getInstance().savePassportSnapshot(passport, ID.ZERO);
+						Passport passport= Util.GS().getPassport(ID.ONE);
+						GlobalStateH2.getInstance().savePassportSnapshot(passport, ID.ZERO);
 					}
 					long end = System.currentTimeMillis();
 					Log.info("Total put time: " + (end - begin) + " ms");
@@ -210,7 +218,7 @@ public class MiscTest {
 //						Log.info("" + Util.dumpBytes(rocksDB.get(columnFamilyHandles.get(1), SerialNumber.ZERO.getEQCBits()), 16));
 					Log.info("" + begin);
 					for (int i = 0; i < 100000; ++i) {
-						EQCHiveH2.getInstance().getPassportSnapshot(ID.ONE, ID.ZERO);
+						GlobalStateH2.getInstance().getPassportSnapshot(ID.ONE, ID.ZERO);
 					}
 					end = System.currentTimeMillis();
 					Log.info("Total get time: " + (end - begin) + " ms");
@@ -381,14 +389,14 @@ public class MiscTest {
 	@Test
 	void rollbackTest() {
 		try {
-			Util.DB().getConnection().setAutoCommit(false);
-			Util.DB().saveEQCHiveTailHeight(ID.THREE);
-			Log.info("" + Util.DB().getEQCHiveTailHeight());
-			Util.DB().saveEQCHiveTailHeight(ID.FIVE);
-			Log.info("" + Util.DB().getEQCHiveTailHeight());
-			Util.DB().getConnection().rollback();
-			Log.info("" + Util.DB().getEQCHiveTailHeight());
-			Util.DB().getConnection().commit();
+			Util.GS().getConnection().setAutoCommit(false);
+			Util.GS().saveEQCHiveTailHeight(ID.THREE);
+			Log.info("" + Util.GS().getEQCHiveTailHeight());
+			Util.GS().saveEQCHiveTailHeight(ID.FIVE);
+			Log.info("" + Util.GS().getEQCHiveTailHeight());
+			Util.GS().getConnection().rollback();
+			Log.info("" + Util.GS().getEQCHiveTailHeight());
+			Util.GS().getConnection().commit();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -402,9 +410,9 @@ public class MiscTest {
 		Log.info("testKeystore");
 		for (int i = 0; i < 30; ++i) {
 			Log.info("i: " + i);
-			account = Keystore.getInstance().createUserProfile("nju2006", "abc", ECCTYPE.P521);
+			account = Keystore.getInstance().createUserProfile("nju2006", "abc", ECCTYPE.P521, "0");
 //			if(account.getAddress().length() > 51 || account.getAddress().length() < 49) {
-			Log.info(account.getReadableLock() + " len: " + account.getReadableLock().length());
+//			Log.info(account.getReadableLock() + " len: " + account.getReadableLock().length());
 //			}
 		}
 		Log.info("end");
@@ -425,7 +433,7 @@ public class MiscTest {
 	 
 	 @Test
 	void testEQCBits1() throws NoSuchFieldException, IllegalStateException, IOException {
-		for (long i = 0; i < 1000000000000l; ++i) {
+		for (long i = 0; i < 1000000000l; ++i) {
 //			Log.info(""+i);
 			BigInteger bigInteger = BigInteger.valueOf(i);
 //			Log.info(Util.dumpBytes(EQCType.bigIntegerToEQCBits(bigInteger), 16));

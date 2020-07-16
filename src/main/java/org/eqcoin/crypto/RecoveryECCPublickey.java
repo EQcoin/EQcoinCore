@@ -39,7 +39,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.ECCurve.Fp;
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockTool;
-import org.eqcoin.transaction.Witness;
+import org.eqcoin.lock.witness.Witness;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -87,7 +87,7 @@ public abstract class RecoveryECCPublickey {
 	 *         possible.
 	 * @throws Exception 
 	 */
-	private byte[] recoverFromSignature(int recId, byte[] signature, byte[] messageHash) throws Exception {
+	public byte[] recoverFromSignature(int recId, byte[] signature, byte[] messageHash) throws Exception {
 		ECDSASignature ecdsaSignature = ECDSASignature.decodeFromDER(signature);
 		// 1.0 For j from 0 to h (h == recId here and the loop is outside this function)
 		// 1.1 Let x = r + jn
@@ -147,16 +147,16 @@ public abstract class RecoveryECCPublickey {
      * @return
      * @throws Exception 
      */
-    public byte[] recoveryPublickey(Transaction transaction) throws Exception {
-    	byte[] compressedPublickey = null;
-        for (byte i = 0; i < 2; i++) {
-            compressedPublickey = recoverFromSignature(i, transaction.getEqcWitness().getDERSignature(), transaction.getSignBytesHash());
-            if(LockTool.verifyEQCLockAndPublickey(transaction.getTxInLockMate().getLock(), compressedPublickey)) {
-            	break;
-            }
-        }
-        return compressedPublickey;
-    }
+//    public byte[] recoveryPublickey(Transaction transaction) throws Exception {
+//    	byte[] compressedPublickey = null;
+//        for (byte i = 0; i < 2; i++) {
+//            compressedPublickey = recoverFromSignature(i, transaction.getWitness().getDERSignature(), transaction.getSignBytesHash());
+//            if(LockTool.verifyEQCLockAndPublickey(transaction.getTxInLockMate().getLock(), compressedPublickey)) {
+//            	break;
+//            }
+//        }
+//        return compressedPublickey;
+//    }
 	
 	/** Decompress a compressed public key (x co-ord and low-bit of y-coord). */
 	private ECPoint decompressKey(BigInteger xBN, boolean yBit) {

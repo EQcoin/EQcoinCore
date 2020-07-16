@@ -32,24 +32,15 @@ package org.eqcoin.transaction;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Objects;
-import java.util.Vector;
 
 import org.eqcoin.changelog.ChangeLog;
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.AssetPassport;
-import org.eqcoin.passport.EQcoinRootPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
-import org.eqcoin.seed.EQCSeed;
-import org.eqcoin.seed.EQcoinSeed;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.transaction.Transaction.TransactionType;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -130,9 +121,9 @@ public class TransferCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#isTxInSanity()
 	 */
 	@Override
-	protected boolean isTxInSanity() {
-		if(txIn != null) {
-			Log.Error("txIn != null");
+	protected boolean isStatusSanity() {
+		if(status != null) {
+			Log.Error("status != null");
 			return false;
 		}
 		return true;
@@ -175,16 +166,16 @@ public class TransferCoinbaseTransaction extends Transaction {
 		Passport passport = null;
 		passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), false);
 		passport.deposit(eqCoinFederalTxOut.getValue());
-		changeLog.getFilter().savePassport(passport);
+		passport.setChangeLog(changeLog).planting();
 		passport = null;
 		passport = changeLog.getFilter().getPassport(eqCoinMinerTxOut.getPassportId(), false);
 		passport.deposit(eqCoinMinerTxOut.getValue());
-		changeLog.getFilter().savePassport(passport);
+		passport.setChangeLog(changeLog).planting();
 	}
 	
 	public String toInnerJson() {
 		return
-		"\"TransferCoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
+		"\"TransferCoinbaseTransaction\":" + "\n{\n"
 		+ "\"EQcoinFederalTxOut\":" + "\n" + eqCoinFederalTxOut.toInnerJson() + "\n,"
 		+ "\"EQcoinMinerTxOut\":" + "\n" + eqCoinMinerTxOut.toInnerJson() + "\n,"
 		+ "\"Nonce\":" + "\"" + nonce + "\"" + 
@@ -257,8 +248,8 @@ public class TransferCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#isEQCWitnessSanity()
 	 */
 	@Override
-	protected boolean isEQCWitnessSanity() {
-		return eqcWitness == null;
+	protected boolean isWitnessSanity() {
+		return witness == null;
 	}
 	
 	/* (non-Javadoc)
@@ -273,15 +264,8 @@ public class TransferCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#initPlanting()
 	 */
 	@Override
-	protected void initPlanting() throws Exception {
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#getTxFee()
-	 */
-	@Override
-	public Value getTxFee() throws Exception {
-		return Value.ZERO;
+	protected boolean isMeetPreCondition() throws Exception {
+		return true;
 	}
 	
 }

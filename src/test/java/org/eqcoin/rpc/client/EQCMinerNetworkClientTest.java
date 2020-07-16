@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.sql.SQLException;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.NewEQCHive;
@@ -124,7 +124,7 @@ class EQCMinerNetworkClientTest {
 	final void testBroadcastNewEQCHive() throws ClassNotFoundException, SQLException, Exception {
 		EQCHive eqcHive = null;
 		NewEQCHive newEQCHive = new NewEQCHive();
-		newEQCHive.setEQCHive(EQCHiveH2.getInstance().getEQCHiveFile(ID.ZERO, false));
+		newEQCHive.setEQCHive(GlobalStateH2.getInstance().getEQCHiveFile(ID.ZERO, false));
 		Info info = null;
 		info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHive, Util.SINGULARITY_SP);
 		assertNotNull(info);

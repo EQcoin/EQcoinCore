@@ -34,9 +34,9 @@ import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
 
 import org.eqcoin.avro.O;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.passport.EQcoinRootPassport;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Util;
@@ -63,8 +63,7 @@ public class NewEQCHive extends IO implements Comparable<NewEQCHive> {
 	public NewEQCHive() throws Exception {
 		super();
 		sp = Util.LOCAL_SP;
-		EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO,
-				Mode.GLOBAL);
+		EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
 		checkPointHeight = eQcoinRootPassport.getCheckPointHeight();
 	}
 	

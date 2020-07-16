@@ -40,6 +40,7 @@ import org.eqcoin.serialization.EQCType;
  * @date May 9, 2020
  * @email 10509759@qq.com
  */
+@Deprecated
 public class WalletStatus extends EQCSerializable {
 	protected Status status;
 	

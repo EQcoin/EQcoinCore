@@ -40,7 +40,7 @@ import org.eqcoin.avro.EQCMinerNetwork;
 import org.eqcoin.avro.EQCTransactionNetwork;
 import org.eqcoin.avro.O;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.LockInfo;
 import org.eqcoin.rpc.LockStatus;
@@ -51,10 +51,10 @@ import org.eqcoin.rpc.TransactionIndexList;
 import org.eqcoin.rpc.TransactionList;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 import org.eqcoin.util.Util.SP_MODE;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 
@@ -215,8 +215,8 @@ public class EQCTransactionNetworkClient extends EQCRPCClient {
 					new InetSocketAddress(InetAddress.getByName(sp.getIp()), Util.TRANSACTION_NETWORK_PORT), new OioClientSocketChannelFactory(
 			                Executors.newCachedThreadPool()), Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCTransactionNetwork.class, nettyTransceiver);
-			transactionIndexList = new TransactionIndexList(client.getTransactionIndexList(Protocol.getProtocol(O.class, Util.DB().getSyncTime(sp).getEQCBits())));
-			EQCHiveH2.getInstance().saveSyncTime(sp, transactionIndexList.getSyncTime());
+			transactionIndexList = new TransactionIndexList(client.getTransactionIndexList(Protocol.getProtocol(O.class, Util.MC().getSyncTime(sp).getEQCBits())));
+			Util.MC().saveSyncTime(sp, transactionIndexList.getSyncTime());
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 			throw e;

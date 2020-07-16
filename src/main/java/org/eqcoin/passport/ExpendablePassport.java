@@ -46,6 +46,7 @@ import org.eqcoin.util.Log;
  */
 public class ExpendablePassport extends Passport {
 	protected Storage storage;
+	private boolean isStorageUpdate;
 	
 	/* (non-Javadoc)
 	 * @see org.eqcoin.passport.Passport#init()
@@ -92,10 +93,6 @@ public class ExpendablePassport extends Passport {
 		return os;
 	}
 	
-	public byte[] getStorageBytes() throws Exception {
-		return storage.getBytes();
-	}
-
 	public void parseStorage(byte [] bytes) throws Exception {
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		parseStorage(is);
@@ -147,6 +144,22 @@ public class ExpendablePassport extends Passport {
 	 */
 	public Storage getStorage() {
 		return storage;
+	}
+	
+	/**
+	 * @return the isStorageUpdate
+	 */
+	public boolean isStorageUpdate() {
+		return isStorageUpdate;
+	}
+	
+	public void sync() {
+		super.sync();
+		isStorageUpdate = true;
+	}
+	
+	public byte[] getStorageState() throws Exception {
+		return storage.getBytes();
 	}
 	
 }

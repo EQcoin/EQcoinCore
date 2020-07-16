@@ -27,14 +27,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.transaction;
+package org.eqcoin.lock.witness;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Signature;
+import java.security.SignatureException;
 
 import org.eqcoin.crypto.ECDSASignature;
+import org.eqcoin.crypto.EQCECCPublicKey;
+import org.eqcoin.crypto.RecoverySECP256R1Publickey;
+import org.eqcoin.crypto.RecoverySECP521R1Publickey;
+import org.eqcoin.keystore.Keystore.ECCTYPE;
+import org.eqcoin.lock.Lock;
+import org.eqcoin.lock.LockMate;
+import org.eqcoin.lock.LockTool;
+import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.serialization.EQCType;
+import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
@@ -44,6 +59,11 @@ import org.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class T2Witness extends Witness {
+	private byte[] compressedPublickey;
+	/**
+	 * The relevant passport's master lock
+	 */
+	private LockMate lockMate;
 	
 	public T2Witness() {
 	}
@@ -61,11 +81,11 @@ public class T2Witness extends Witness {
 	 */
 	@Override
 	public boolean isSanity() {
-		if(signature == null) {
+		if(witness == null) {
 			Log.Error("signature == null");
 			return false;
 		}
-		if(signature.length != Util.P521_SIGNATURE_LEN.intValue()) {
+		if(witness.length != Util.P521_SIGNATURE_LEN.intValue()) {
 			Log.Error("signature.length != Util.P521_SIGNATURE_LEN.intValue()");
 			return false;
 		}
@@ -80,7 +100,7 @@ public class T2Witness extends Witness {
 		return 
 				"\"T2Witness\":" + 
 				"\n{\n" +
-					"\"Signature\":\"" + Util.bytesToHexString(signature) + "\"\n" +
+					"\"Signature\":\"" + Util.bytesToHexString(witness) + "\"\n" +
 				"}";
 	}
 
@@ -89,7 +109,7 @@ public class T2Witness extends Witness {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		signature = EQCType.parseNBytes(is, Util.P521_SIGNATURE_LEN.intValue());
+		witness = EQCType.parseNBytes(is, Util.P521_SIGNATURE_LEN.intValue());
 	}
 
 	public static byte[] DERToEQCSignature(byte[] derSignature) throws Exception {
@@ -111,13 +131,9 @@ public class T2Witness extends Witness {
 		return os.toByteArray();
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.EQCWitness#getDERSignature()
-	 */
-	@Override
 	public byte[] getDERSignature() throws Exception {
 		byte[] r = null, s = null;
-		ByteArrayInputStream is = new ByteArrayInputStream(signature);
+		ByteArrayInputStream is = new ByteArrayInputStream(witness);
 		r = EQCType.parseNBytes(is, Util.P521_POINT_LEN.intValue());
 		s = EQCType.parseNBytes(is, Util.P521_POINT_LEN.intValue());
 		ECDSASignature ecdsaSignature = new ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
@@ -125,13 +141,13 @@ public class T2Witness extends Witness {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.EQCWitness#setDERSignature(byte[])
+	 * @see org.eqcoin.transaction.Witness#setWitness(byte[])
 	 */
 	@Override
-	public void setDERSignature(byte[] derSignature) throws Exception {
-		signature = DERToEQCSignature(derSignature);
+	public void setWitness(byte[] witness) throws Exception {
+		this.witness = DERToEQCSignature(witness);
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -140,11 +156,83 @@ public class T2Witness extends Witness {
 	@Override
 	public byte[] getProof() {
 		byte[] bytes = new byte[Util.PROOF_SIZE];
-		bytes[0] = signature[0];
-		bytes[1] = signature[21];
-		bytes[2] = signature[42];
-		bytes[3] = signature[63];
+		bytes[0] = witness[0];
+		bytes[1] = witness[21];
+		bytes[2] = witness[42];
+		bytes[3] = witness[63];
 		return bytes;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.eqcoin.transaction.Witness#getMaxBillingLength()
+	 */
+	@Override
+	public BigInteger getMaxBillingLength() {
+		return Util.P521_SIGNATURE_LEN;
+	}
+	
+	/* (non-Javadoc)
+	 * @see org.eqcoin.transaction.Witness#verifySignature()
+	 */
+	@Override
+	public boolean verifySignature() throws Exception {
+		boolean isTransactionValid = false;
+		Signature signature = null;
+		// Verify Signature
+		try {
+			signature = Signature.getInstance("NONEwithECDSA", "SunEC");
+			EQCECCPublicKey eqcPublicKey = new EQCECCPublicKey(ECCTYPE.P521);
+			// Create EQPublicKey according to compressed Publickey
+			eqcPublicKey.setECPoint(compressedPublickey);
+			signature.initVerify(eqcPublicKey);
+//			Log.info("\nPublickey: " + Util.dumpBytesLittleEndianHex(txInLockMate.getEqcPublickey().getPublickey()));
+//			Log.info("\nMessageLen: " + getBytes().length + "\nMessageBytes: " + Util.dumpBytesLittleEndianHex(getBytes()));
+//			Log.info("\nMessage Hash: " + Util.dumpBytesLittleEndianHex(MessageDigest.getInstance(Util.SHA3_512).digest(getBytes())));
+			signature.update(transaction.getSignBytesHash());
+			isTransactionValid = signature.verify(getDERSignature());
+		} catch (NoSuchAlgorithmException | NoSuchProviderException | SignatureException | IOException | InvalidKeyException e) {
+			Log.Error(e.getMessage());
+		}
+		return isTransactionValid;
+	}
+	
+	/* (non-Javadoc)
+	 * @see org.eqcoin.transaction.Witness#initPlanting()
+	 */
+	@Override
+	public boolean isMeetPreCondition() throws Exception {
+		Lock lock = null;
+		ID lockMateId = null;
+		for (int i = 0; i < 2; ++i) {
+			compressedPublickey = RecoverySECP521R1Publickey.getInstance().recoverFromSignature(i,
+					getDERSignature(), transaction.getSignBytesHash());
+			lock = LockTool.publickeyToEQCLock(LockType.T2, compressedPublickey);
+			if ((lockMateId = transaction.getChangeLog().getFilter().isLockExists(lock, false)) != null) {
+				break;
+			}
+		}
+		if(lockMateId == null) {
+			Log.Error("Witness relevant lock doesn't exists");
+			return false;
+		}
+		lockMate = transaction.getChangeLog().getFilter().getLock(lockMateId, true);
+		if(lockMate == null) {
+			Log.Error("lockMate == null");
+			return false;
+		}
+		passport = transaction.getChangeLog().getFilter().getPassportFromLockId(lockMateId, true);
+		if(passport == null) {
+			Log.Error("passport == null");
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * @return the lockMate
+	 */
+	public LockMate getLockMate() {
+		return lockMate;
 	}
 	
 }

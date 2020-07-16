@@ -89,7 +89,7 @@ public class ChangeTxFeeRate extends Operation {
 			Log.Error("Only ModerateOPTransaction can execute ChangeTxFeeRateOP");
 			return false;
 		}
-		if(!transaction.getTxIn().getPassportId().equals(ID.ONE)) {
+		if(!transaction.getWitness().getPassport().getId().equals(ID.ONE)) {
 			Log.Error("Only Passport one can execute ChangeTxFeeRateOP");
 			return false;
 		}

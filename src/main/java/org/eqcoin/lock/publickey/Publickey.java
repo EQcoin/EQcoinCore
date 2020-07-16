@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.lock;
+package org.eqcoin.lock.publickey;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import org.eqcoin.changelog.ChangeLog;
+import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.passport.Passport;
 import org.eqcoin.serialization.EQCSerializable;
@@ -141,14 +142,14 @@ public class Publickey extends EQCSerializable {
 
 	@Override
 	public boolean isValid() throws Exception {
-		if(!transaction.getTxInLockMate().getPublickey().isNULL()) {
-			Log.Error("Publickey relevant LockMate's Publickey isn't null");
-			return false;
-		}
-		if(LockTool.verifyEQCLockAndPublickey(transaction.getTxInLockMate().getLock(), publickey)) {
-			Log.Error("Publickey doesn't match relevant EQCLock");
-			return false;
-		}
+//		if(!transaction.getTxInLockMate().getPublickey().isNULL()) {
+//			Log.Error("Publickey relevant LockMate's Publickey isn't null");
+//			return false;
+//		}
+//		if(LockTool.verifyEQCLockAndPublickey(transaction.getTxInLockMate().getLock(), publickey)) {
+//			Log.Error("Publickey doesn't match relevant EQCLock");
+//			return false;
+//		}
 		return true;
 	}
 	

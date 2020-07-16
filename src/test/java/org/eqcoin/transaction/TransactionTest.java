@@ -38,16 +38,15 @@ import java.security.Signature;
 import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.keystore.Keystore;
 import org.eqcoin.keystore.UserProfile;
 import org.eqcoin.keystore.Keystore.ECCTYPE;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.lock.Publickey;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.T2Lock;
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.lock.publickey.Publickey;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
 import org.eqcoin.rpc.client.EQCTransactionNetworkClient;
@@ -55,17 +54,16 @@ import org.eqcoin.test.TransTest;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.TransferTxOut;
-import org.eqcoin.transaction.TxIn;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.transaction.ZionTransaction;
-import org.eqcoin.transaction.ZionTxOut;
 import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.transaction.operation.ChangeLock;
+import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -84,7 +82,7 @@ public class TransactionTest {
 	@BeforeAll
 	static void setUpBeforeClass() throws Exception {
 		Log.info("setUpBeforeClass");
-		isRpc = true;
+		isRpc = false;
 	}
 	
 	@Test

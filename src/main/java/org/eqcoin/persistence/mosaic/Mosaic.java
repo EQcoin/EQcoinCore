@@ -27,51 +27,62 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.lock;
+package org.eqcoin.persistence.mosaic;
 
-import java.io.ByteArrayInputStream;
+import java.util.Vector;
 
-import org.eqcoin.serialization.EQCType;
-import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
+import org.eqcoin.hive.EQCHive;
+import org.eqcoin.rpc.SP;
+import org.eqcoin.rpc.SPList;
+import org.eqcoin.rpc.TransactionIndex;
+import org.eqcoin.rpc.TransactionIndexList;
+import org.eqcoin.rpc.TransactionList;
+import org.eqcoin.transaction.Transaction;
+import org.eqcoin.util.ID;
 
 /**
  * @author Xun Wang
- * @date Apr 10, 2020
+ * @date Jun 2, 2020
  * @email 10509759@qq.com
  */
-public class T2Publickey extends Publickey {
+public interface Mosaic {
 	
-	public T2Publickey() {
-	}
+		// TransactionPool relevant interface for H2, avro.
+		public boolean isTransactionExistsInPool(Transaction transaction) throws Exception;
 
-	public T2Publickey(ByteArrayInputStream is) throws Exception {
-		parse(is);
-	}
-	
-	public void parse(ByteArrayInputStream is) throws Exception {
-		// Parse publicKey
-		publickey = EQCType.parseNBytes(is, Util.P521_PUBLICKEY_LEN);
-	}
+		public boolean isTransactionExistsInPool(TransactionIndex transactionIndex) throws Exception;
 
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.lock.EQCPublickey#isSanity()
-	 */
-	@Override
-	public boolean isSanity() {
-		if(publickey == null) {
-			Log.Error("publickey == null");
-			return false;
-		}
-		if(publickey.length == Util.P521_PUBLICKEY_LEN) {
-			Log.Error("publickey.length == Util.P521_PUBLICKEY_LEN");
-			return false;
-		}
-		return true;
-	}
-	
-	public String toInnerJson() {
-		return "\"T2Publickey\":" + "\"" + Util.bytesTo512HexString(publickey) + "\"";
-	}
-	
+		public boolean saveTransactionInPool(Transaction transaction) throws Exception;
+
+		public boolean deleteTransactionInPool(Transaction transaction) throws Exception;
+
+		public boolean deleteTransactionsInPool(EQCHive eqcHive) throws Exception;
+
+		public Vector<Transaction> getTransactionListInPool() throws Exception;
+
+		public Vector<Transaction> getPendingTransactionListInPool(ID id) throws Exception;
+
+		public TransactionIndexList getTransactionIndexListInPool(long previousSyncTime, long currentSyncTime)
+				throws Exception;
+
+		public TransactionList getTransactionListInPool(TransactionIndexList transactionIndexList)
+				throws Exception;
+
+		// EQC service provider relevant interface for H2, avro.
+		public boolean isSPExists(SP sp) throws Exception;
+
+		public boolean saveSP(SP sp) throws Exception;
+
+		public boolean deleteSP(SP sp) throws Exception;
+
+		public boolean saveSyncTime(SP sp, ID syncTime) throws Exception;
+
+		public ID getSyncTime(SP sp) throws Exception;
+
+		public boolean saveSPCounter(SP sp, byte counter) throws Exception;
+
+		public byte getSPCounter(SP sp) throws Exception;
+
+		public SPList getSPList(ID flag) throws Exception;
+		
 }

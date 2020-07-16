@@ -37,7 +37,7 @@ import java.util.Objects;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.passport.AssetPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQcoinSeed;
+import org.eqcoin.seed.EQCoinSeed;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction.TransactionType;
 import org.eqcoin.transaction.operation.ChangeLock;
@@ -86,12 +86,12 @@ public class ZionOPTransaction extends ZionTransaction {
 	public String toInnerJson() {
 		return
 		"\"ZionOPTransaction\":" + "\n{\n" 
-				+ txIn.toInnerJson() + ",\n"
+				+ statusInnerJson() + ",\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
 				+ "\"TxOutList\":" + "\n{\n" + "\"Size\":" + "\"" + txOutList.size() + "\"" + ",\n"
 				+ "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ operation.toInnerJson() + ",\n"
-				+ eqcWitness.toInnerJson()
+				+ witness.toInnerJson()
 				+ "\n" + "}";
 	}
 	

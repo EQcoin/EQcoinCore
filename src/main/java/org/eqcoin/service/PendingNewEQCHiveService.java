@@ -31,10 +31,10 @@ package org.eqcoin.service;
 
 import java.util.concurrent.PriorityBlockingQueue;
 
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.keystore.Keystore;
 import org.eqcoin.passport.EQcoinRootPassport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.rpc.NewEQCHive;
 import org.eqcoin.rpc.client.EQCHiveSyncNetworkClient;
 import org.eqcoin.rpc.client.EQCMinerNetworkClient;
@@ -116,17 +116,17 @@ public class PendingNewEQCHiveService extends EQCService {
 //						+ " just return");
 //				return;
 //			} else {
-			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
-			ID localTailHeight = Util.DB().getEQCHiveTailHeight();
+			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
+			ID localTailHeight = Util.GS().getEQCHiveTailHeight();
 			// Here need do more job to check if the checkpoint is valid need add checkpoint
 			// transaction in NewBlock add isValid in NewBlock to handle this
 			if (newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(localTailHeight) > 0
 					&& newBlockState.getNewEQCHive().getCheckPointHeight()
 							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
 					&& newBlockState.getNewEQCHive().getEQCHive().getEQCHiveRoot().isDifficultyValid()) {
-				if(newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(Util.DB().getEQCHiveTailHeight().getNextID()) > 0) {
+				if(newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(Util.GS().getEQCHiveTailHeight().getNextID()) > 0) {
 					if(EQCHiveSyncNetworkClient.registerSP(newBlockState.getNewEQCHive().getSp()).getPing() == -1) {
-						Log.info("Received new EQCHive height:" + newBlockState.getNewEQCHive().getEQCHive().getHeight() + " is more than one bigger than local tail:" + Util.DB().getEQCHiveTailHeight() + " but the SP:" + newBlockState.getNewEQCHive().getSp() + " can't access have to discard it");
+						Log.info("Received new EQCHive height:" + newBlockState.getNewEQCHive().getEQCHive().getHeight() + " is more than one bigger than local tail:" + Util.GS().getEQCHiveTailHeight() + " but the SP:" + newBlockState.getNewEQCHive().getSp() + " can't access have to discard it");
 						return;
 					}
 				}

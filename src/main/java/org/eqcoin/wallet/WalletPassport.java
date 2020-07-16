@@ -39,6 +39,7 @@ import org.eqcoin.passport.Passport;
  * @date May 9, 2020
  * @email 10509759@qq.com
  */
+@Deprecated
 public class WalletPassport extends WalletStatus {
 	private Passport passport;
 	

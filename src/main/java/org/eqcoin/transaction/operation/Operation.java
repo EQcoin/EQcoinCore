@@ -40,11 +40,11 @@ import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.transaction.operation.Operation.OP;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -218,7 +218,7 @@ public class Operation  extends EQCSerializable {
 	}
 	
 	public Value getProofLength() {
-		return Value.ZERO;
+		return null;
 	}
 
 	/**

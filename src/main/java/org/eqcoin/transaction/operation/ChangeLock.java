@@ -40,10 +40,10 @@ import org.eqcoin.passport.Passport;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -71,7 +71,7 @@ public class ChangeLock extends Operation {
 
 	@Override
 	public void planting() throws Exception {
-		Passport passport = transaction.getChangeLog().getFilter().getPassport(transaction.getTxIn().getPassportId(), true);
+		Passport passport = transaction.getWitness().getPassport();
 		LockMate lockMate = new LockMate();
 		lockMate.setId(transaction.getChangeLog().getNextLockId());
 		lockMate.setLock(lock);
@@ -80,10 +80,12 @@ public class ChangeLock extends Operation {
 		passport.setChangeLog(transaction.getChangeLog()).planting();
 		// Due to from here doesn't need forbidden lock any more so just remove it's publickey to release space
 		// If light client want verify the forbidden lock proof can recovery it from relevant transaction's signature
-		transaction.getTxInLockMate().getPublickey().setPublickey(null);
-		transaction.getTxInLockMate().setChangeLog(transaction.getChangeLog()).planting();
-		// At the last add the forbidden lock in case exist any exception
-		transaction.getChangeLog().getForbiddenLockList().add(transaction.getTxInLockMate());
+		transaction.getWitness().forbidden();
+		if(!transaction.getWitness().getLockMate().getPublickey().isNULL()) {
+			transaction.getWitness().getLockMate().getPublickey().setPublickey(null);
+		}
+		transaction.getWitness().getLockMate().setForbidden();
+		transaction.getWitness().getLockMate().setChangeLog(transaction.getChangeLog()).planting();
 	}
 
 	/**

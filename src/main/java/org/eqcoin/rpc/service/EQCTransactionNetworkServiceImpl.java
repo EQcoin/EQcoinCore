@@ -35,11 +35,11 @@ import java.util.Vector;
 import org.apache.avro.AvroRemoteException;
 import org.eqcoin.avro.EQCTransactionNetwork;
 import org.eqcoin.avro.O;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.rpc.Code;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.LockInfo;
@@ -109,7 +109,7 @@ public class EQCTransactionNetworkServiceImpl extends EQCRPCServiceImpl implemen
 		TransactionList transactionList = new TransactionList();
 		Vector<Transaction> transactions = null;
 		try {
-			transactions = Util.DB().getPendingTransactionListInPool(EQCType.parseID(i));
+			transactions = Util.MC().getPendingTransactionListInPool(EQCType.parseID(i));
 			if(!transactions.isEmpty()) {
 				for(Transaction transaction:transactions) {
 					transactionList.addTransaction(transaction);
@@ -132,9 +132,9 @@ public class EQCTransactionNetworkServiceImpl extends EQCRPCServiceImpl implemen
 		try {
 			lockStatus = new LockStatus(s);
 			if(lockStatus.getType() == LOCKSTATUS.READABLELOCK) {
-				LockMate lockMate = Util.DB().getLock(LockTool.readableLockToEQCLock(lockStatus.getReadableLock()), Mode.GLOBAL);
+				LockMate lockMate = Util.GS().getLockMate(LockTool.readableLockToEQCLock(lockStatus.getReadableLock()));
 				if(lockMate != null) {
-					passport = Util.DB().getPassportFromLockId(lockMate.getId(), Mode.GLOBAL);
+					passport = Util.GS().getPassportFromLockMateId(lockMate.getId());
 					if(passport != null) {
 						lockInfo.setStatus(Status.LIVELY);
 						lockInfo.setPassport(passport);
@@ -160,7 +160,7 @@ public class EQCTransactionNetworkServiceImpl extends EQCRPCServiceImpl implemen
 		long syncTime = Util.bytesToLong(synctime.getO().array());
 		TransactionIndexList transactionIndexList = null;
 		try {
-			transactionIndexList = EQCHiveH2.getInstance().getTransactionIndexListInPool(syncTime, System.currentTimeMillis());
+			transactionIndexList = Util.MC().getTransactionIndexListInPool(syncTime, System.currentTimeMillis());
 			io = transactionIndexList.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -179,7 +179,7 @@ public class EQCTransactionNetworkServiceImpl extends EQCRPCServiceImpl implemen
 		O io = null;
 		TransactionList transactionList = null;
 		try {
-			transactionList = EQCHiveH2.getInstance().getTransactionListInPool(new TransactionIndexList(transactionIndexList));
+			transactionList = Util.MC().getTransactionListInPool(new TransactionIndexList(transactionIndexList));
 			io = transactionList.getProtocol(O.class);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

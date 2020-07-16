@@ -43,9 +43,12 @@ import org.eqcoin.passport.Passport;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.transaction.Transaction.TransactionType;
+import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -120,14 +123,14 @@ public class ZionCoinbaseTransaction extends Transaction {
 		}
 		return true;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.Transaction#isTxInSanity()
 	 */
 	@Override
-	protected boolean isTxInSanity() {
-		if(txIn != null) {
-			Log.Error("txIn != null");
+	protected boolean isStatusSanity() {
+		if(status != null) {
+			Log.Error("status != null");
 			return false;
 		}
 		return true;
@@ -159,8 +162,8 @@ public class ZionCoinbaseTransaction extends Transaction {
 			Log.Error("!eqCoinMinerTxOut.isSanity()");
 			return false;
 		}
-		if(!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_EQC) >= 0)) {
-			Log.Error("!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_EQC) >= 0)");
+		if(!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_BALANCE) >= 0)) {
+			Log.Error("!(eqCoinMinerTxOut.getValue().compareTo(Util.MIN_BALANCE) >= 0)");
 			return false;
 		}
 		if(!eqCoinFederalTxOut.getPassportId().equals(ID.ZERO)) {
@@ -196,7 +199,7 @@ public class ZionCoinbaseTransaction extends Transaction {
 	
 	public String toInnerJson() {
 		return
-		"\"ZionCoinbaseTransaction\":" + "\n{\n" + TxIn.coinBase() + ",\n"
+		"\"ZionCoinbaseTransaction\":" + "\n{\n"
 		+ "\"EQcoinFederalTxOut\":" + "\n" + eqCoinFederalTxOut.toInnerJson() + "\n,"
 		+ "\"EQcoinMinerTxOut\":" + "\n" + eqCoinMinerTxOut.toInnerJson() + "\n,"
 		+ "\"Nonce\":" + "\"" + nonce + "\"" + 
@@ -270,8 +273,8 @@ public class ZionCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#isEQCWitnessSanity()
 	 */
 	@Override
-	protected boolean isEQCWitnessSanity() {
-		if(eqcWitness != null) {
+	protected boolean isWitnessSanity() {
+		if(witness != null) {
 			Log.Error("eqcWitness != null");
 			return false;
 		}
@@ -290,15 +293,8 @@ public class ZionCoinbaseTransaction extends Transaction {
 	 * @see com.eqcoin.blockchain.transaction.Transaction#initPlanting()
 	 */
 	@Override
-	protected void initPlanting() throws Exception {
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#getTxFee()
-	 */
-	@Override
-	public Value getTxFee() throws Exception {
-		return Value.ZERO;
+	protected boolean isMeetPreCondition() throws Exception {
+		return true;
 	}
 	
 }

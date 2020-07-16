@@ -34,7 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.apache.velocity.runtime.directive.Parse;
-import org.eqcoin.transaction.Witness;
+import org.eqcoin.lock.witness.Witness;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -85,7 +85,7 @@ public abstract class EQCSerializable implements EQCTypable, EQCInheritable {
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
 		parseHeader(is);
-		parseBody(is);
+ 		parseBody(is);
 	}
 
 	/**

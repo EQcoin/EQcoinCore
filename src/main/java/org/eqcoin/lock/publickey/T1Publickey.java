@@ -27,63 +27,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.transaction;
+package org.eqcoin.lock.publickey;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
- * @date Mar 30, 2020
+ * @date Apr 10, 2020
  * @email 10509759@qq.com
  */
-public class TransferTxOut extends Tx {
+public class T1Publickey extends Publickey {
 	
-	public TransferTxOut(byte[] bytes) throws Exception {
-		super(bytes);
+	public T1Publickey() {
+	}
+
+	public T1Publickey(ByteArrayInputStream is) throws Exception {
+		parse(is);
 	}
 	
-	public TransferTxOut(ByteArrayInputStream is) throws Exception {
-		super(is);
-	}
-	
-	public TransferTxOut() {
-		super();
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public TransferTxOut Parse(ByteArrayInputStream is) throws Exception {
-		return new TransferTxOut(is);
+	public void parse(ByteArrayInputStream is) throws Exception {
+		// Parse publicKey
+		publickey = EQCType.parseNBytes(is, Util.P256_PUBLICKEY_LEN);
 	}
 
 	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
+	 * @see com.eqcoin.blockchain.lock.EQCPublickey#isSanity()
 	 */
 	@Override
-	public String toString() {
-		return 
-		"{\n" +
-		toInnerJson() +
-		"\n}";
+	public boolean isSanity() {
+		if(publickey == null) {
+			Log.Error("publickey == null");
+			return false;
+		}
+		if(publickey.length == Util.P256_PUBLICKEY_LEN) {
+			Log.Error("publickey.length == Util.P256_PUBLICKEY_LEN");
+			return false;
+		}
+		return true;
 	}
 	
 	public String toInnerJson() {
-		return 
-		"\"TransferTxOut\":" + 
-		"\n{" +
-		"\"PassportId\":" + passportId + ",\n" +
-		"\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
-		"}";
+		return "\"T1Publickey\":" + "\"" + Util.bytesTo512HexString(publickey) + "\"";
 	}
 	
 }

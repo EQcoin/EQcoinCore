@@ -39,10 +39,10 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Vector;
 import org.eqcoin.avro.O;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * EQCType is an efficient binary serialization format for serializing and
@@ -107,6 +107,10 @@ public class EQCType {
 	public final static byte NULL = 0;
 	
 	public final static byte[] NULL_ARRAY = {NULL};
+	
+	public final static int MAX_BIN_LEN = Integer.MAX_VALUE;
+	
+	public final static int MAX_ARRAY_LEN = Integer.MAX_VALUE;
 	
 	/**
 	 * BIN8 stores a byte array whose length is from 1 to 8 bytes.
@@ -220,15 +224,15 @@ public class EQCType {
 	public final static byte EQCBITS = (byte) 128;
 	public final static byte EQCBITS_BUFFER_LEN = 12;
 	
-	public final static NoSuchFieldException ZERO_EXCEPTION = new NoSuchFieldException("The ID shouldn't be zero.");
+	public final static NoSuchFieldException ZERO_EXCEPTION = new NoSuchFieldException("The ID shouldn't be zero");
 	
-	public final static NoSuchFieldException NULL_OBJECT_EXCEPTION = new NoSuchFieldException("The Object shouldn't be null.");
+	public final static NoSuchFieldException NULL_OBJECT_EXCEPTION = new NoSuchFieldException("The Object shouldn't be null");
 	
-	public final static IllegalStateException REDUNDANT_DATA_EXCEPTION = new IllegalStateException("Exists redundant data in current Object.");
+	public final static IllegalStateException REDUNDANT_DATA_EXCEPTION = new IllegalStateException("Exists redundant data in current Object");
 
-	public final static IllegalStateException ARRAY_LENGTH_EXCEPTION = new IllegalStateException("ARRAY's length doesn't equal to it's actual length.");
+	public final static IllegalStateException ARRAY_LENGTH_EXCEPTION = new IllegalStateException("ARRAY's length doesn't equal to it's actual length");
 
-	public final static IllegalStateException EOF_EXCEPTION = new IllegalStateException("The ByteArrayInputStream shouldn't end but read EOF.");
+	public final static IllegalStateException EOF_EXCEPTION = new IllegalStateException("The ByteArrayInputStream shouldn't end but read EOF");
 
 	private final static byte[] bytesToBINX(final byte[] bytes) {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -441,7 +445,7 @@ public class EQCType {
 			data = new byte[type];
 			iLen = is.read(data);
 			if (iLen != data.length) {
-				throw new NoSuchFieldException("parseBINX Get BIN data's len  error occur record len != real len.");
+				throw new NoSuchFieldException("parseBINX Get BIN data's len  error occur record len != real len");
 			}
 			bytes = data;
 		} else if (isBIN(type)) {
@@ -450,13 +454,13 @@ public class EQCType {
 			data = new byte[iLen];
 			iLen = is.read(data);
 			if (iLen != data.length) {
-				throw new NoSuchFieldException("parseBIN Get BIN type len error occur record len != real len.");
+				throw new NoSuchFieldException("parseBIN Get BIN type len error occur record len != real len");
 			}
 			// Get BIN data's length
 			elementLen = Util.bytesToLong(data);
 			// Check if Bin data's length is valid
 			if(!isElementLenValid(type, elementLen)) {
-				throw new IllegalStateException("Bin data's length is invalid.");
+				throw new IllegalStateException("Bin data's length is invalid");
 			}
 			// Read the content
 			// Due to the Java array size's limit to Integer.MAX_VALUE so here exists
@@ -465,7 +469,7 @@ public class EQCType {
 			data = new byte[(int) elementLen];
 			iLen = is.read(data);
 			if (iLen != data.length) {
-				throw new NoSuchFieldException("parseBIN Get BIN data's len error occur record len != real len.");
+				throw new NoSuchFieldException("parseBIN Get BIN data's len error occur record len != real len");
 			}
 			bytes = data;
 		} else {
@@ -501,7 +505,7 @@ public class EQCType {
 			data = new byte[iLen];
 			iLen = is.read(data);
 			if (iLen != data.length) {
-				throw new NoSuchFieldException("parseArray Get BIN type len error occur record len != real len.");
+				throw new NoSuchFieldException("parseArray Get BIN type len error occur record len != real len");
 			}
 			// Get Array element's length
 			elementLen = Util.bytesToLong(data);
@@ -524,7 +528,7 @@ public class EQCType {
 		int nLen = 0;
 		nLen = is.read(bytes);
 		if(nLen != len) {
-			throw new IllegalStateException("Expected read " + len + " bytes but actually read " + nLen + " bytes.");
+			throw new IllegalStateException("Expected read " + len + " bytes but actually read " + nLen + " bytes");
 		}
 		return bytes;
 	}
@@ -581,6 +585,7 @@ public class EQCType {
 			throw EOF_EXCEPTION;
 		}
 		if(bytes.length > 1) {
+			// 20200530 due to new implement method here maybe exists bug need do more job
 			if((bytes[0] == 128) && (bytes[1] < 192) ) {
 				throw new IllegalStateException("Bad EQCBits format the highest byte can't be zero");
 			}
@@ -810,66 +815,79 @@ public class EQCType {
 	public final static void assertNoRedundantData(ByteArrayInputStream is) throws IllegalStateException {
 		Objects.requireNonNull(is);
 		if(!isInputStreamEnd(is)) {
-			throw new IllegalStateException("Exists redundant data in current Object.");
+			throw new IllegalStateException("Exists redundant data in current Object");
 		}
 	}
 	
 	public final static void assertNotTerminate(ByteArrayInputStream is) throws IllegalStateException {
 		Objects.requireNonNull(is);
 		if(isInputStreamEnd(is)) {
-			throw new IllegalStateException("Current Object's input stream unexpected terminated.");
+			throw new IllegalStateException("Current Object's input stream unexpected terminated");
 		}
 	}
 	
 	public final static void assertNotNull(ByteArrayInputStream is) throws IllegalStateException {
 		Objects.requireNonNull(is);
 		if(isNULL(is)) {
-			throw new IllegalStateException("The Object shouldn't be null.");
+			throw new IllegalStateException("The Object shouldn't be null");
 		}
 	}
 	
 	public final static void assertNotNull(byte[] bytes) throws IllegalStateException {
 		if(isNULL(bytes)) {
-			throw new IllegalStateException("The Object shouldn't be null.");
+			throw new IllegalStateException("The Object shouldn't be null");
 		}
 	}
 	
 	public final static void assertNotZero(ID id) throws IllegalStateException {
 		Objects.requireNonNull(id);
-		if(id.compareTo(ID.ZERO) == 0) {
-			throw new IllegalStateException("The ID shouldn't be zero.");
+		if(id.compareTo(BigInteger.ZERO) == 0) {
+			throw new IllegalStateException("The ID shouldn't be zero");
 		}
 	}
 	
 	public final static void assertNotNegative(ID id) throws IllegalStateException {
 		Objects.requireNonNull(id);
-		if(id.compareTo(ID.ZERO) < 0) {
-			throw new IllegalStateException("The ID shouldn't be negative.");
+		if(id.compareTo(BigInteger.ZERO) < 0) {
+			throw new IllegalStateException("The ID shouldn't be negative");
 		}
 	}
 	
 	public final static void assertNotNegative(BigInteger bigInteger) throws IllegalStateException {
 		Objects.requireNonNull(bigInteger);
 		if(bigInteger.compareTo(BigInteger.ZERO) < 0) {
-			throw new IllegalStateException("The BigInteger shouldn't be negative.");
+			throw new IllegalStateException("The BigInteger shouldn't be negative");
 		}
 	}
 	
 	public final static void assertNotNegative(long value) throws IllegalStateException {
 		if(value < 0) {
-			throw new IllegalStateException("The long Value shouldn't be negative.");
+			throw new IllegalStateException("The long Value shouldn't be negative");
+		}
+	}
+	
+	public final static void assertPositive(BigInteger bigInteger) throws IllegalStateException {
+		Objects.requireNonNull(bigInteger);
+		if(bigInteger.compareTo(BigInteger.ZERO) <= 0) {
+			throw new IllegalStateException("The BigInteger shouldn't be negative or zero");
+		}
+	}
+	
+	public final static void assertPositive(long value) throws IllegalStateException {
+		if(value <= 0) {
+			throw new IllegalStateException("The long Value shouldn't be negative or zero");
 		}
 	}
 	
 	public final static void assertNotZero(long value) throws IllegalStateException {
 		if(value == 0) {
-			throw new IllegalStateException("The value shouldn't be zero.");
+			throw new IllegalStateException("The value shouldn't be zero");
 		}
 	}
 	
 	public final static void assertNotEOF(int type) throws IllegalStateException {
 		if(type == EOF) {
-			throw new IllegalStateException("The ByteArrayInputStream shouldn't end but read EOF.");
+			throw new IllegalStateException("The ByteArrayInputStream shouldn't end but read EOF");
 		}
 	}
 
@@ -881,15 +899,37 @@ public class EQCType {
 		}
 	}
 	
+	public final static void assertNotLess(BigInteger amount0, BigInteger amount1) throws IllegalStateException {
+		Objects.requireNonNull(amount0);
+		Objects.requireNonNull(amount1);
+		if(amount0.compareTo(amount1) < 0) {
+			throw new IllegalStateException(amount0 + " shouldn't less than " + amount1);
+		}
+	}
+	
+	public final static void assertNotLess(int amount0, int amount1) throws IllegalStateException {
+		if(amount0 < amount1) {
+			throw new IllegalStateException(amount0 + " shouldn't less than " + amount1);
+		}
+	}
+	
 	public final static void assertEqual(long value, long value1) throws IllegalStateException {
 		if(value != value1) {
-			throw new IllegalStateException("The value " + value + " and " + value1 + " should equal.");
+			throw new IllegalStateException("The value " + value + " and " + value1 + " should equal");
 		}
 	}
 	
 	public final static void assertEqual(int value, int value1) throws IllegalStateException {
 		if(value != value1) {
-			throw new IllegalStateException("The value " + value + " and " + value1 + " should equal.");
+			throw new IllegalStateException("The value " + value + " and " + value1 + " should equal");
+		}
+	}
+	
+	public final static void assertEqual(ID value, ID value1) throws IllegalStateException {
+		Objects.requireNonNull(value);
+		Objects.requireNonNull(value1);
+		if(!value.equals(value1)) {
+			throw new IllegalStateException("The value " + value + " and " + value1 + " should equal");
 		}
 	}
 	

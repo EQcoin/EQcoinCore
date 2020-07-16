@@ -49,10 +49,10 @@ import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 import org.h2.engine.User;
 
 /**
@@ -64,27 +64,12 @@ public class UserProfile extends EQCSerializable {
 
 	private String userName;
 	private byte[] pwdProof;
+	private ECCTYPE eccType;
 	private byte[] privateKey;
 	private byte[] publicKey;
-	private String readableLock;
-
+	private String alais;
+	
 	public UserProfile() {
-	}
-
-	/**
-	 * @param userName
-	 * @param pwdProof
-	 * @param privateKey
-	 * @param publicKey
-	 * @param readableAddress
-	 */
-	public UserProfile(String userName, byte[] pwdProof, byte[] privateKey, byte[] publicKey, String readableAddress) {
-		super();
-		this.userName = userName;
-		this.pwdProof = pwdProof;
-		this.privateKey = privateKey;
-		this.publicKey = publicKey;
-		this.readableLock = readableAddress;
 	}
 
 	public UserProfile(byte[] bytes) throws Exception {
@@ -106,14 +91,17 @@ public class UserProfile extends EQCSerializable {
 		// Parse pwdHash
 		pwdProof = EQCType.parseNBytes(is, Util.SHA3_512_LEN);
 
+		// Parse ECCTYPE
+		eccType = ECCTYPE.get(EQCType.parseID(is).intValue());
+				
 		// Parse privateKey
 		privateKey = EQCType.parseBIN(is);
 
 		// Parse publicKey
 		publicKey = EQCType.parseBIN(is);
 
-		// Parse address
-		readableLock = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
+		// Parse alais
+		alais =  EQCType.bytesToASCIISting(EQCType.parseBIN(is));
 	}
 	
 	/* (non-Javadoc)
@@ -131,12 +119,14 @@ public class UserProfile extends EQCSerializable {
 		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(userName)));
 		// pwdHash
 		os.write(pwdProof);
+		// eccType
+		os.write(eccType.getEQCBits());
 		// privateKey
 		os.write(EQCType.bytesToBIN(privateKey));
 		// publicKey
 		os.write(EQCType.bytesToBIN(publicKey));
-		// address
-		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(readableLock)));
+		// alais
+		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(alais)));
 		return os.toByteArray();
 	}
 
@@ -195,59 +185,46 @@ public class UserProfile extends EQCSerializable {
 	public void setPublicKey(byte[] publicKey) {
 		this.publicKey = publicKey;
 	}
-
-	/**
-	 * @return the readableAddress
-	 */
-	public String getReadableLock() {
-		return readableLock;
-	}
 	
 	/**
-	 * @param readableAddress the readableAddress to set
+	 * @return the alais
 	 */
-	public void setReadableLock(String readableAddress) {
-		this.readableLock = readableAddress;
+	public String getAlais() {
+		return alais;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#hashCode()
+	/**
+	 * @param alais the alais to set
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((readableLock == null) ? 0 : readableLock.hashCode());
-		result = prime * result + Arrays.hashCode(privateKey);
-		return result;
+	public void setAlais(String alais) {
+		this.alais = alais;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#equals(java.lang.Object)
+	/**
+	 * @return the eccType
 	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		UserProfile other = (UserProfile) obj;
-		if (readableLock == null) {
-			if (other.readableLock != null)
-				return false;
-		} else if (!readableLock.equals(other.readableLock))
-			return false;
-		if (!Arrays.equals(privateKey, other.privateKey))
-			return false;
-		return true;
+	public ECCTYPE getECCType() {
+		return eccType;
+	}
+
+	/**
+	 * @param eccType the eccType to set
+	 */
+	public void setECCType(ECCTYPE eccType) {
+		this.eccType = eccType;
 	}
 	
+	public LockType getLockType() {
+		LockType lockType = null;
+		if(eccType == ECCTYPE.P256) {
+			lockType = LockType.T1;
+		}
+		else if(eccType == ECCTYPE.P521) {
+			lockType = LockType.T2;
+		}
+		return lockType;
+	}
+
 	public boolean isPasswordCorrect(String password) throws NoSuchAlgorithmException {
 		return Arrays.equals(pwdProof, MessageDigest.getInstance(Util.SHA3_512).digest(password.getBytes()));
 	}
@@ -267,13 +244,9 @@ public class UserProfile extends EQCSerializable {
 					"\"PasswordProof\":" + "\"" + Util.dumpBytes(pwdProof, 16) + "\"" + ",\n" +
 					"\"PrivateKey\":" + "\"" + Util.dumpBytes(privateKey, 16)  + "\"" + ",\n" +
 					"\"PublicKey\":" + "\"" + Util.dumpBytes(publicKey, 16)  + "\"" + ",\n" +
-					"\"ReadableLock\":" + "\"" + readableLock + "\"" + "\n" +
+					"\"Alais\":" + "\"" + alais  + "\"" + "\n" +
 				"}\n" +
 			"}";
-	}
-
-	public LockType getLockType() throws Exception {
-		return LockTool.getLockType(readableLock);
 	}
 
 	@Override
@@ -286,6 +259,10 @@ public class UserProfile extends EQCSerializable {
 			Log.Error("pwdProof == null");
 			return false;
 		}
+		if(eccType == null) {
+			Log.Error("eccType == null");
+			return false;
+		}
 		if(privateKey == null) {
 			Log.Error("privateKey == null");
 			return false;
@@ -294,16 +271,12 @@ public class UserProfile extends EQCSerializable {
 			Log.Error("publicKey == null");
 			return false;
 		}
-		if(readableLock == null) {
-			Log.Error("readableLock == null");
-			return false;
-		}
 		if(pwdProof.length != Util.SHA3_512_LEN) {
 			Log.Error("pwdProof.length != Util.SHA3_512_LEN");
 			return false;
 		}
-		if(!LockTool.isReadableLockSanity(readableLock)) {
-			Log.Error("Readable lock isn't sanity: " + readableLock);
+		if(alais == null) {
+			Log.Error("alais == null");
 			return false;
 		}
 		return true;

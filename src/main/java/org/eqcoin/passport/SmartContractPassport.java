@@ -50,7 +50,7 @@ import org.eqcoin.util.Util;
  * @date May 13, 2019
  * @email 10509759@qq.com
  */
-public abstract class SmartContractPassport extends Passport {
+public abstract class SmartContractPassport extends ExpendablePassport {
 	/**
 	 * Body field include LanguageType
 	 */

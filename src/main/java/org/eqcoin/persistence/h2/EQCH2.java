@@ -27,81 +27,34 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.util;
+package org.eqcoin.persistence.h2;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
+import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
- * @date May 4, 2020
+ * @date Jun 2, 2020
  * @email 10509759@qq.com
  */
-class Base58Test1 {
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
+public abstract class EQCH2 {
+	protected String JDBC_URL;
+	private static final String USER = "Believer";
+	private static final String PASSWORD = "God bless us...";
+	protected Connection connection;
+	protected static final int ONE_ROW = 1;
+	
+	public EQCH2(String jdbc) throws SQLException {
+		JDBC_URL = jdbc;
+		connection = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+		connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+		createTable();
 	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterAll
-	static void tearDownAfterClass() throws Exception {
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@BeforeEach
-	void setUp() throws Exception {
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterEach
-	void tearDown() throws Exception {
-	}
-
-	/**
-	 * Test method for {@link org.eqcoin.util.Base58#encode(byte[])}.
-	 */
-	@Test
-	final void testEncode() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link org.eqcoin.util.Base58#decode(java.lang.String)}.
-	 */
-	@Test
-	final void testDecode() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link org.eqcoin.util.Base58#decodeToBigInteger(java.lang.String)}.
-	 */
-	@Test
-	final void testDecodeToBigInteger() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link org.eqcoin.util.Base58#isBase58Char(char)}.
-	 */
-	@Test
-	final void testIsBase58Char() {
-		fail("Not yet implemented"); // TODO
-	}
-
+	
+	protected synchronized void createTable() throws SQLException {}
+	
 }

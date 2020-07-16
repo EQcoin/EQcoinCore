@@ -60,6 +60,9 @@ public class LockTool {
 				lockType = LockType.T2;
 				break;
 			}
+			if(lockType == null) {
+				throw new IllegalStateException("Invalid lock type: " + ordinal);
+			}
 			return lockType;
 		}
 		public final byte[] getEQCBits() {
@@ -127,18 +130,18 @@ public class LockTool {
 			throws NoSuchAlgorithmException {
 		byte[] lock_proof = null;
 		int compressed_publickey_len = 0;
-		if (eqcLock.getLockType() == LockType.T1) {
+		if (eqcLock.getType() == LockType.T1) {
 			lock_proof = MessageDigest.getInstance(Util.SHA3_256)
 					.digest(Util.multipleExtend(compressedPublickey, Util.THREE));
 			compressed_publickey_len = Util.P256_PUBLICKEY_LEN;
-		} else if (eqcLock.getLockType() == LockType.T2) {
+		} else if (eqcLock.getType() == LockType.T2) {
 			lock_proof = MessageDigest.getInstance(Util.SHA3_512)
 					.digest(Util.multipleExtend(compressedPublickey, Util.THREE));
 			compressed_publickey_len = Util.P521_PUBLICKEY_LEN;
 		}
 		Log.info("Len: " + lock_proof.length + " Recovery publickey's hash: " + Util.bytesToHexString(lock_proof));
-    	Log.info("Len: " + eqcLock.getLockProof().length + " Lock code: " + Util.bytesToHexString(eqcLock.getLockProof()));
-		return (compressed_publickey_len == compressedPublickey.length  && Arrays.equals(lock_proof, eqcLock.getLockProof()));
+    	Log.info("Len: " + eqcLock.getProof().length + " Lock code: " + Util.bytesToHexString(eqcLock.getProof()));
+		return (compressed_publickey_len == compressedPublickey.length  && Arrays.equals(lock_proof, eqcLock.getProof()));
 	}
 	
 	@Deprecated
@@ -193,7 +196,7 @@ public class LockTool {
 	
 	public static final String EQCLockToReadableLock(Lock eqcLock) throws Exception {
 		Objects.requireNonNull(eqcLock);
-		return _generateReadableLock(eqcLock.getLockType(), eqcLock.getLockProof());
+		return _generateReadableLock(eqcLock.getType(), eqcLock.getProof());
 	}
 	
 	public static final byte[] getLockProof(String readableLock) throws Exception {
@@ -218,7 +221,7 @@ public class LockTool {
 		else if(lockType == LockType.T2) {
 			eqcLock = new T2Lock();
 		}
-		eqcLock.setLockProof(getLockProof(readableLock));
+		eqcLock.setProof(getLockProof(readableLock));
 		return eqcLock;
 	}
 	
@@ -226,11 +229,11 @@ public class LockTool {
 		Lock eqcLock = null;
 		if(lockType == LockType.T1) {
 			eqcLock = new T1Lock();
-			eqcLock.setLockProof( MessageDigest.getInstance(Util.SHA3_256).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
+			eqcLock.setProof( MessageDigest.getInstance(Util.SHA3_256).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
 		}
 		else if(lockType == LockType.T2) {
 			eqcLock = new T2Lock();
-			eqcLock.setLockProof(MessageDigest.getInstance(Util.SHA3_512).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
+			eqcLock.setProof(MessageDigest.getInstance(Util.SHA3_512).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
 		}
 		return eqcLock;
 	}

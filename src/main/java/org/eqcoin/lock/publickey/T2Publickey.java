@@ -27,97 +27,51 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.transaction;
+package org.eqcoin.lock.publickey;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 
-import org.eqcoin.serialization.EQCInheritable;
-import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.util.ID;
+import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
- * @date Mar 31, 2020
+ * @date Apr 10, 2020
  * @email 10509759@qq.com
  */
-public class Value extends BigInteger {
-	public static final Value ZERO = new Value(0);
+public class T2Publickey extends Publickey {
 	
-	public Value() {
-		super(BigInteger.ZERO.toByteArray());
+	public T2Publickey() {
+	}
+
+	public T2Publickey(ByteArrayInputStream is) throws Exception {
+		parse(is);
 	}
 	
-	/**
-	 * @param EQCBits
-	 */
-	public Value(byte[] bytes) {
-		super(EQCType.eqcBitsToBigInteger(bytes).toByteArray());
-	}
-	
-	/**
-	 * @param long
-	 */
-	public Value(final long value) {
-		super(BigInteger.valueOf(value).toByteArray());
-		EQCType.assertNotNegative(value);
-	}
-	
-	/**
-	 * @param BigInteger
-	 */
-	public Value(final BigInteger value) {
-		super(value.toByteArray());
-		EQCType.assertNotNegative(value);
-	}
-	
-	public boolean isSanity() throws Exception {
-		return (this.compareTo(Value.ZERO) > 0 && this.compareTo(Util.MAX_EQcoin) <= 0);
-	}
-	
-	/**
-	 * @return current serial number's EQCBits
-	 */
-	public byte[] getEQCBits() {
-		return EQCType.bigIntegerToEQCBits(this);
+	public void parse(ByteArrayInputStream is) throws Exception {
+		// Parse publicKey
+		publickey = EQCType.parseNBytes(is, Util.P521_PUBLICKEY_LEN);
 	}
 
 	/* (non-Javadoc)
-	 * @see java.math.BigInteger#add(java.math.BigInteger)
+	 * @see com.eqcoin.blockchain.lock.EQCPublickey#isSanity()
 	 */
 	@Override
-	public Value add(BigInteger val) {
-		return new Value(super.add(val));
-	}
-
-	/* (non-Javadoc)
-	 * @see java.math.BigInteger#subtract(java.math.BigInteger)
-	 */
-	@Override
-	public Value subtract(BigInteger val) {
-		// TODO Auto-generated method stub
-		return new Value(super.subtract(val));
+	public boolean isSanity() {
+		if(publickey == null) {
+			Log.Error("publickey == null");
+			return false;
+		}
+		if(publickey.length == Util.P521_PUBLICKEY_LEN) {
+			Log.Error("publickey.length == Util.P521_PUBLICKEY_LEN");
+			return false;
+		}
+		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.math.BigInteger#multiply(java.math.BigInteger)
-	 */
-	@Override
-	public Value multiply(BigInteger val) {
-		// TODO Auto-generated method stub
-		return new Value(super.multiply(val));
-	}
-
-	/* (non-Javadoc)
-	 * @see java.math.BigInteger#divide(java.math.BigInteger)
-	 */
-	@Override
-	public Value divide(BigInteger val) {
-		// TODO Auto-generated method stub
-		return new Value(super.divide(val));
+	public String toInnerJson() {
+		return "\"T2Publickey\":" + "\"" + Util.bytesTo512HexString(publickey) + "\"";
 	}
 	
 }

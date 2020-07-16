@@ -116,6 +116,9 @@ public class StateVariable extends EQCSerializable {
 				state = STATE.UPDATEHEIGHT;
 				break;
 			}
+			if(state == null) {
+				throw new IllegalStateException("Invalid state: " + state);
+			}
 			return state;
 		}
 		

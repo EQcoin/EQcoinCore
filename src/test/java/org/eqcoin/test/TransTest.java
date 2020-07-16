@@ -37,28 +37,29 @@ import java.util.concurrent.locks.Lock;
 
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.keystore.Keystore;
 import org.eqcoin.keystore.UserProfile;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.T2Lock;
+import org.eqcoin.lock.witness.T2Witness;
+import org.eqcoin.lock.witness.Witness;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.client.EQCTransactionNetworkClient;
+import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.TransferTxOut;
-import org.eqcoin.transaction.TxIn;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.transaction.ZionTransaction;
-import org.eqcoin.transaction.ZionTxOut;
 import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.transaction.operation.ChangeLock;
+import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -69,63 +70,13 @@ public class TransTest {
 
 	public static void Tranfer(int fromId, double value, TRANSACTION_PRIORITY priority, boolean isRpc, int... toIds) {
 		try {
-			Passport passport = Util.DB().getPassport(new ID(fromId), Mode.GLOBAL);
-			LockMate eqcLockMate = Util.DB().getLock(passport.getLockID(), Mode.GLOBAL);
-			UserProfile userProfile = Keystore.getInstance().getUserProfiles().get(eqcLockMate.getId().intValue());
-			TransferTransaction transaction = new TransferTransaction();
-			transaction.setLockType(LockType.T2);
-			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_TXFEE_RATE));
-			TxIn txIn = new TxIn();
-			txIn.setPassportId(passport.getId());
-			transaction.setTxIn(txIn);
-			for (int id : toIds) {
-				TransferTxOut txOut = new TransferTxOut();
-				txOut.setPassportId(new ID(id));
-				txOut.setValue(Util.getValue(value));
-				transaction.addTxOut(txOut);
-			}
-			transaction.setNonce(passport.getNonce().getNextID());
-			byte[] privateKey = Util.AESDecrypt(userProfile.getPrivateKey(), "abc");
-			byte[] publickey = Util.AESDecrypt(userProfile.getPublicKey(), "abc");
-			transaction.setPriority(TRANSACTION_PRIORITY.ASAP, null);
-			Log.info("getTxIn().getValue: " + transaction.getTxIn().getValue());
-			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
-			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
-			Log.info("getPriorityRate: " + transaction.getPriorityValue());
-			Log.info("getTransactionPriority: " + transaction.getPriority());
-
-			Signature ecdsa = null;
-			ecdsa = Signature.getInstance("NONEwithECDSA", "SunEC");
-			ecdsa.initSign(Util.getPrivateKey(privateKey, LockType.T2));
-			transaction.sign(ecdsa);
-			Log.info("Signature Len: " + transaction.getEqcWitness().getBytes().length);
-			Log.info("Transaction Len: " + transaction.getBytes().length);
+			Transaction transaction = TransFactory.Tranfer(fromId, value, priority, toIds);
 			if(isRpc) {
 				EQCTransactionNetworkClient.sendTransaction(transaction, Util.SINGULARITY_SP);
 			}
 			else {
-				EQCHiveH2.getInstance().saveTransactionInPool(transaction);
+				Util.MC().saveTransactionInPool(transaction);
 			}
-//			if(eqcLockMate.getEqcPublickey().isNULL()) {
-//				eqcLockMate.getEqcPublickey().setPublickey(publickey);
-//			}
-			
-			T2Lock t2Lock = (T2Lock) LockTool.publickeyToEQCLock(LockType.T2, publickey);
-			Log.info("Pub proof: " + Util.bytesToHexString(t2Lock.getLockProof()));
-			Log.info("Lock proof: " + Util.bytesToHexString(eqcLockMate.getLock().getLockProof()));
-			transaction.setTxInLockMate(eqcLockMate);
-			if(LockTool.verifyEQCLockAndPublickey(eqcLockMate.getLock(), publickey)) {
-				Log.info("valid");
-			}
-			else {
-				Log.Error("invalid");
-			}
-//			if(transaction.verifySignature()) {
-//				Log.info("Passed");
-//			}
-//			else {
-//				Log.info("Failed");
-//			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -135,47 +86,12 @@ public class TransTest {
 	public static void TranferChangeLock(int fromId, double value, int newLockId, TRANSACTION_PRIORITY priority, boolean isRpc,
 			int... toIds) {
 		try {
-			Passport passport = Util.DB().getPassport(new ID(fromId), Mode.GLOBAL);
-			LockMate eqcLockMate = Util.DB().getLock(passport.getLockID(), Mode.GLOBAL);
-			UserProfile userProfile = Keystore.getInstance().getUserProfiles().get(eqcLockMate.getId().intValue());
-			TransferOPTransaction transaction = new TransferOPTransaction();
-			transaction.setLockType(LockType.T2);
-			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_TXFEE_RATE));
-			TxIn txIn = new TxIn();
-			txIn.setPassportId(passport.getId());
-			transaction.setTxIn(txIn);
-
-			for (int id : toIds) {
-				TransferTxOut txOut = new TransferTxOut();
-				txOut.setPassportId(new ID(id));
-				txOut.setValue(Util.getValue(value));
-				transaction.addTxOut(txOut);
-			}
-
-			transaction.setNonce(passport.getNonce().getNextID());
-			byte[] privateKey = Util.AESDecrypt(userProfile.getPrivateKey(), "abc");
-			byte[] publickey = Util.AESDecrypt(userProfile.getPublicKey(), "abc");
-			ChangeLock changeLock = new ChangeLock();
-			changeLock.setLock(LockTool.readableLockToEQCLock(Keystore.getInstance().getUserProfiles().get(newLockId).getReadableLock()));
-			transaction.setOperation(changeLock);
-			transaction.setPriority(TRANSACTION_PRIORITY.ASAP, null);
-			Log.info("getTxIn().getValue: " + transaction.getTxIn().getValue());
-			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
-			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
-			Log.info("getPriorityRate: " + transaction.getPriorityValue());
-			Log.info("getTransactionPriority: " + transaction.getPriority());
-
-			Signature ecdsa = null;
-			ecdsa = Signature.getInstance("NONEwithECDSA", "SunEC");
-			ecdsa.initSign(Util.getPrivateKey(privateKey, LockType.T2));
-			transaction.sign(ecdsa);
-			Log.info("Signature Len: " + transaction.getEqcWitness().getBytes().length);
-			Log.info("Len: " + transaction.getBytes().length);
+			Transaction transaction = TransFactory.TranferChangeLock(fromId, value, newLockId, priority, toIds);
 			if(isRpc) {
 				EQCTransactionNetworkClient.sendTransaction(transaction, Util.SINGULARITY_SP);
 			}
 			else {
-				EQCHiveH2.getInstance().saveTransactionInPool(transaction);
+				Util.MC().saveTransactionInPool(transaction);
 			}
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -185,55 +101,13 @@ public class TransTest {
 	
 	public static void Zion(int fromId, double value, TRANSACTION_PRIORITY priority, boolean isRpc, int... zions) {
 		try {
-			Passport passport = Util.DB().getPassport(new ID(fromId), Mode.GLOBAL);
-//			LockMate eqcLockMate = Util.DB().getLock(passport.getLockID(), Mode.GLOBAL);
-			UserProfile userProfile = Keystore.getInstance().getUserProfiles().get(passport.getLockID().intValue());
-			ZionTransaction transaction = new ZionTransaction();
-			transaction.setLockType(LockType.T2);
-			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_TXFEE_RATE));
-			TxIn txIn = new TxIn();
-			txIn.setPassportId(passport.getId());
-			transaction.setTxIn(txIn);
-
-			for (int i : zions) {
-				ZionTxOut txOut = new ZionTxOut();
-				txOut.setLock(LockTool.readableLockToEQCLock(Keystore.getInstance().getUserProfiles().get(i).getReadableLock()));
-				txOut.setValue(Util.getValue(value));
-				transaction.addTxOut(txOut);
-			}
-
-			transaction.setNonce(passport.getNonce().getNextID());
-			byte[] privateKey = Util.AESDecrypt(userProfile.getPrivateKey(), "abc");
-			byte[] publickey = Util.AESDecrypt(userProfile.getPublicKey(), "abc");
-			transaction.setPriority(TRANSACTION_PRIORITY.ASAP, null);
-			Log.info("getTxIn().getValue: " + transaction.getTxIn().getValue());
-			Log.info("getMaxBillingSize: " + transaction.getMaxBillingLength());
-			Log.info("getTxFeeLimit: " + transaction.getTxFeeLimit());
-			Log.info("getPriorityRate: " + transaction.getPriorityValue());
-			Log.info("getTransactionPriority: " + transaction.getPriority());
-
-			Signature ecdsa = null;
-			ecdsa = Signature.getInstance("NONEwithECDSA", "SunEC");
-			ecdsa.initSign(Util.getPrivateKey(privateKey, LockType.T2));
-			transaction.sign(ecdsa);
-			Log.info("Signature Len: " + transaction.getEqcWitness().getBytes().length);
-			Log.info("Len: " + transaction.getBytes().length);
-//		EQCLockMate eqcLockMate = new EQCLockMate();
-//		eqcLockMate.getEqcPublickey().setPublickey(publickey);
-//		transaction.setTxInLockMate(eqcLockMate);
-//		if(transaction.verifySignature()) {
-//			Log.info("Passed");
-//		}
-//		else {
-//			Log.info("Failed");
-//		}
+			Transaction transaction = TransFactory.Zion(fromId, value, priority, zions);
 			if(isRpc) {
 				EQCTransactionNetworkClient.sendTransaction(transaction, Util.SINGULARITY_SP);
 			}
 			else {
-				EQCHiveH2.getInstance().saveTransactionInPool(transaction);
+				Util.MC().saveTransactionInPool(transaction);
 			}
-			
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

@@ -31,7 +31,7 @@ package org.eqcoin.misc;
 
 import java.sql.SQLException;
 
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.util.Util;
 import org.junit.jupiter.api.Test;
 

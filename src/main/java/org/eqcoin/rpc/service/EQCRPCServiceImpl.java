@@ -30,7 +30,7 @@
 package org.eqcoin.rpc.service;
 
 import org.eqcoin.avro.O;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
 import org.eqcoin.serialization.EQCType;
@@ -65,7 +65,7 @@ public class EQCRPCServiceImpl {
 		O o = null;
 		SPList spList = null;
 		try {
-			spList = Util.DB().getSPList(EQCType.parseID(F));
+			spList = Util.MC().getSPList(EQCType.parseID(F));
 			if(spList != null) {
 				o = spList.getProtocol(O.class);
 			}

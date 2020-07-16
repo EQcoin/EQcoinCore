@@ -31,24 +31,24 @@ package org.eqcoin.changelog;
 
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQCSeed;
-import org.eqcoin.seed.EQcoinSeed;
-import org.eqcoin.seed.EQcoinSeedRoot;
+import org.eqcoin.seed.EQCoinSeed;
+import org.eqcoin.seed.EQCoinSeedRoot;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.transaction.ZionOPTransaction;
 import org.eqcoin.transaction.ZionTransaction;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
  * @date Mar 19, 2020
  * @email 10509759@qq.com
  */
+@Deprecated
 public class Statistics {
 	private Value totalSupply;
 	private ID totalTransactionNumbers;
@@ -56,15 +56,14 @@ public class Statistics {
 	private ChangeLog changeLog;
 	
 	public Statistics(ChangeLog changeLog) {
-		totalSupply = Value.ZERO;
 		totalTransactionNumbers = ID.ZERO;
 		totalPublickeyNumbers = ID.ZERO;
 		this.changeLog = changeLog;
 	}
 	
-	public boolean isValid(EQCSeed eQcoinSeed) throws Exception {
+	public boolean isValid(EQCoinSeed eQcoinSeed) throws Exception {
 		// Check if total new lock numbers equal to total new passport numbers + total new updated Lock numbers
-		EQcoinSeedRoot preEQcoinSeedRoot = null;
+		EQCoinSeedRoot preEQcoinSeedRoot = null;
 		ID totalNewLockNumbers = null;
 		ID totalNewPassportNumbers = null;
 		ID preTotalTransactionNumbers = null;
@@ -78,18 +77,19 @@ public class Statistics {
 			totalPassportNumbers = ID.TWO;
 		}
 		else {
-			preEQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(changeLog.getHeight().getPreviousID()); 
+			preEQcoinSeedRoot = Util.GS().getEQCoinSeedRoot(changeLog.getHeight().getPreviousID()); 
 			totalNewLockNumbers = changeLog.getTotalLockNumbers().subtract(preEQcoinSeedRoot.getTotalLockNumbers());
 			totalNewPassportNumbers = changeLog.getTotalPassportNumbers().subtract(preEQcoinSeedRoot.getTotalPassportNumbers());
 			preTotalTransactionNumbers = preEQcoinSeedRoot.getTotalTransactionNumbers();
-			totalLockNumbers = Util.DB().getTotalLockNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewLockNumbers(changeLog));
-			totalPassportNumbers = Util.DB().getTotalPassportNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewPassportNumbers(changeLog));
+			totalLockNumbers = Util.GS().getTotalLockNumbers(changeLog.getFilter().getMode());
+			totalPassportNumbers = Util.GS().getTotalPassportNumbers(changeLog.getFilter().getMode());
 		}
-		
-		if(!totalNewLockNumbers.equals(totalNewPassportNumbers.add(new ID(changeLog.getForbiddenLockList().size())))) {
-			Log.Error("TotalNewLockNumbers doesn't equal to totalNewPassportNumbers + totalNewUpdateLockNumbers. This is invalid.");
-			return false;
-		}
+
+		// 20200530 here need do more job
+//		if(!totalNewLockNumbers.equals(totalNewPassportNumbers.add(new ID(changeLog.getForbiddenLockList().size())))) {
+//			Log.Error("TotalNewLockNumbers doesn't equal to totalNewPassportNumbers + totalNewUpdateLockNumbers. This is invalid.");
+//			return false;
+//		}
 		
 		// Check if total supply is valid
 		if(!totalSupply.equals(Util.cypherTotalSupply(changeLog))) {
@@ -105,13 +105,13 @@ public class Statistics {
 		
 		// Check if total lock numbers is valid
 		if(!changeLog.getTotalLockNumbers().equals(totalLockNumbers)) {
-			Log.Error("Total lock numbers is invalid expected: " + changeLog.getTotalLockNumbers() + " but actual: " + Util.DB().getTotalLockNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewLockNumbers(changeLog)));
+			Log.Error("Total lock numbers is invalid expected: " + changeLog.getTotalLockNumbers() + " but actual: " + totalLockNumbers);
 			return false;
 		}
 		
 		// Check if total passport numbers is valid
 		if(!changeLog.getTotalPassportNumbers().equals(totalPassportNumbers)) {
-			Log.Error("Total passport numbers is invalid expected: " + changeLog.getTotalPassportNumbers() + " but actual: " + Util.DB().getTotalPassportNumbers(changeLog.getHeight().getPreviousID()).add(Util.DB().getTotalNewPassportNumbers(changeLog)));
+			Log.Error("Total passport numbers is invalid expected: " + changeLog.getTotalPassportNumbers() + " but actual: " + totalPassportNumbers);
 			return false;
 		}
 		
@@ -119,7 +119,12 @@ public class Statistics {
 	}
 	
 	public void update(Passport passport) {
-		totalSupply = totalSupply.add(passport.getBalance());
+		if(totalSupply == null) {
+			totalSupply = new Value(passport.getBalance());
+		}
+		else {
+			totalSupply = totalSupply.add(passport.getBalance());
+		}
 		totalTransactionNumbers = totalTransactionNumbers.add(passport.getNonce());
 	}
 	
@@ -137,7 +142,7 @@ public class Statistics {
 		return totalTransactionNumbers;
 	}
 
-	public void generateStatistics(EQCSeed eQcoinSeed) throws Exception {
+	public void generateStatistics(EQCoinSeed eQcoinSeed) throws Exception {
 		Passport passport;
 		for(long i=0; i<changeLog.getTotalPassportNumbers().longValue(); ++i) {
 			passport = changeLog.getFilter().getPassport(new ID(i), true);

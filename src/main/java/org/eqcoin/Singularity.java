@@ -32,7 +32,11 @@ package org.eqcoin;
 import java.awt.RenderingHints.Key;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.persistence.hive.EQCHiveH2;
+import org.eqcoin.keystore.Keystore.ECCTYPE;
+import org.eqcoin.lock.Lock;
+import org.eqcoin.lock.LockMate;
+import org.eqcoin.lock.LockTool.LockType;
+import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.rpc.Info;
 import org.eqcoin.rpc.NewEQCHive;
 import org.eqcoin.rpc.SP;
@@ -45,6 +49,7 @@ import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 import org.eqcoin.util.Util.SP_MODE;
+import org.eqcoin.wallet.persistence.EQCDesktopWalletH2;
 
 /**
  * @author Xun Wang
@@ -57,21 +62,27 @@ public class Singularity {
 		try {
 //			Log.info(Util.DB().getLock(ID.THREE, Mode.GLOBAL).toString());
 //			Log.info(Util.DB().getPassport(ID.ZERO, Mode.GLOBAL).toString());
-//			Log.info(Util.DB().getEQCHive(ID.SEVEN).toString());
-			Util.init();
+//			EQCHive eqcHive = new EQCHive(Util.DB().getEQCHive(ID.ZERO));
+//			Log.info(Util.DB().getEQCHive(ID.ZERO).toString());
+//			Util.init();
+//			Util.GS().getConnection().commit();
+//			for(int i=0; i<30; ++i)
+//			Log.info(ID.THREE.toString());
+//			EQCDesktopWalletH2.getInstance().generateKeyPair(EQCDesktopWalletH2.getInstance().generateAlais().toString(), ECCTYPE.P521);
 //			EQCHiveH2.getInstance().saveEQCHiveFile(new EQCHive(Util.DB().getEQCHive(ID.ZERO)));
 //			Log.info("TH: " + Util.DB().getEQCHiveTailHeight());
 			Util.IsDeleteTransactionInPool = true;
-			Util.LOCAL_SP.setIp(args[0]);
-//			Util.SINGULARITY_SP.setIp(args[0]);
-//			Util.LOCAL_SP.setFlag(SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK));
-			EQCServiceProvider.getInstance().setSp(Util.LOCAL_SP).start();
+//			EQCDesktopWalletH2.getInstance().setUserName("nju2006");
+//			Util.LOCAL_SP.setIp(args[0]);
+////			Util.SINGULARITY_SP.setIp(args[0]);
+////			Util.LOCAL_SP.setFlag(SP_MODE.getFlag(SP_MODE.EQCHIVESYNCNETWORK));
+//			EQCServiceProvider.getInstance().setSp(Util.LOCAL_SP).start();
 //			TransTest.Tranfer(0, 1, TRANSACTION_PRIORITY.ASAP, true, 1);
 //			TailInfo tailInfo = EQCHiveSyncNetworkClient.getEQCHiveTail(Util.SINGULARITY_SP);
 //			Thread.sleep(100000000000000000L);
 //			MinerService.getInstance().start();
-////			for(int i=0; i<10; ++i)
-//			MinerService.getInstance().miningOneHive();
+//////			for(int i=0; i<10; ++i)
+//			MinerService.getInstance().miningOneEQCHive();
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 		}

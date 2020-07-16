@@ -45,7 +45,7 @@ import javax.print.attribute.standard.RequestingUserName;
 import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.rpc.Protocol;
-import org.eqcoin.seed.EQcoinSeed;
+import org.eqcoin.seed.EQCoinSeed;
 import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
@@ -59,23 +59,39 @@ import org.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class EQCHiveRoot extends EQCSerializable implements Protocol {
-	/*
-	 * previous Hive proof |  target  | EQcoinSeed proof | 	 Height 	 |     timestamp 	 |       nonce  
-   	 *		 64 bytes	     4 bytes     64 bytes  lengthen(>=1bytes) lengthen(>=6bytes)  lengthen(<=8bytes)   
-	 */
-	private byte[]	preProof;
-	private byte[]	target;
-	private byte[]	eqCoinSeedProof;
-	private ID height;
-	private ID timestamp;
-	private ID nonce;
 	// The EQCHeader's size is lengthen
 	private final int min_size = 139; // Here exists bug need do more job to fix this
 	private final static int MIN_TIMESTAMP_LEN = 6;
 	private final static int MAX_NONCE_LEN = 8;
 	private final static int TARGET_LEN = 4;
+	/**
+	 * Current EQCHive's height. Height also used as version symbol.
+	 *  lengthen >= 1 byte 
+	 */
+	private ID height;
+	/**
+	 * lengthen = 64 bytes
+	 */
+	private byte[]	preProof;
+	/**
+	 * lengthen = 4 bytes
+	 */
+	private byte[]	target;
+	/**
+	 * lengthen = 64 bytes
+	 */
+	private byte[]	eqCoinSeedProof;
+	/**
+	 *  lengthen >= 1 byte 
+	 */
+	private ID timestamp;
+	/**
+	 *  lengthen <= 8 bytes 
+	 */
+	private ID nonce;
+
 	private ChangeLog changeLog;
-	private EQcoinSeed eQcoinSeed;
+	private EQCoinSeed eQcoinSeed;
 	
 	/**
 	 * @param header
@@ -99,14 +115,14 @@ public class EQCHiveRoot extends EQCSerializable implements Protocol {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
+		// Parse Height
+		height = new ID(EQCType.parseEQCBits(is));
 		// Parse PreHash
 		preProof = EQCType.parseNBytes(is, Util.HASH_LEN);
 		// Parse Target
 		target = EQCType.parseNBytes(is, TARGET_LEN);
 		// Parse EQCoinSeedHash
 		eqCoinSeedProof = EQCType.parseNBytes(is, Util.HASH_LEN);
-		// Parse Height
-		height = new ID(EQCType.parseEQCBits(is));
 		// Parse Timestamp
 		timestamp = new ID(EQCType.parseEQCBits(is));
 		// Parse Nonce
@@ -166,15 +182,13 @@ public class EQCHiveRoot extends EQCSerializable implements Protocol {
 	public byte[] getBytes() {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
+			os.write(height.getEQCBits());
 			os.write(preProof);
 			os.write(target);
 			os.write(eqCoinSeedProof);
-			os.write(height.getEQCBits());
 			os.write(timestamp.getEQCBits());
 			os.write(nonce.getEQCBits());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			Log.Error(e.getMessage());
 		}
 		return os.toByteArray();
@@ -368,7 +382,7 @@ public class EQCHiveRoot extends EQCSerializable implements Protocol {
 			Log.info("Sanity test failed.");
 			return false;
 		}
-		EQCHiveRoot preEQCHiveRoot = Util.DB().getEQCHiveRoot(height.getPreviousID());
+		EQCHiveRoot preEQCHiveRoot = Util.GS().getEQCHiveRoot(height.getPreviousID());
 		if(!Arrays.equals(preProof, preEQCHiveRoot.getProof())) {
 			Log.Error("PreHash is invalid.");
 			return false;
@@ -402,8 +416,9 @@ public class EQCHiveRoot extends EQCSerializable implements Protocol {
 	/**
 	 * @param height the height to set
 	 */
-	public void setHeight(ID height) {
+	public EQCHiveRoot setHeight(ID height) {
 		this.height = height;
+		return this;
 	}
 	
 //	public byte[] getSnapshot() {
@@ -424,7 +439,7 @@ public class EQCHiveRoot extends EQCSerializable implements Protocol {
 	/**
 	 * @param eQcoinSeed the eQcoinSeed to set
 	 */
-	public EQCHiveRoot setEQcoinSeed(EQcoinSeed eQcoinSeed) {
+	public EQCHiveRoot setEQCoinSeed(EQCoinSeed eQcoinSeed) {
 		this.eQcoinSeed = eQcoinSeed;
 		return this;
 	}

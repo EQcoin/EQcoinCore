@@ -29,36 +29,16 @@
  */
 package org.eqcoin.transaction;
 
-import java.awt.Window.Type;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Objects;
 import java.util.Vector;
 
-import org.eqcoin.changelog.ChangeLog;
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.AssetPassport;
 import org.eqcoin.passport.Passport;
-import org.eqcoin.persistence.hive.EQCHiveH2;
-import org.eqcoin.seed.EQCSeed;
-import org.eqcoin.seed.EQcoinSeed;
-import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
-import org.eqcoin.transaction.Transaction.TransactionType;
-import org.eqcoin.transaction.operation.Operation;
-import org.eqcoin.util.ID;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -99,10 +79,10 @@ public class TransferTransaction extends Transaction {
 	public String toInnerJson() {
 		return
 
-		"\"TransferTransaction\":" + "\n{\n" + txIn.toInnerJson() + ",\n" + "\"TxOutList\":" + "\n{\n" + "\"Size\":"
+		"\"TransferTransaction\":" + "\n{\n" + statusInnerJson() + ",\n" + "\"TxOutList\":" + "\n{\n" + "\"Size\":"
 				+ "\"" + txOutList.size() + "\"" + ",\n" + "\"List\":" + "\n" + getTxOutString() + "\n},\n"
 				+ "\"Nonce\":" + "\"" + nonce + "\"" + ",\n"
-				+ eqcWitness.toInnerJson() 
+				+ witness.toInnerJson() 
 				+ "\n" + "}";
 	}
 
@@ -170,35 +150,32 @@ public class TransferTransaction extends Transaction {
 
 	public void addTxOut(TransferTxOut txOut) {
 		if (!isTxOutPassportExists(txOut)) {
-			if (!isTxOutPassportEqualsTxInPassport(txOut)) {
-				txOutList.add(txOut);
-			} else {
-				Log.Error(txOut + " equal to TxIn Address: " + txIn + " just ignore it.");
-			}
+			txOutList.add(txOut);
 		} else {
 			Log.Error(txOut + " already exists in txOutList just ignore it.");
 		}
 	}
 
 	public Value getTxOutValues() {
-		Value totalTxOut = Value.ZERO;
+		Value totalTxOut = null;
 		for (TransferTxOut txOut : txOutList) {
-			totalTxOut = totalTxOut.add(txOut.getValue());
+			if(totalTxOut == null) {
+				totalTxOut = new Value(txOut.getValue());
+			}
+			else {
+				totalTxOut = totalTxOut.add(txOut.getValue());
+			}
 		}
 		return totalTxOut;
 	}
 
-	public boolean isTxOutPassportIncludeTxInPassport() {
+	public boolean isTxOutPassportIncludeTxInPassport(Passport passport) {
 		for (TransferTxOut txOut : txOutList) {
-			if (isTxOutPassportEqualsTxInPassport(txOut)) {
+			if (txOut.getPassportId().equals(passport.getId())) {
 				return true;
 			}
 		}
 		return false;
-	}
-
-	private boolean isTxOutPassportEqualsTxInPassport(TransferTxOut transferTxOut) {
-		return transferTxOut.getPassportId().equals(txIn.getPassportId());
 	}
 
 	public Value getBillingValue() throws Exception {
@@ -275,11 +252,17 @@ public class TransferTransaction extends Transaction {
 			return false;
 		}
 		// Check if TxOut's Address doesn't include TxIn
-		if (isTxOutPassportIncludeTxInPassport()) {
+		if (isTxOutPassportIncludeTxInPassport(witness.getPassport())) {
 			Log.info("Txout's Address include TxIn this is invalid");
+			return false;
+		}
+		if(!getTxFee().isSanity()) {
+			Log.Error("!getTxFee().isSanity()");
 			return false;
 		}
 		return true;
 	}
 
+	
+	
 }

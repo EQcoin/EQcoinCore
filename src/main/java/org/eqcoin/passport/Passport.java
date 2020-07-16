@@ -45,17 +45,18 @@ import org.eqcoin.avro.O;
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.lock.Publickey;
 import org.eqcoin.lock.LockTool.LockType;
+import org.eqcoin.lock.publickey.Publickey;
+import org.eqcoin.passport.storage.Storage;
 import org.eqcoin.rpc.TailInfo;
 import org.eqcoin.serialization.EQCInheritable;
 import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.transaction.Value;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
  * Passport table's schema after refactor meet 3NF now //does not match 3NF but very blockchain.
@@ -69,13 +70,21 @@ public class Passport extends EQCSerializable {
 	 * Passport type can also used to represent different passport type's version
 	 */
 	protected PassportType type;
+	private boolean isTypeUpdate;
 	/**
 	 * Body field include ID, LockID, balance, nonce and updateHeight
 	 */
 	private ID id;
+	private boolean isIDUpdate;
 	private ID lockID;
+	private boolean isLockIDUpdate;
 	private Value balance;
+	private boolean isBalanceUpdate;
 	private ID nonce;
+	private boolean isNonceUpdate;
+	private ID updateHeight;
+	private boolean isUpdateHeightUpdate;
+	
 	protected ChangeLog changeLog;
 	
 	/**
@@ -86,7 +95,7 @@ public class Passport extends EQCSerializable {
 	 * @email 10509759@qq.com
 	 */
 	public enum PassportType {
-		ASSET, EXTENDABLE, EQCOINROOT, SMARTCONTRACT;
+		ASSET, EXTENDABLEASSET, EQCOINROOT;//, SMARTCONTRACT, EXTENDABLESMARTCONTRACT;
 		public static PassportType get(int ordinal) {
 			PassportType passportTypeType = null;
 			switch (ordinal) {
@@ -94,14 +103,20 @@ public class Passport extends EQCSerializable {
 				passportTypeType = PassportType.ASSET;
 				break;
 			case 1:
-				passportTypeType = PassportType.EXTENDABLE;
+				passportTypeType = PassportType.EXTENDABLEASSET;
 				break;
 			case 2:
 				passportTypeType = PassportType.EQCOINROOT;
 				break;
-			case 3:
-				passportTypeType = PassportType.SMARTCONTRACT;
-				break;
+//			case 3:
+//				passportTypeType = PassportType.SMARTCONTRACT;
+//				break;
+//			case 4:
+//				passportTypeType = PassportType.EXTENDABLESMARTCONTRACT;
+//				break;
+			}
+			if(passportTypeType == null) {
+				throw new IllegalStateException("Invalid passport type: " + ordinal);
 			}
 			return passportTypeType;
 		}
@@ -144,7 +159,7 @@ public class Passport extends EQCSerializable {
 			if (passportType == PassportType.ASSET) {
 				passport = new AssetPassport(resultSet);
 			} 
-			else if(passportType == PassportType.EXTENDABLE) {
+			else if(passportType == PassportType.EXTENDABLEASSET) {
 				passport = new ExpendablePassport(resultSet);
 			}
 			else if (passportType == PassportType.EQCOINROOT) {
@@ -158,7 +173,7 @@ public class Passport extends EQCSerializable {
 	
 	public static PassportType parsePassportType(Lock lock) {
 		PassportType passportType = null;
-		if(lock.getLockType() == LockType.T1 || lock.getLockType() == LockType.T2) {
+		if(lock.getType() == LockType.T1 || lock.getType() == LockType.T2) {
 			passportType = PassportType.ASSET;
 		}
 		return passportType;
@@ -179,10 +194,11 @@ public class Passport extends EQCSerializable {
 		balance = EQCType.parseValue(is);
 		// Parse Nonce
 		nonce = EQCType.parseID(is);
+		// Parse UpdateHeight
+		updateHeight = EQCType.parseID(is);
 	}
 	
 	protected void init() {
-		balance = Value.ZERO;
 		nonce = ID.ZERO;
 	}
 	
@@ -201,6 +217,8 @@ public class Passport extends EQCSerializable {
 		balance = new Value(resultSet.getLong("balance"));
 		// Parse Nonce
 		nonce = new ID(resultSet.getLong("nonce"));
+		// Parse UpdateHeight
+		updateHeight = EQCType.parseID(resultSet.getLong("update_height"));
 	}
 	
 	public Passport() throws Exception {
@@ -219,6 +237,7 @@ public class Passport extends EQCSerializable {
 		os.write(lockID.getEQCBits());
 		os.write(balance.getEQCBits());
 		os.write(nonce.getEQCBits());
+		os.write(updateHeight.getEQCBits());
 		return os;
 	}
 	
@@ -236,6 +255,14 @@ public class Passport extends EQCSerializable {
 		return type;
 	}
 
+	/**
+	 * @param type the type to set
+	 */
+	public void setType(PassportType type) {
+		this.type = type;
+		isTypeUpdate = true;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -248,11 +275,12 @@ public class Passport extends EQCSerializable {
 
 	public String toInnerJson() {
 		return 
-					"\"PassportType\":" + "\"" + type + "\"" + ",\n" +
+					"\"Type\":" + "\"" + type + "\"" + ",\n" +
 					"\"ID\":" + "\"" + id + "\"" + ",\n" +
 					"\"LockID\":" + "\"" + lockID + "\"" + ",\n" +
 					"\"Balance\":" + "\"" + balance + "\"" + ",\n" +
-					"\"Nonce\":" + "\"" + nonce + "\"" +
+					"\"Nonce\":" + "\"" + nonce + "\"" + ",\n" +
+					"\"UpdateHeight\":" + "\"" + updateHeight + "\"" +
 					"\n}";
 	}
 	
@@ -291,8 +319,12 @@ public class Passport extends EQCSerializable {
 			Log.Error("!balance.isSanity()");
 			return false;
 		}
-		if(balance.compareTo(Util.MIN_EQC) < 0) {
-			Log.Error("balance.compareTo(Util.MIN_EQC) < 0");
+		if(balance.compareTo(Util.MIN_BALANCE) < 0) {
+			Log.Error("balance.compareTo(Util.MIN_BALANCE) < 0");
+			return false;
+		}
+		if(balance.compareTo(Util.MAX_BALANCE) > 0) {
+			Log.Error("balance.compareTo(Util.MAX_BALANCE) > 0");
 			return false;
 		}
 		if(nonce == null) {
@@ -303,7 +335,14 @@ public class Passport extends EQCSerializable {
 			Log.Error("!nonce.isSanity()");
 			return false;
 		}
-		
+		if(updateHeight == null) {
+			Log.Error("updateHeight == null");
+			return false;
+		}
+		if(!updateHeight.isSanity()) {
+			Log.Error("!updateHeight.isSanity()");
+			return false;
+		}
 		return true;
 	}
 	
@@ -318,11 +357,19 @@ public class Passport extends EQCSerializable {
 	public void withdraw(Value value) {
 		EQCType.assertNotBigger(value, balance);
 		balance = balance.subtract(value);
+		isBalanceUpdate = true;
 	}
 	
 	public void deposit(Value value) {
-		EQCType.assertNotBigger(value, Util.MAX_EQcoin);
-		balance = balance.add(value);
+		EQCType.assertNotBigger(value, Util.MAX_BALANCE);
+		if(balance == null) {
+			EQCType.assertNotLess(value, Util.MIN_BALANCE);
+			balance = value;
+		}
+		else {
+			balance = balance.add(value);
+		}
+		isBalanceUpdate = true;
 	}
 
 	/**
@@ -337,6 +384,7 @@ public class Passport extends EQCSerializable {
 	 */
 	public void setId(ID id) {
 		this.id = id;
+		isIDUpdate = true;
 	}
 
 	/**
@@ -351,6 +399,7 @@ public class Passport extends EQCSerializable {
 	 */
 	public void setLockID(ID lockID) {
 		this.lockID = lockID;
+		isLockIDUpdate = true;
 	}
 
 	/**
@@ -369,6 +418,7 @@ public class Passport extends EQCSerializable {
 
 	public void increaseNonce() {
 		nonce = nonce.getNextID();
+		isNonceUpdate = true;
 	}
 	
 	/**
@@ -395,6 +445,70 @@ public class Passport extends EQCSerializable {
 	
 	public void planting() throws Exception {
 		changeLog.getFilter().savePassport(this);
+	}
+
+	/**
+	 * @return the isTypeUpdate
+	 */
+	public boolean isTypeUpdate() {
+		return isTypeUpdate;
+	}
+
+	/**
+	 * @return the isIDUpdate
+	 */
+	public boolean isIDUpdate() {
+		return isIDUpdate;
+	}
+
+	/**
+	 * @return the isLockIDUpdate
+	 */
+	public boolean isLockIDUpdate() {
+		return isLockIDUpdate;
+	}
+
+	/**
+	 * @return the isBalanceUpdate
+	 */
+	public boolean isBalanceUpdate() {
+		return isBalanceUpdate;
+	}
+
+	/**
+	 * @return the isNonceUpdate
+	 */
+	public boolean isNonceUpdate() {
+		return isNonceUpdate;
+	}
+	
+	/**
+	 * @return the updateHeight
+	 */
+	public ID getUpdateHeight() {
+		return updateHeight;
+	}
+
+	/**
+	 * @param updateHeight the updateHeight to set
+	 */
+	public void setUpdateHeight(ID updateHeight) {
+		this.updateHeight = updateHeight;
+	}
+
+	/**
+	 * @return the isUpdateHeightUpdate
+	 */
+	public boolean isUpdateHeightUpdate() {
+		return isUpdateHeightUpdate;
+	}
+
+	public void sync() {
+		isTypeUpdate = true;
+		isLockIDUpdate = true;
+		isBalanceUpdate = true;
+		isNonceUpdate = true;
+		isUpdateHeightUpdate = true;
 	}
 	
 }

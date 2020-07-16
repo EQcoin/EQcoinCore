@@ -35,7 +35,7 @@ import java.io.ByteArrayOutputStream;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCType;
-import org.eqcoin.transaction.Value;
+import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -43,8 +43,8 @@ import org.eqcoin.transaction.Value;
  * @email 10509759@qq.com
  */
 public class Lock extends EQCSerializable {
-	protected LockType lockType;
-	protected byte[] lockProof;
+	protected LockType type;
+	protected byte[] proof;
 
 	public Lock() {
 		super();
@@ -59,18 +59,15 @@ public class Lock extends EQCSerializable {
 	 */
 	@Override
 	public Lock Parse(ByteArrayInputStream is) throws Exception {
-		Lock eqcLock = null;
+		Lock lock = null;
 		LockType lockType = parseLockType(is);
 		if(lockType == LockType.T1) {
-			eqcLock = new T1Lock(is);
+			lock = new T1Lock(is);
 		}
 		else if(lockType == LockType.T2) {
-			eqcLock = new T2Lock(is);
+			lock = new T2Lock(is);
 		}
-		else {
-			throw new IllegalStateException("Invalid lock type: " + lockType);
-		}
-		return eqcLock;
+		return lock;
 	}
 	
 	/* (non-Javadoc)
@@ -79,11 +76,11 @@ public class Lock extends EQCSerializable {
 	@Override
 	public Lock Parse(byte[] bytes) throws Exception {
 		EQCType.assertNotNull(bytes);
-		Lock eqcLock = null;
+		Lock lock = null;
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		eqcLock = Parse(is);
+		lock = Parse(is);
 		EQCType.assertNoRedundantData(is);
-		return eqcLock;
+		return lock;
 	}
 
 	private final LockType parseLockType(ByteArrayInputStream is) throws Exception {
@@ -102,7 +99,7 @@ public class Lock extends EQCSerializable {
 	 */
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		lockType = LockType.get(EQCType.parseID(is).intValue());
+		type = LockType.get(EQCType.parseID(is).intValue());
 	}
 
 	/* (non-Javadoc)
@@ -110,7 +107,7 @@ public class Lock extends EQCSerializable {
 	 */
 	@Override
 	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		os.write(lockType.getEQCBits());
+		os.write(type.getEQCBits());
 		return os;
 	}
 
@@ -124,35 +121,35 @@ public class Lock extends EQCSerializable {
 	}
 
 	/**
-	 * @return the lockProof
+	 * @return the proof
 	 */
-	public byte[] getLockProof() {
-		return lockProof;
+	public byte[] getProof() {
+		return proof;
 	}
 
 	/**
-	 * @param lockProof the lockProof to set
+	 * @param proof the proof to set
 	 */
-	public void setLockProof(byte[] lockProof) {
-		this.lockProof = lockProof;
+	public void setProof(byte[] proof) {
+		this.proof = proof;
 	}
 
 	/**
-	 * @return the lockType
+	 * @return the type
 	 */
-	public LockType getLockType() {
-		return lockType;
+	public LockType getType() {
+		return type;
 	}
 
 	/**
-	 * @param lockType the lockType to set
+	 * @param type the type to set
 	 */
-	public void setLockType(LockType lockType) {
-		this.lockType = lockType;
+	public void setType(LockType lockType) {
+		this.type = lockType;
 	}
 	
 	public Value getProofLength() {
-		return  Value.ZERO;
+		return  null;
 	}
 
 	public String getReadableLock() throws Exception {

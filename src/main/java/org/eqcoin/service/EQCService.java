@@ -231,7 +231,7 @@ public abstract class EQCService implements Runnable {
 		EQCServiceState state = null;
 		while (isRunning.get()) {
 			try {
-				Log.info(name + "Waiting for new message... thread state: " + worker.getState());
+				Log.info(name + "Waiting for new message... pending message size: " + pendingMessage.size() + " pending message: "+ pendingMessage + " thread state: " + worker.getState());
 				state = pendingMessage.take();
 				Log.info(name + "take new message: " + state + " thread state: " + worker.getState());
 				this.state.set(State.TAKE);

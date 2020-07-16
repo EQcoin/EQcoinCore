@@ -27,122 +27,127 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.transaction;
+package org.eqcoin.transaction.txout;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import org.eqcoin.lock.Publickey;
-import org.eqcoin.lock.T1Publickey;
-import org.eqcoin.lock.T2Publickey;
-import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.serialization.EQCInheritable;
+import org.eqcoin.lock.LockMate;
 import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
 import org.eqcoin.serialization.EQCType;
+import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
+import org.eqcoin.util.Value;
 
 /**
- * Witness contains the transaction relevant witness parts for example signature.
- * 
  * @author Xun Wang
- * @date Mar 5, 2020
+ * @date Mar 30, 2020
  * @email 10509759@qq.com
  */
-public class Witness extends EQCSerializable {
+public class TransferTxOut extends EQCSerializable {
+	private ID passportId;
+	private Value value;
 	
-	protected byte[] signature;
-	protected Transaction transaction;
-
-	public Witness() {
-	}
-	
-	public Witness(Transaction transaction) {
-		this.transaction = transaction;
-	}
-	
-	public Witness(byte[] bytes) throws Exception {
+	public TransferTxOut(byte[] bytes) throws Exception {
 		super(bytes);
 	}
 	
-	public Witness(ByteArrayInputStream is) throws Exception {
-		parse(is);
+	public TransferTxOut(ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
+	
+	public TransferTxOut() {
+		super();
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
+	 */
+	@Override
+	public void parse(ByteArrayInputStream is) throws Exception {
+		// Parse Passport ID
+		passportId = EQCType.parseID(is);
+		// Parse Value
+		value = EQCType.parseValue(is);
+	}
+	
+	@Override
+	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
+			os.write(passportId.getEQCBits());
+			os.write(value.getEQCBits());
+		return os;
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public Witness Parse(ByteArrayInputStream is) throws Exception {
-		Witness witness = null;
-		if (transaction.getLockType() ==LockType.T1) {
-			witness = new T1Witness(is);
-		} else if (transaction.getLockType() == LockType.T2) {
-			witness = new T2Witness(is);
-		} else {
-			throw new IllegalStateException("Bad lock type: " + transaction.getTxInLockMate().getLock().getLockType());
-		}
-		return witness;
-	}
-
-	@Override
-	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws IOException {
-		os.write(signature);
-		return os;
-	}
-
-	/**
-	 * @return the DERSignature
-	 * @throws Exception 
-	 */
-	public byte[] getDERSignature() throws Exception {
-		return null;
-	}
-
-	/**
-	 * @param derSignature the derSignature to set
-	 * @throws Exception 
-	 */
-	public void setDERSignature(byte[] derSignature) throws Exception {
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return 
-		
-				"{\n" +
-				toInnerJson() +
-				"\n}";
-		
+	public TransferTxOut Parse(ByteArrayInputStream is) throws Exception {
+		return new TransferTxOut(is);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#isSanity()
+	 */
+	@Override
+	public boolean isSanity() throws Exception {
+		if(passportId == null) {
+			Log.Error("passportId == null");
+			return false;
+		}
+		if(!passportId.isSanity()) {
+			Log.Error("!passportId.isSanity()");
+			return false;
+		}
+		if(value == null) {
+			Log.Error("value == null");
+			return false;
+		}
+		if(!value.isSanity()) {
+			Log.Error("!value.isSanity()");
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * @return the passportId
+	 */
+	public ID getPassportId() {
+		return passportId;
+	}
+
+	/**
+	 * @param passportId the passportId to set
+	 */
+	public void setPassportId(ID passportId) {
+		this.passportId = passportId;
+	}
+
+	/**
+	 * @return the value
+	 */
+	public Value getValue() {
+		return value;
+	}
+
+	/**
+	 * @param value the value to set
+	 * @throws NoSuchFieldException 
+	 */
+	public void setValue(Value value) {
+		this.value = value;
+	}
+
 	public String toInnerJson() {
 		return 
-		
-				"\"Witness\":" + 
-				"\n{\n" +
-					"\"Signature\":\"" + Util.bytesToHexString(signature) + "\"\n" +
-				"}";
-	}
-
-	public boolean isNull() {
-		return signature == null;
-	}
-
-	/**
-	 * @return the signature
-	 */
-	public byte[] getSignature() {
-		return signature;
-	}
-	
-	public byte[] getProof() {
-		return null;
+		"\"TransferTxOut\":" + 
+		"\n{" +
+		"\"PassportId\":" + passportId + ",\n" +
+		"\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
+		"}";
 	}
 	
 }

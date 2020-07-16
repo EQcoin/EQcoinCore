@@ -38,10 +38,10 @@ import java.util.Vector;
 
 import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.changelog.Filter;
-import org.eqcoin.changelog.Filter.Mode;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.hive.EQCHiveRoot;
 import org.eqcoin.passport.EQcoinRootPassport;
+import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.rpc.SP;
 import org.eqcoin.rpc.SPList;
 import org.eqcoin.rpc.TailInfo;
@@ -50,7 +50,7 @@ import org.eqcoin.rpc.client.EQCMinerNetworkClient;
 import org.eqcoin.rpc.service.EQCHiveSyncNetworkService;
 import org.eqcoin.rpc.service.EQCMinerNetworkService;
 import org.eqcoin.rpc.service.EQCTransactionNetworkService;
-import org.eqcoin.seed.EQcoinSeedRoot;
+import org.eqcoin.seed.EQCoinSeedRoot;
 import org.eqcoin.service.state.EQCHiveSyncState;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.EQCServiceState.State;
@@ -178,7 +178,7 @@ public class EQCServiceProvider extends EQCService {
 
 		try {
 			// Before here already do syncMinerList in Util.init during every time EQcoin core startup
-			minerList = Util.DB().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK));
+			minerList = Util.MC().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK));
 			if (minerList.isEmpty()) {
 				if (Util.LOCAL_SP.equals(Util.SINGULARITY_SP)) {
 					// This is Singularity node and miner list is empty just start Minering
@@ -246,10 +246,10 @@ public class EQCServiceProvider extends EQCService {
 			Log.info("MinerTailList: " + minerTailList.toString());
 			maxTailInfo = minerTailList.get(0);
 			Log.info("MaxTail: " + maxTailInfo.getHeight());
-			Log.info("LocalTail: " + Util.DB().getEQCHiveTailHeight());
-			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
+			Log.info("LocalTail: " + Util.GS().getEQCHiveTailHeight());
+			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
 			if (maxTailInfo.getCheckPointHeight().compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
-					&& maxTailInfo.getHeight().compareTo(Util.DB().getEQCHiveTailHeight()) > 0) {
+					&& maxTailInfo.getHeight().compareTo(Util.GS().getEQCHiveTailHeight()) > 0) {
 				isMaxTail = false;
 				SPList minerIpList = new SPList();
 				for (TailInfo tailInfo2 : minerTailList) {
@@ -306,14 +306,14 @@ public class EQCServiceProvider extends EQCService {
 					Log.info("Begin synchronized (EQCService.class)");
 					Log.info("Received new EQCHive tail from " + eqcHiveSyncState.getSp());
 					// Check if new block's height is bigger than local tail
-					ID localTailHeight = Util.DB().getEQCHiveTailHeight();
+					ID localTailHeight = Util.GS().getEQCHiveTailHeight();
 					if (eqcHiveSyncState.getEQCHive().getHeight().compareTo(localTailHeight) <= 0) {
 						Log.info("New EQCHive's height: " + eqcHiveSyncState.getEQCHive().getHeight()
 								+ " not bigger than local tail: " + localTailHeight
 								+ " just discard it");
 						return;
 					} else {
-						byte[] localTailRootProof = Util.DB().getEQCHiveRootProof(localTailHeight);
+						byte[] localTailRootProof = Util.GS().getEQCHiveRootProof(localTailHeight);
 						if (eqcHiveSyncState.getEQCHive().getHeight().isNextID(localTailHeight)) {
 							if (Arrays.equals(eqcHiveSyncState.getEQCHive().getEQCHiveRoot().getPreProof(),
 									localTailRootProof)) {
@@ -323,7 +323,7 @@ public class EQCServiceProvider extends EQCService {
 								eqcHiveSyncState.getEQCHive().setChangeLog(changeLog);
 								if (eqcHiveSyncState.getEQCHive().isValid()) {
 									try {
-										Savepoint savepointNext = Util.DB().getConnection().setSavepoint("Verfiy next hive");
+										Savepoint savepointNext = Util.GS().getConnection().setSavepoint();
 										changeLog.updateGlobalState(eqcHiveSyncState.getEQCHive(), savepointNext);
 										Log.info("New EQCHive is valid and saved successful");
 										Log.info("Miner service isRunning: " + MinerService.getInstance().isRunning + " isPausing: " + MinerService.getInstance().isPausing + " isMining: " + MinerService.getInstance().isMining());
@@ -368,11 +368,11 @@ public class EQCServiceProvider extends EQCService {
 					}
 				}
 
-				localTailHeight = Util.DB().getEQCHiveTailHeight();
+				localTailHeight = Util.GS().getEQCHiveTailHeight();
 				Log.info("LocalTailHeight: " + localTailHeight);
 				// 20200514 here need analysis if need retrieve the passport from current mining table if exists?
-				EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.DB().getPassport(ID.ZERO, Mode.GLOBAL);
-				EQcoinSeedRoot eQcoinSeedRoot = Util.DB().getEQcoinSeedRoot(localTailHeight);
+				EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
+				EQCoinSeedRoot eQcoinSeedRoot = Util.GS().getEQCoinSeedRoot(localTailHeight);
 				long base = localTailHeight.longValue();
 				// Check if it is valid chain
 				if (maxTailInfo.getHeight().compareTo(localTailHeight) > 0 && maxTailInfo.getCheckPointHeight()
@@ -382,7 +382,7 @@ public class EQCServiceProvider extends EQCService {
 					byte[] localProof = null;
 					for (; base >= eQcoinSubchainAccount.getCheckPointHeight().longValue(); --base) {
 						maxProof = EQCHiveSyncNetworkClient.getEQCHiveRootProof(new ID(base), eqcHiveSyncState.getSp());
-						localProof = Util.DB().getEQCHiveRootProof(new ID(base));
+						localProof = Util.GS().getEQCHiveRootProof(new ID(base));
 						if (Arrays.equals(localProof, maxProof)) {
 							Log.info("Current max tail chain's local base height is: " + base);
 							isValidChain = true;
@@ -423,7 +423,7 @@ public class EQCServiceProvider extends EQCService {
 					if (isValidChain) {
 						if(eqcHiveSyncState.getEQCHive() != null) {
 						Log.info("Received broadcast new EQCHive and is valid chain begin set savepoint");
-						savepointBroadcastNewEQCHive = Util.DB().getConnection().setSavepoint("Sync to broadcast new EQCHive");
+						savepointBroadcastNewEQCHive = Util.GS().getConnection().setSavepoint();
 						Log.info("Savepoint: " + savepointBroadcastNewEQCHive);
 						}
 						Log.info("MaxTail is valid chain begin sync");
@@ -432,7 +432,7 @@ public class EQCServiceProvider extends EQCService {
 						if (base < localTailHeight.longValue()) {
 							Log.info("Begin delete EQCHive from " + (base + 1) + " to " + localTailHeight.longValue());
 							for(long i=(base+1); i<=localTailHeight.longValue(); ++i) {
-								Util.DB().deleteEQCHive(new ID(i));
+								Util.GS().deleteEQCHive(new ID(i));
 							}
 						} else {
 							Log.info("Base " + base + " equal to local tail " + localTailHeight.longValue() + " do nothing");
@@ -441,23 +441,23 @@ public class EQCServiceProvider extends EQCService {
 						if (new ID(base).compareTo(localTailHeight) < 0) {
 							Log.info("Base height " + base + " less than local tail height " + localTailHeight.longValue() + " beginning recovery global state and remove snapshot");
 							// Recovery relevant global state to base height
-							Util.recoveryGlobalStatusTo(new ID(base));
+							Util.recoveryGlobalStateTo(new ID(base));
 							// Remove relevant snapshot after base height to avoid exists wrong state
-							Util.DB().deletePassportSnapshotFrom(new ID(base+1), true);
-							Util.DB().deleteLockSnapshotFrom(new ID(base+1), true);
+							Util.GS().deletePassportSnapshotFrom(new ID(base+1), true);
+							Util.GS().deleteLockMateSnapshotFrom(new ID(base+1), true);
 						}
 					
 						// Remove extra passport and lock here need remove passport and lock after base
 						// Passport
 						ID originalPassportNumbers = eQcoinSeedRoot.getTotalPassportNumbers();
-						EQcoinSeedRoot eQcoinSeedRootBase = Util.DB().getEQcoinSeedRoot(new ID(base));
+						EQCoinSeedRoot eQcoinSeedRootBase = Util.GS().getEQCoinSeedRoot(new ID(base));
 						// Here throw null pointer will cause savepoint invalid?
 						if (eQcoinSeedRootBase.getTotalPassportNumbers().compareTo(originalPassportNumbers) < 0) {
 							Log.info("Begin delete extra Passport from "
 									+ eQcoinSeedRootBase.getTotalPassportNumbers().getNextID() + " to "
 									+ originalPassportNumbers);
 							for(long i=eQcoinSeedRootBase.getTotalPassportNumbers().getNextID().longValue(); i<=originalPassportNumbers.longValue(); ++i) {
-								Util.DB().deletePassport(new ID(i), Mode.GLOBAL);
+								Util.GS().deletePassport(new ID(i));
 							}
 						} else {
 							Log.info(
@@ -471,14 +471,14 @@ public class EQCServiceProvider extends EQCService {
 									+ eQcoinSeedRootBase.getTotalLockNumbers().getNextID() + " to "
 									+ originalLockNumbers);
 							for(long i=eQcoinSeedRootBase.getTotalLockNumbers().getNextID().longValue(); i<=originalLockNumbers.longValue(); ++i) {
-								Util.DB().deleteLock(new ID(i), Mode.GLOBAL);
+								Util.GS().deleteLockMate(new ID(i));
 							}
 						} else {
 							Log.info(
 									"Base height's TotalLockNumbers " + eQcoinSeedRootBase.getTotalLockNumbers()
 											+ " equal to local tail " + originalLockNumbers + " do nothing");
 						}
-						Util.DB().saveEQCHiveTailHeight(new ID(base));
+						Util.GS().saveEQCHiveTailHeight(new ID(base));
 
 						// Begin sync to tail
 						EQCHive maxTailHive = null;
@@ -486,7 +486,7 @@ public class EQCServiceProvider extends EQCService {
 							if(eqcHiveSyncState.getEQCHive() == null) {
 								savepointSync = null;
 								Log.info("onSync begin set savepoint");
-								savepointSync = Util.DB().getConnection().setSavepoint("onSync");
+								savepointSync = Util.GS().getConnection().setSavepoint();
 								Log.info("onSync end set savepoint: " + savepointSync);
 							}
 							Log.info("Begin sync No. " + i + " EQCHive from " + eqcHiveSyncState.getSp());
@@ -511,7 +511,7 @@ public class EQCServiceProvider extends EQCService {
 									Log.Error("During update No." + i + " hive's global state error occur: " + e.getMessage());
 									throw new MaxTailValidException("During update No." + i + " hive's global state error occur: " + e.getMessage());
 								}
-								Log.info("Current new tail: " + Util.DB().getEQCHiveTailHeight());
+								Log.info("Current new tail: " + Util.GS().getEQCHiveTailHeight());
 							} else {
 								Log.info("No." + i + " hive is invalid");
 								throw new MaxTailValidException("No." + i + " hive is invalid");
@@ -525,7 +525,7 @@ public class EQCServiceProvider extends EQCService {
 							pendingMessage.clear();
 						}
 						Log.info("Successful sync to current tail just begin commit");
-						Util.DB().getConnection().commit();
+						Util.GS().getConnection().commit();
 						Log.info("End commit");
 						if(eqcHiveSyncState.getEQCHive() != null) {
 							Log.info("Changed to max chain just stop mining");
@@ -550,7 +550,7 @@ public class EQCServiceProvider extends EQCService {
 				if(savepointBroadcastNewEQCHive != null) {
 					try {
 						Log.info("Begin rollback, Savepoint: " + savepointBroadcastNewEQCHive);
-						Util.DB().getConnection().rollback(savepointBroadcastNewEQCHive);
+						Util.GS().getConnection().rollback(savepointBroadcastNewEQCHive);
 						Log.info("Rollback successful");
 					} catch (Exception e1) {
 						Log.Error(e1.getMessage());
@@ -567,7 +567,7 @@ public class EQCServiceProvider extends EQCService {
 				if(savepointSync != null) {
 					try {
 						Log.info("Begin rollback, Savepoint: " + savepointSync);
-						Util.DB().getConnection().rollback(savepointSync);
+						Util.GS().getConnection().rollback(savepointSync);
 						Log.info("Rollback successful");
 					} catch (Exception e1) {
 						Log.Error(e1.getMessage());
@@ -578,6 +578,22 @@ public class EQCServiceProvider extends EQCService {
 					sleeping(Util.getCurrentEQCHiveInterval().longValue());
 				} catch (Exception e1) {
 					Log.Error(e1.getMessage());
+				}
+			}
+		}
+		finally {
+			if(savepointBroadcastNewEQCHive != null) {
+				try {
+					Util.GS().getConnection().releaseSavepoint(savepointBroadcastNewEQCHive);
+				} catch (Exception e) {
+					Log.Error(e.getMessage());
+				}
+			}
+			if(savepointSync != null) {
+				try {
+					Util.GS().getConnection().releaseSavepoint(savepointSync);
+				} catch (Exception e) {
+					Log.Error(e.getMessage());
 				}
 			}
 		}
@@ -594,7 +610,7 @@ public class EQCServiceProvider extends EQCService {
 					// Here need add synchronized lock to double avoid conflict with MinerService
 					synchronized (EQCService.class) {
 						Log.info("Begin synchronized (EQCService.class)");
-						if (!MinerService.getInstance().getNewEQCHiveHeight().isNextID(Util.DB().getEQCHiveTailHeight())) {
+						if (!MinerService.getInstance().getNewEQCHiveHeight().isNextID(Util.GS().getEQCHiveTailHeight())) {
 							Log.info("Changed to new mining base begin stop current mining progress");
 							MinerService.getInstance().stopMining();
 							Log.info("Need restart just beginning new mining progress");
