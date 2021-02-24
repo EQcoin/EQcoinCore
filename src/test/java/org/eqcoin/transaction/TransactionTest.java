@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,41 +31,9 @@
  */
 package org.eqcoin.transaction;
 
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Signature;
-
-import org.eqcoin.avro.O;
-import org.eqcoin.changelog.ChangeLog;
-import org.eqcoin.changelog.Filter;
-import org.eqcoin.keystore.Keystore;
-import org.eqcoin.keystore.UserProfile;
-import org.eqcoin.keystore.Keystore.ECCTYPE;
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.lock.LockTool;
-import org.eqcoin.lock.T2Lock;
-import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.lock.publickey.Publickey;
-import org.eqcoin.persistence.globalstate.GlobalStateH2;
-import org.eqcoin.rpc.SP;
-import org.eqcoin.rpc.SPList;
-import org.eqcoin.rpc.client.EQCTransactionNetworkClient;
-import org.eqcoin.test.TransTest;
-import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.ZionTransaction;
 import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
-import org.eqcoin.transaction.Transaction.TransactionShape;
-import org.eqcoin.transaction.operation.ChangeLock;
-import org.eqcoin.transaction.txout.TransferTxOut;
-import org.eqcoin.transaction.txout.ZionTxOut;
-import org.eqcoin.util.ID;
+import org.eqcoin.ut.misc.TransTest;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
-import org.eqcoin.util.Value;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

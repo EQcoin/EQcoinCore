@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,9 +35,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import org.eqcoin.changelog.ChangeLog;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.hive.EQCHive;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -78,23 +80,27 @@ public class TransferCoinbaseTransaction extends Transaction {
 	 */
 	@Override
 	public boolean isValid() throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!nonce.equals(changeLog.getHeight().getNextID())) {
+		if(eqCoinMinerTxOut.getPassportId().compareTo(eqcHive.getPreRoot().getTotalPassportNumbers()) >= 0) {
+			Log.Error("No confirmed passport id can't use: " + eqCoinFederalTxOut.getPassportId());
+			return false;
+		}
+		if(!nonce.equals(eqcHive.getRoot().getHeight().getNextID())) {
 			Log.Error("!nonce.equals(changeLog.getHeight().getNextID())");
 			return false;
 		}
-		Passport passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), false);
+		Passport passport = eqcHive.getGlobalState().getPassport(eqCoinFederalTxOut.getPassportId());
 		if(passport == null) {
 			Log.Error("EQcoinFederal's passport == null");
 			return false;
 		}
 		passport = null;
-		passport = changeLog.getFilter().getPassport(eqCoinMinerTxOut.getPassportId(), false);
+		passport = eqcHive.getGlobalState().getPassport(eqCoinMinerTxOut.getPassportId());
 		if(passport == null) {
 			Log.Error("EQcoinMiner's passport == null");
 			return false;
 		}
-		Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
-		if(!eqCoinFederalTxOut.getValue().equals(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward))) {
+		Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(eqcHive.getGlobalState()));
+		if(!eqCoinFederalTxOut.getValue().equals(Util.getCurrentCoinbaseReward(eqcHive.getGlobalState()).subtract(minerCoinbaseReward))) {
 			Log.Error("EQcoinFederal's coinbase reward is invalid");
 			return false;
 		}
@@ -117,13 +123,14 @@ public class TransferCoinbaseTransaction extends Transaction {
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#isTxInSanity()
-	 */
 	@Override
 	protected boolean isStatusSanity() {
-		if(status != null) {
-			Log.Error("status != null");
+		if(priority != null) {
+			Log.Error("priority != null");
+			return false;
+		}
+		if(lockType != null) {
+			Log.Error("lockType != null");
 			return false;
 		}
 		return true;
@@ -164,13 +171,13 @@ public class TransferCoinbaseTransaction extends Transaction {
 	@Override
 	protected void derivedPlanting() throws Exception {
 		Passport passport = null;
-		passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), false);
+		passport = eqcHive.getGlobalState().getPassport(eqCoinFederalTxOut.getPassportId());
 		passport.deposit(eqCoinFederalTxOut.getValue());
-		passport.setChangeLog(changeLog).planting();
+		passport.setEQCHive(eqcHive).planting();
 		passport = null;
-		passport = changeLog.getFilter().getPassport(eqCoinMinerTxOut.getPassportId(), false);
+		passport = eqcHive.getGlobalState().getPassport(eqCoinMinerTxOut.getPassportId());
 		passport.deposit(eqCoinMinerTxOut.getValue());
-		passport.setChangeLog(changeLog).planting();
+		passport.setEQCHive(eqcHive).planting();
 	}
 	
 	public String toInnerJson() {
@@ -188,9 +195,9 @@ public class TransferCoinbaseTransaction extends Transaction {
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
 		// Parse Transaction type
-		transactionType = TransactionType.get(EQCType.parseID(is).intValue());
+		transactionType = TransactionType.get(EQCCastle.parseID(is).intValue());
 		// Parse nonce
-		nonce = EQCType.parseID(is);
+		nonce = EQCCastle.parseID(is);
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
@@ -206,7 +213,7 @@ public class TransferCoinbaseTransaction extends Transaction {
 		// Serialization Transaction type
 		os.write(transactionType.getEQCBits());
 		// Serialization nonce
-		os.write(EQCType.bigIntegerToEQCBits(nonce));
+		os.write(EQCCastle.bigIntegerToEQCBits(nonce));
 		return os;
 	}
 	
@@ -252,12 +259,9 @@ public class TransferCoinbaseTransaction extends Transaction {
 		return witness == null;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#init(com.eqcoin.blockchain.changelog.ChangeLog)
-	 */
 	@Override
-	public void init(ChangeLog changeLog) throws Exception {
-		this.changeLog = changeLog;
+	public void init(EQCHive eqcHive) throws Exception {
+		this.eqcHive = eqcHive;
 	}
 	
 	/* (non-Javadoc)

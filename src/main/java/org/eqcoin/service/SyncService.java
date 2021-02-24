@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,14 +35,14 @@ import java.util.Vector;
 
 import org.eqcoin.avro.O;
 import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.globalstate.GlobalStateH2;
-import org.eqcoin.rpc.SP;
-import org.eqcoin.rpc.SPList;
-import org.eqcoin.rpc.TransactionIndex;
-import org.eqcoin.rpc.TransactionIndexList;
-import org.eqcoin.rpc.TransactionList;
-import org.eqcoin.rpc.client.EQCMinerNetworkClient;
-import org.eqcoin.rpc.client.EQCTransactionNetworkClient;
+import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
+import org.eqcoin.rpc.client.avro.EQCMinerNetworkClient;
+import org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient;
+import org.eqcoin.rpc.object.SP;
+import org.eqcoin.rpc.object.SPList;
+import org.eqcoin.rpc.object.TransactionIndex;
+import org.eqcoin.rpc.object.TransactionIndexList;
+import org.eqcoin.rpc.object.TransactionList;
 import org.eqcoin.service.state.SleepState;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.Log;
@@ -112,7 +114,7 @@ public class SyncService extends EQCService {
 					}
 				}
 			}
-			sleeping(Util.getCurrentEQCHiveInterval().longValue()/10);
+			sleeping(Util.getCurrentEQCHiveInterval(Util.GS()).longValue()/10);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.Error(e.getMessage());
@@ -128,7 +130,7 @@ public class SyncService extends EQCService {
 		getInstance();
 		super.start();
 		try {
-			sleeping(Util.getCurrentEQCHiveInterval().longValue()/10);
+			sleeping(Util.getCurrentEQCHiveInterval(Util.GS()).longValue()/10);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.Error(e.getMessage());

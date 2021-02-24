@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,112 +33,71 @@ package org.eqcoin.util;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import org.eqcoin.avro.O;
-import org.eqcoin.changelog.ChangeLog;
-import org.eqcoin.rpc.Protocol;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.rpc.gateway.Gateway;
+import org.eqcoin.serialization.EQCCastle;
 
 /**
  * @author Xun Wang
  * @date 9-17-2018
  * @email 10509759@qq.com
  */
-public class ID extends BigInteger implements Protocol {
+public class ID extends BigInteger implements Gateway {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -8644553965845085710L;
 
 	public static final ID ZERO = new ID(BigInteger.ZERO);
-	
+
 	public static final ID ONE = new ID(BigInteger.ONE);
-	
+
 	public static final ID TWO = new ID(BigInteger.TWO);
-	
+
 	public static final ID THREE = new ID(3);
-	
+
 	public static final ID FOUR = new ID(4);
-	
+
 	public static final ID FIVE = new ID(5);
-	
+
 	public static final ID SIX = new ID(6);
-	
+
 	public static final ID SEVEN = new ID(7);
-	
+
 	public static final ID NINE = new ID(9);
-	
+
 	public ID() {
 		super(BigInteger.ZERO.toByteArray());
 	}
-	
-	/**
-	 * @param EQCBits
-	 */
-	public ID(final byte[] bytes) {
-		super(EQCType.eqcBitsToBigInteger(bytes).toByteArray());
-	}
-	
-	public <T> ID(final T type) throws Exception{
-		super(BigInteger.ZERO.toByteArray());
-		parse(type);
-		EQCType.assertNotNegative(this);
-	}
-	
+
 	/**
 	 * @param BigInteger
 	 */
 	public ID(final BigInteger value) {
 		super(value.toByteArray());
-		EQCType.assertNotNegative(this);
+		EQCCastle.assertNotNegative(this);
 	}
-	
+
+	/**
+	 * @param EQCBits
+	 */
+	public ID(final byte[] bytes) {
+		super(EQCCastle.eqcBitsToBigInteger(bytes).toByteArray());
+	}
+
 	/**
 	 * @param long
 	 */
 	public ID(final long value) {
 		super(BigInteger.valueOf(value).toByteArray());
-		EQCType.assertNotNegative(this);
+		EQCCastle.assertNotNegative(this);
 	}
-	
-	/**
-	 * @param previousID previous ID
-	 * @return return true if current ID equal to previous ID + 1 otherwise return false
-	 */
-	public boolean isNextID(final ID previousID) {
-		return this.compareTo(previousID.add(BigInteger.ONE)) == 0;
-	}
-	
-	/**
-	 * @param bytes previous ID's EQCBits
-	 * @return return true if current ID equal to previous ID + 1 otherwise return false
-	 */
-	public boolean isNextID(final byte[] bytes) {
-		BigInteger previousID = EQCType.eqcBitsToBigInteger(bytes);
-		return this.compareTo(previousID.add(BigInteger.ONE)) == 0;
-	}
-	
-	/**
-	 * @return the next ID
-	 */
-	public ID getNextID() {
-		return new ID(this.add(BigInteger.ONE));
-	}
-	
-	/**
-	 * @return the previous ID
-	 */
-	public ID getPreviousID() {
-		return new ID(this.subtract(BigInteger.ONE));
-	}
-	
-	/**
-	 * @return current serial number's EQCBits
-	 */
-	public byte[] getEQCBits() {
-		return EQCType.bigIntegerToEQCBits(this);
+
+	public <T> ID(final T type) throws Exception{
+		super(BigInteger.ZERO.toByteArray());
+		parse(type);
+		EQCCastle.assertNotNegative(this);
 	}
 
 	/* (non-Javadoc)
@@ -148,14 +109,61 @@ public class ID extends BigInteger implements Protocol {
 	}
 
 	/* (non-Javadoc)
-	 * @see java.math.BigInteger#subtract(java.math.BigInteger)
+	 * @see java.math.BigInteger#divide(java.math.BigInteger)
 	 */
 	@Override
-	public ID subtract(final BigInteger val) {
+	public ID divide(final BigInteger val) {
 		// TODO Auto-generated method stub
-		return new ID(super.subtract(val));
+		return new ID(super.divide(val));
 	}
-	
+
+	/**
+	 * @return current serial number's EQCBits
+	 */
+	public byte[] getEQCBits() {
+		return EQCCastle.bigIntegerToEQCBits(this);
+	}
+
+	/**
+	 * @return the next ID
+	 */
+	public ID getNextID() {
+		return new ID(this.add(BigInteger.ONE));
+	}
+
+	/**
+	 * @return the previous ID
+	 */
+	public ID getPreviousID() {
+		return new ID(this.subtract(BigInteger.ONE));
+	}
+
+	@Override
+	public <T> T getProtocol(final Class<T> type) throws Exception {
+		return Gateway.getProtocol(type, EQCCastle.bigIntegerToEQCBits(this));
+	}
+
+	/**
+	 * @param bytes previous ID's EQCBits
+	 * @return return true if current ID equal to previous ID + 1 otherwise return false
+	 */
+	public boolean isNextID(final byte[] bytes) {
+		final BigInteger previousID = EQCCastle.eqcBitsToBigInteger(bytes);
+		return this.compareTo(previousID.add(BigInteger.ONE)) == 0;
+	}
+
+	/**
+	 * @param previousID previous ID
+	 * @return return true if current ID equal to previous ID + 1 otherwise return false
+	 */
+	public boolean isNextID(final ID previousID) {
+		return this.compareTo(previousID.add(BigInteger.ONE)) == 0;
+	}
+
+	public boolean isSanity() {
+		return this.compareTo(ID.ZERO) >= 0;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.math.BigInteger#multiply(java.math.BigInteger)
 	 */
@@ -165,37 +173,25 @@ public class ID extends BigInteger implements Protocol {
 		return new ID(super.multiply(val));
 	}
 
-	/* (non-Javadoc)
-	 * @see java.math.BigInteger#divide(java.math.BigInteger)
-	 */
-	@Override
-	public ID divide(final BigInteger val) {
-		// TODO Auto-generated method stub
-		return new ID(super.divide(val));
-	}
-
-	public boolean isSanity() {
-		return this.compareTo(ID.ZERO) >= 0;
-	}
-
-	/** 
-	 * Due to the limit of BigInteger so have to use EQCType.parseID(T type) instead of this 
-	 * @see org.eqcoin.rpc.Protocol#parse(java.lang.Object)
+	/**
+	 * Due to the limit of BigInteger so have to use EQCType.parseID(T type) instead of this
+	 * @see org.eqcoin.rpc.gateway.Gateway#parse(java.lang.Object)
 	 */
 	@Override
 	public <T> void parse(final T type) throws Exception {
+		Objects.requireNonNull(type);
+		final ByteArrayInputStream is = new ByteArrayInputStream(Gateway.parseProtocol(type));
+		parse(is);
+		EQCCastle.assertNoRedundantData(is);
 	}
 
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#subtract(java.math.BigInteger)
+	 */
 	@Override
-	public <T> T getProtocol(final Class<T> type) throws Exception {
-		T protocol = null;
-		if(type.equals(O.class)) {
-			protocol = (T) new O(ByteBuffer.wrap(EQCType.bigIntegerToEQCBits(this)));
-		}
-		else {
-			throw new IllegalStateException("Invalid Protocol type");
-		}
-		return protocol;
+	public ID subtract(final BigInteger val) {
+		// TODO Auto-generated method stub
+		return new ID(super.subtract(val));
 	}
-	
+
 }

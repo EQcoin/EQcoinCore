@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -255,7 +257,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#EQCSerializable()}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#EQCSerializable()}.
 	 */
 	@Test
 	final void testEQCSerializable() {
@@ -263,7 +265,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#EQCSerializable(byte[])}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#EQCSerializable(byte[])}.
 	 */
 	@Test
 	final void testEQCSerializableByteArray() {
@@ -271,7 +273,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#EQCSerializable(java.io.ByteArrayInputStream)}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#EQCSerializable(java.io.ByteArrayInputStream)}.
 	 */
 	@Test
 	final void testEQCSerializableByteArrayInputStream() {
@@ -279,7 +281,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#parse(java.io.ByteArrayInputStream)}.
 	 */
 	@Test
 	final void testParse() {
@@ -287,7 +289,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#Parse(java.io.ByteArrayInputStream)}.
 	 */
 	@Test
 	final void testParseByteArrayInputStream() {
@@ -295,7 +297,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#Parse(byte[])}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#Parse(byte[])}.
 	 */
 	@Test
 	final void testParseByteArray() {
@@ -303,7 +305,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#parseHeader(java.io.ByteArrayInputStream)}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#parseHeader(java.io.ByteArrayInputStream)}.
 	 */
 	@Test
 	final void testParseHeader() {
@@ -311,7 +313,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#parseBody(java.io.ByteArrayInputStream)}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#parseBody(java.io.ByteArrayInputStream)}.
 	 */
 	@Test
 	final void testParseBody() {
@@ -319,7 +321,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#getBytes(java.io.ByteArrayOutputStream)}.
 	 */
 	@Test
 	final void testGetBytesByteArrayOutputStream() {
@@ -327,7 +329,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#getBytes()}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#getBytes()}.
 	 */
 	@Test
 	final void testGetBytes() {
@@ -335,7 +337,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#getBin()}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#getBin()}.
 	 */
 	@Test
 	final void testGetBin() {
@@ -343,7 +345,7 @@ class LockMateTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.serialization.EQCSerializable#isValid()}.
+	 * Test method for {@link org.eqcoin.serialization.EQCObject#isValid()}.
 	 */
 	@Test
 	final void testIsValid() {

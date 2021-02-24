@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,13 +31,9 @@
  */
 package org.eqcoin.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 
-import org.eqcoin.serialization.EQCInheritable;
-import org.eqcoin.serialization.EQCTypable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
 
 /**
  * @author Xun Wang
@@ -43,36 +41,62 @@ import org.eqcoin.serialization.EQCType;
  * @email 10509759@qq.com
  */
 public class Value extends BigInteger {
-//	public static final Value ZERO = new Value(0);
-	
-//	public Value() {
-//		super(BigInteger.ZERO.toByteArray());
-//	}
-	
-	/**
-	 * @param EQCBits
-	 */
-	public Value(final byte[] bytes) {
-		super(EQCType.eqcBitsToBigInteger(bytes).toByteArray());
-		EQCType.assertPositive(this);
-	}
-	
-	/**
-	 * @param long
-	 */
-	public Value(final long value) {
-		super(BigInteger.valueOf(value).toByteArray());
-		EQCType.assertPositive(this);
-	}
-	
+	//	public static final Value ZERO = new Value(0);
+
+	//	public Value() {
+	//		super(BigInteger.ZERO.toByteArray());
+	//	}
+
 	/**
 	 * @param BigInteger
 	 */
 	public Value(final BigInteger value) {
 		super(value.toByteArray());
-		EQCType.assertPositive(this);
+		EQCCastle.assertPositive(this);
+		EQCCastle.assertNotBigger(this, Util.MAX_EQC);
 	}
-	
+
+	/**
+	 * @param EQCBits
+	 */
+	public Value(final byte[] bytes) {
+		super(EQCCastle.eqcBitsToBigInteger(bytes).toByteArray());
+		EQCCastle.assertPositive(this);
+		EQCCastle.assertNotBigger(this, Util.MAX_EQC);
+	}
+
+	/**
+	 * @param long
+	 */
+	public Value(final long value) {
+		super(BigInteger.valueOf(value).toByteArray());
+		EQCCastle.assertPositive(this);
+	}
+
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#add(java.math.BigInteger)
+	 */
+	@Override
+	public Value add(final BigInteger val) {
+		return new Value(super.add(val));
+	}
+
+	/* (non-Javadoc)
+	 * @see java.math.BigInteger#divide(java.math.BigInteger)
+	 */
+	@Override
+	public Value divide(final BigInteger val) {
+		// TODO Auto-generated method stub
+		return new Value(super.divide(val));
+	}
+
+	/**
+	 * @return current serial number's EQCBits
+	 */
+	public byte[] getEQCBits() {
+		return EQCCastle.bigIntegerToEQCBits(this);
+	}
+
 	public boolean isSanity() throws Exception {
 		if(this.compareTo(Value.ZERO) <= 0) {
 			Log.Error(this + " <= 0");
@@ -84,47 +108,23 @@ public class Value extends BigInteger {
 		}
 		return true;
 	}
-	
-	/**
-	 * @return current serial number's EQCBits
-	 */
-	public byte[] getEQCBits() {
-		return EQCType.bigIntegerToEQCBits(this);
-	}
 
 	/* (non-Javadoc)
-	 * @see java.math.BigInteger#add(java.math.BigInteger)
+	 * @see java.math.BigInteger#multiply(java.math.BigInteger)
 	 */
 	@Override
-	public Value add(BigInteger val) {
-		return new Value(super.add(val));
+	public Value multiply(final BigInteger val) {
+		// TODO Auto-generated method stub
+		return new Value(super.multiply(val));
 	}
 
 	/* (non-Javadoc)
 	 * @see java.math.BigInteger#subtract(java.math.BigInteger)
 	 */
 	@Override
-	public Value subtract(BigInteger val) {
+	public Value subtract(final BigInteger val) {
 		// TODO Auto-generated method stub
 		return new Value(super.subtract(val));
 	}
-	
-	/* (non-Javadoc)
-	 * @see java.math.BigInteger#multiply(java.math.BigInteger)
-	 */
-	@Override
-	public Value multiply(BigInteger val) {
-		// TODO Auto-generated method stub
-		return new Value(super.multiply(val));
-	}
 
-	/* (non-Javadoc)
-	 * @see java.math.BigInteger#divide(java.math.BigInteger)
-	 */
-	@Override
-	public Value divide(BigInteger val) {
-		// TODO Auto-generated method stub
-		return new Value(super.divide(val));
-	}
-	
 }

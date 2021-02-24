@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -49,7 +51,7 @@ import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -105,20 +107,24 @@ public class T1Witness extends Witness {
 			compressedPublickey = RecoverySECP256R1Publickey.getInstance().recoverFromSignature(i,
 					getDERSignature(), transaction.getSignBytesHash());
 			lock = LockTool.publickeyToEQCLock(LockType.T1, compressedPublickey);
-			if ((lockMateId = transaction.getChangeLog().getFilter().isLockExists(lock, false)) != null) {
+			if ((lockMateId = transaction.getEQCHive().getGlobalState().isLockMateExists(lock)) != null) {
 				break;
 			}
 		}
 		if(lockMateId == null) {
-			Log.Error("Witness relevant lock doesn't exists");
+			Log.Error("Witness relevant lock mate doesn't exists");
 			return false;
 		}
-		lockMate = transaction.getChangeLog().getFilter().getLock(lockMateId, true);
-		if(lockMate == null) {
-			Log.Error("lockMate == null");
+		if(lockMateId.compareTo(transaction.getEQCHive().getPreRoot().getTotalLockMateNumbers()) >= 0) {
+			Log.Error("Witness relevant lock mate doesn't confirmed");
 			return false;
 		}
-		passport = transaction.getChangeLog().getFilter().getPassportFromLockId(lockMateId, true);
+//		lockMate = transaction.getEQCHive().getGlobalState().getLockMate(lockMateId);
+//		if(lockMate == null) {
+//			Log.Error("lockMate == null");
+//			return false;
+//		}
+		passport = transaction.getEQCHive().getGlobalState().getPassportFromLockMateId(lockMateId);
 		if(passport == null) {
 			Log.Error("passport == null");
 			return false;
@@ -157,7 +163,7 @@ public class T1Witness extends Witness {
 	 */
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
-		witness = EQCType.parseNBytes(is, Util.P256_SIGNATURE_LEN.intValue());
+		witness = EQCCastle.parseNBytes(is, Util.P256_SIGNATURE_LEN.intValue());
 	}
 	
 	public static byte[] DERTosignature(byte[] derSignature) throws Exception {
@@ -182,8 +188,8 @@ public class T1Witness extends Witness {
 	public final byte[] getDERSignature() throws Exception {
 		byte[] r = null, s = null;
 		ByteArrayInputStream is = new ByteArrayInputStream(witness);
-		r = EQCType.parseNBytes(is, Util.P256_POINT_LEN.intValue());
-		s = EQCType.parseNBytes(is, Util.P256_POINT_LEN.intValue());
+		r = EQCCastle.parseNBytes(is, Util.P256_POINT_LEN.intValue());
+		s = EQCCastle.parseNBytes(is, Util.P256_POINT_LEN.intValue());
 		ECDSASignature ecdsaSignature = new ECDSASignature(new BigInteger(1, r), new BigInteger(1, s));
 		return ecdsaSignature.encodeToDER();
 	}
@@ -256,10 +262,10 @@ public class T1Witness extends Witness {
 	@Override
 	public void planting() throws Exception {
 		super.planting();
-		// Update publickey if need
-		if (lockMate.getPublickey().isNULL()) {
+		// Update publickey if need here exists one bug when forbidden doesn't update publickey
+		if (lockMate.isLively() && lockMate.getPublickey().isNULL()) {
 			lockMate.getPublickey().setPublickey(compressedPublickey);
-			lockMate.setChangeLog(transaction.getChangeLog()).planting();
+			lockMate.setEQCHive(transaction.getEQCHive()).planting();
 		}
 	}
 	
@@ -268,6 +274,11 @@ public class T1Witness extends Witness {
 	 */
 	public LockMate getLockMate() {
 		return lockMate;
+	}
+
+	@Override
+	public void forbidden() throws Exception {
+		lockMate.forbidden();
 	}
 	
 }

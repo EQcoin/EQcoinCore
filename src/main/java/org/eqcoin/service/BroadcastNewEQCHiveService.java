@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,12 +35,12 @@ import java.io.IOException;
 
 import org.eqcoin.avro.O;
 import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.globalstate.GlobalStateH2;
-import org.eqcoin.rpc.Info;
-import org.eqcoin.rpc.SP;
-import org.eqcoin.rpc.SPList;
-import org.eqcoin.rpc.client.EQCMinerNetworkClient;
-import org.eqcoin.rpc.service.EQCMinerNetworkService;
+import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
+import org.eqcoin.rpc.client.avro.EQCMinerNetworkClient;
+import org.eqcoin.rpc.object.Info;
+import org.eqcoin.rpc.object.SP;
+import org.eqcoin.rpc.object.SPList;
+import org.eqcoin.rpc.service.avro.EQCMinerNetworkService;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.NewEQCHiveState;
 import org.eqcoin.service.state.EQCServiceState.State;
@@ -89,9 +91,9 @@ public class BroadcastNewEQCHiveService extends EQCService {
 			newEQCHiveState = (NewEQCHiveState) state;
 			if(!Util.LOCAL_SP.equals(Util.SINGULARITY_SP)) {
 				try {
-					Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getHeight() + " to SINGULARITY_SP");
+					Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to SINGULARITY_SP");
 					Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), Util.SINGULARITY_SP);
-					Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getHeight() + " to SINGULARITY_SP result: " + info.getCode());
+					Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to SINGULARITY_SP result: " + info.getCode());
 				}
 				catch (Exception e) {
 					Log.Error(e.getMessage());
@@ -102,9 +104,9 @@ public class BroadcastNewEQCHiveService extends EQCService {
 				for(SP sp:spList.getSPList()) {
 					if(!Util.LOCAL_SP.equals(sp)) {
 						try {
-							Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getHeight() + " to: " + sp);
+							Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to: " + sp);
 							Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), sp);
-							Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getHeight() + " to: " + sp + " result: " + info.getCode());
+							Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to: " + sp + " result: " + info.getCode());
 						}
 						catch (Exception e) {
 							if(e instanceof IOException) {

@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,8 +36,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 
-import org.eqcoin.passport.Passport;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Value;
@@ -90,9 +92,9 @@ public class TransferTransaction extends Transaction {
 		Passport passport = null;
 		// Update current Transaction's TxOut Account
 		for (TransferTxOut transferTxOut : txOutList) {
-			passport = changeLog.getFilter().getPassport(transferTxOut.getPassportId(), true);
+			passport = eqcHive.getGlobalState().getPassport(transferTxOut.getPassportId());
 			passport.deposit(transferTxOut.getValue());
-			changeLog.getFilter().savePassport(passport);
+			passport.setEQCHive(eqcHive).planting();
 		}
 	}
 
@@ -105,7 +107,7 @@ public class TransferTransaction extends Transaction {
 	protected void parseDerivedBody(ByteArrayInputStream is)
 			throws Exception {
 		// Parse TxOut
-		txOutList = EQCType.parseArray(is, new TransferTxOut());
+		txOutList = EQCCastle.parseArray(is, new TransferTxOut());
 	}
 	
 	/* (non-Javadoc)
@@ -116,7 +118,7 @@ public class TransferTransaction extends Transaction {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization TxOut
-			os.write(EQCType.eqcSerializableListToArray(txOutList));
+			os.write(EQCCastle.eqcSerializableListToArray(txOutList));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -222,7 +224,7 @@ public class TransferTransaction extends Transaction {
 
 	public boolean isAllTxOutLockIDValid() {
 		for (TransferTxOut transferTxOut : txOutList) {
-			if (transferTxOut.getPassportId().compareTo(changeLog.getPreviousTotalPassportNumbers().getPreviousID()) > 0) {
+			if (transferTxOut.getPassportId().compareTo(eqcHive.getPreRoot().getTotalPassportNumbers()) >= 0) {
 				Log.Error("isAllTxOutLockIDValid failed: " + transferTxOut);
 				return false;
 			}

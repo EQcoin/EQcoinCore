@@ -1,7 +1,7 @@
 package org.eqcoin.service.state;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.rpc.SP;
+import org.eqcoin.rpc.object.SP;
 import org.eqcoin.service.state.EQCServiceState.State;
 
 public class EQCHiveSyncState extends EQCServiceState {

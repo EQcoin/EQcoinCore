@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +32,6 @@
 package org.eqcoin.keystore;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -38,14 +39,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.file.Files;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -55,12 +52,9 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Vector;
 
 import org.eqcoin.crypto.EQCECCPublicKey;
-import org.eqcoin.lock.LockTool;
-import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.serialization.EQCType;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
-import org.eqcoin.util.Value;
 
 /**
  * @author Xun Wang
@@ -68,16 +62,9 @@ import org.eqcoin.util.Value;
  * @email 10509759@qq.com
  */
 public class Keystore {
-	public static final int P256 = 1;
-	public static final int P521 = 2;
-	public final static String SECP256R1 = "secp256r1";
-	public final static String SECP521R1 = "secp521r1";
-	private Vector<UserProfile> userProfileList;
-	private static Keystore instance;
-
 	public enum ECCTYPE {
 		P256, P521;
-		public static final ECCTYPE get(int ordinal) {
+		public static final ECCTYPE get(final int ordinal) {
 			ECCTYPE eccType = null;
 			switch (ordinal) {
 			case 0:
@@ -87,19 +74,21 @@ public class Keystore {
 				eccType = P521;
 				break;
 			}
-			if(eccType == null) {
+			if (eccType == null) {
 				throw new IllegalStateException("Invalid ECCTYPE: " + ordinal);
 			}
 			return eccType;
 		}
+
 		public final byte[] getEQCBits() {
 			return EQCType.intToEQCBits(this.ordinal());
 		}
 	}
-	
-	private Keystore() {
-		userProfileList = loadUserProfileList(Util.KEYSTORE_PATH);
-	}
+	public static final int P256 = 1;
+	public static final int P521 = 2;
+	public final static String SECP256R1 = "secp256r1";
+	public final static String SECP521R1 = "secp521r1";
+	private static Keystore instance;
 
 	public static Keystore getInstance() {
 		if (instance == null) {
@@ -112,11 +101,18 @@ public class Keystore {
 		return instance;
 	}
 
-	public synchronized UserProfile createUserProfile(String userName, String password, ECCTYPE eccType, String alais) {
-		UserProfile userProfile = new UserProfile();
-		KeyPairGenerator kpg;
-		
+	private Vector<UserProfile> userProfileList;
+
+	private Keystore() {
+		userProfileList = loadUserProfileList(Util.KEYSTORE_PATH);
+	}
+
+	public synchronized UserProfile createUserProfile(final String userName, final String password, final ECCTYPE eccType, final String alais) {
+		UserProfile userProfile = null;
+		KeyPairGenerator kpg = null;
+
 		try {
+			userProfile = new UserProfile();
 			kpg = KeyPairGenerator.getInstance("EC", "SunEC");
 			ECGenParameterSpec ecsp = null;
 			if(eccType == ECCTYPE.P256) {
@@ -126,17 +122,18 @@ public class Keystore {
 				ecsp = new ECGenParameterSpec("secp521r1");
 			}
 			kpg.initialize(ecsp, SecureRandom.getInstanceStrong());
-			KeyPair kp = kpg.genKeyPair();
-			PrivateKey privKey = kp.getPrivate();
-			PublicKey pubKey = kp.getPublic();
-			EQCECCPublicKey eqcPublicKey = new EQCECCPublicKey(eccType);
+			final KeyPair kp = kpg.genKeyPair();
+			final PrivateKey privKey = kp.getPrivate();
+			final PublicKey pubKey = kp.getPublic();
+			final EQCECCPublicKey eqcPublicKey = new EQCECCPublicKey(eccType);
 			eqcPublicKey.setECPoint((ECPublicKey) pubKey);
+			userProfile.setECCType(eccType);
 			userProfile.setUserName(userName);
 			userProfile.setPwdProof(MessageDigest.getInstance(Util.SHA3_512).digest(password.getBytes()));
 			userProfile.setPrivateKey(Util.AESEncrypt(((ECPrivateKey)privKey).getS().toByteArray(), password));
 			userProfile.setPublicKey(Util.AESEncrypt(eqcPublicKey.getCompressedPublicKeyEncoded(), password));
 			userProfile.setAlais(alais);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			Log.Error("error occur: " + e.getMessage());
 		}
 
@@ -150,9 +147,41 @@ public class Keystore {
 		return userProfile;
 	}
 
-	public Vector<UserProfile> loadUserProfileList(String path) {
+	public UserProfile getUserProfile(final String alais) {
+		UserProfile userProfile = null;
+		for (final UserProfile userProfile2 : userProfileList) {
+			if (userProfile2.getAlais().equals(alais)) {
+				userProfile = userProfile2;
+				break;
+			}
+		}
+		return userProfile;
+	}
+
+	/**
+	 * @return the userProfileList
+	 */
+	public Vector<UserProfile> getUserProfileList() {
+		return userProfileList;
+	}
+
+	public boolean isUserProfileExist(final UserProfile account) {
+		boolean bool = false;
+		if (userProfileList != null) {
+			for (final UserProfile userProfile : userProfileList) {
+				if (userProfile.equals(account)) {
+					bool = true;
+					Log.info(account.toString() + " exist.");
+					break;
+				}
+			}
+		}
+		return bool;
+	}
+
+	public Vector<UserProfile> loadUserProfileList(final String path) {
 		Vector<UserProfile> userProfileList = null;
-		File file = new File(path);
+		final File file = new File(path);
 		if (file.exists()) {
 			if (file.length() == 0) {
 				Log.info("EQCoin.keystore exists but haven't any account just return.");
@@ -162,17 +191,17 @@ public class Keystore {
 			InputStream is = null;
 			try {
 				is = new FileInputStream(file);
-				ByteArrayInputStream bis = new ByteArrayInputStream(is.readAllBytes());
+				final ByteArrayInputStream bis = new ByteArrayInputStream(is.readAllBytes());
 				userProfileList = EQCType.parseArray(bis, new UserProfile());
-			} catch (FileNotFoundException e) {
+			} catch (final FileNotFoundException e) {
 				Log.info("EQCoin.keystore not found: " + e.getMessage());
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				Log.info("Load userProfileList failed: " + e.getMessage());
 			} finally {
 				if (is != null) {
 					try {
 						is.close();
-					} catch (IOException e) {
+					} catch (final IOException e) {
 						Log.info(e.getMessage());
 					}
 				}
@@ -185,8 +214,8 @@ public class Keystore {
 		boolean bool = true;
 		try {
 			Log.info(Util.KEYSTORE_PATH);
-			File file = new File(Util.KEYSTORE_PATH);
-			File fileBak = new File(Util.KEYSTORE_PATH_BAK);
+			final File file = new File(Util.KEYSTORE_PATH);
+			final File fileBak = new File(Util.KEYSTORE_PATH_BAK);
 			// Backup old key store file to EQCoin.keystore.bak
 			if (file.exists() && file.length() > 0) {
 				if (fileBak.exists()) {
@@ -196,7 +225,7 @@ public class Keystore {
 			}
 
 			// Save all userProfileList to EQCoin.keystore
-			OutputStream os = new FileOutputStream(file);
+			final OutputStream os = new FileOutputStream(file);
 			os.write(EQCType.eqcSerializableListToArray(userProfileList));
 			os.flush();
 			os.close();
@@ -208,43 +237,11 @@ public class Keystore {
 				}
 				Files.copy(file.toPath(), fileBak.toPath());
 			}
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			bool = false;
 			Log.Error(e.getMessage());
 		}
 		return bool;
-	}
-
-	public boolean isUserProfileExist(UserProfile account) {
-		boolean bool = false;
-		if(userProfileList != null) {
-			for (UserProfile userProfile : userProfileList) {
-				if (userProfile.equals(account)) {
-					bool = true;
-					Log.info(account.toString() + " exist.");
-					break;
-				}
-			}
-		}
-		return bool;
-	}
-
-	/**
-	 * @return the userProfileList
-	 */
-	public Vector<UserProfile> getUserProfileList() {
-		return userProfileList;
-	}
-	
-	public UserProfile getUserProfile(String alais) {
-		UserProfile userProfile = null;
-		for (UserProfile userProfile2 : userProfileList) {
-			if (userProfile2.getAlais().equals(alais)) {
-				userProfile = userProfile2;
-				break;
-			}
-		}
-		return userProfile;
 	}
 
 }

@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,14 +38,12 @@ import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Objects;
-
-import org.eqcoin.changelog.ChangeLog;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.passport.Passport;
 import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.serialization.EQCObject;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.ModerateOPTransaction;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
@@ -64,7 +64,7 @@ import org.eqcoin.util.Util;
  * @date Sep 28, 2018
  * @email 10509759@qq.com
  */
-public class Publickey extends EQCSerializable {
+public class Publickey extends EQCObject {
 	protected byte[] publickey;
 	protected Transaction transaction;
 	protected LockType lockType;
@@ -98,11 +98,11 @@ public class Publickey extends EQCSerializable {
 	 */
 	@Override
 	public Publickey Parse(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
+		EQCCastle.assertNotNull(bytes);
 		Publickey publickey = null;
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		publickey = Parse(is);
-		EQCType.assertNoRedundantData(is);
+		EQCCastle.assertNoRedundantData(is);
 		return publickey;
 	}
 
@@ -115,7 +115,7 @@ public class Publickey extends EQCSerializable {
 	@Override
 	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
 		if (publickey == null) {
-			os.write(EQCType.NULL);
+			os.write(EQCCastle.NULL);
 		} else {
 			os.write(publickey);
 		}

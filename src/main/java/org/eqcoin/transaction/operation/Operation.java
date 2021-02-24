@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,17 +35,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.serialization.EQCInheritable;
-import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.persistence.globalstate.GlobalState.Plantable;
+import org.eqcoin.protocol.Constraint;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.transaction.operation.Operation.OP;
-import org.eqcoin.util.ID;
-import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 import org.eqcoin.util.Value;
 
 /**
@@ -51,10 +47,10 @@ import org.eqcoin.util.Value;
  * @date Mar 27, 2019
  * @email 10509759@qq.com
  */
-public class Operation  extends EQCSerializable {
+public class Operation extends EQCObject implements Constraint, Plantable {
 	public enum OP {
 		LOCK, CHECKPOINT, BLOCKINTERVAL, MAXBLOCKSIZE, TXFEERATE, UPDATESCRIPT;
-		public static OP get(int ordinal) {
+		public static OP get(final int ordinal) {
 			OP op = null;
 			switch (ordinal) {
 			case 0:
@@ -78,6 +74,10 @@ public class Operation  extends EQCSerializable {
 			}
 			return op;
 		}
+
+		public byte[] getEQCBits() {
+			return EQCCastle.intToEQCBits(this.ordinal());
+		}
 	}
 
 	protected OP op;
@@ -86,18 +86,57 @@ public class Operation  extends EQCSerializable {
 	public Operation() throws Exception {
 		super();
 	}
-	
-	public Operation(byte[] bytes) throws Exception {
+
+	public Operation(final byte[] bytes) throws Exception {
 		super(bytes);
 	}
-	
-	public Operation(ByteArrayInputStream is) throws Exception {
+
+	public Operation(final ByteArrayInputStream is) throws Exception {
 		parse(is);
 	}
-	
-	public void planting() throws Exception {
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final Operation other = (Operation) obj;
+		if (op != other.op) {
+			return false;
+		}
+		if (transaction == null) {
+			if (other.transaction != null) {
+				return false;
+			}
+		} else if (!transaction.equals(other.transaction)) {
+			return false;
+		}
+		return true;
 	}
-	
+
+	@Override
+	public ByteArrayOutputStream getHeaderBytes(final ByteArrayOutputStream os) throws Exception {
+		// Serialization OP
+		os.write(op.getEQCBits());
+		return os;
+	}
+
+	/**
+	 * @return the op
+	 */
+	public OP getOp() {
+		return op;
+	}
+
 	/**
 	 * @return the op
 	 */
@@ -105,69 +144,15 @@ public class Operation  extends EQCSerializable {
 		return op;
 	}
 
+	public Value getProofLength() {
+		return null;
+	}
+
 	/**
-	 * @param op the op to set
+	 * @return the transaction
 	 */
-	public void setOP(OP op) {
-		this.op = op;
-	}
-
-	// Due to the expand ability so here need use isMeetPreconditions
-	public boolean isMeetPreconditions() throws Exception {
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public Operation Parse(ByteArrayInputStream is) throws Exception {
-		Operation operation = null;
-		OP op = parseOP(is);
-		if (op == OP.LOCK) {
-			operation = new ChangeLock();
-		} else if (op == OP.CHECKPOINT) {
-			operation = new ChangeCheckPoint();
-		} 
-		operation.setTransaction(transaction);
-		operation.parse(is);
-		return operation;
-	}
-
-	public OP parseOP(ByteArrayInputStream is) throws Exception {
-		OP op = null;
-		int opCode = -1;
-		try {
-			is.mark(0);
-			opCode = EQCType.eqcBitsToInt(EQCType.parseEQCBits(is));
-			op = OP.get(opCode);
-			if(op == null) {
-				throw new IllegalStateException("OP shouldn't null.");
-			}
-		} finally {
-			is.reset();
-		}
-		return op;
-	}
-
-	@Override
-	public String toInnerJson() {
-		return 
-		"\"OP\":" + "\"" + op + "\"";
-	}
-
-	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-			// Serialization OP
-			os.write(EQCType.longToEQCBits(op.ordinal()));
-		return os;
-	}
-
-	@Override
-	public void parseHeader(ByteArrayInputStream is)
-			throws NoSuchFieldException, IOException, IllegalArgumentException {
-		// Parse OP
-		op = OP.get(EQCType.eqcBitsToInt(EQCType.parseEQCBits(is)));
+	public Transaction getTransaction() {
+		return transaction;
 	}
 
 	/* (non-Javadoc)
@@ -182,58 +167,74 @@ public class Operation  extends EQCSerializable {
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
+	// Due to the expand ability so here need use isMeetPreconditions
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		Operation other = (Operation) obj;
-		if (op != other.op) {
-			return false;
-		}
-		if (transaction == null) {
-			if (other.transaction != null) {
-				return false;
-			}
-		} else if (!transaction.equals(other.transaction)) {
-			return false;
-		}
+	public boolean isMeetConstraint() throws Exception {
 		return true;
 	}
 
-	/**
-	 * @return the op
+	/* (non-Javadoc)
+	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
 	 */
-	public OP getOp() {
+	@Override
+	public Operation Parse(final ByteArrayInputStream is) throws Exception {
+		Operation operation = null;
+		final OP op = parseOP(is);
+		if (op == OP.LOCK) {
+			operation = new ChangeLock();
+		} else if (op == OP.CHECKPOINT) {
+			operation = new ChangeCheckPoint();
+		}
+		operation.setTransaction(transaction).parse(is);
+		return operation;
+	}
+
+	@Override
+	public void parseHeader(final ByteArrayInputStream is)
+			throws NoSuchFieldException, IOException, IllegalArgumentException {
+		// Parse OP
+		op = OP.get(EQCCastle.parseID(is).intValue());
+	}
+
+	public OP parseOP(final ByteArrayInputStream is) throws Exception {
+		OP op = null;
+		int opCode = -1;
+		try {
+			is.mark(0);
+			opCode = EQCCastle.eqcBitsToInt(EQCCastle.parseEQCBits(is));
+			op = OP.get(opCode);
+			if(op == null) {
+				throw new IllegalStateException("OP shouldn't null.");
+			}
+		} finally {
+			is.reset();
+		}
 		return op;
 	}
-	
-	public Value getProofLength() {
-		return null;
+
+	@Override
+	public void planting() throws Exception {
 	}
 
 	/**
-	 * @return the transaction
+	 * @param op the op to set
 	 */
-	public Transaction getTransaction() {
-		return transaction;
+	public void setOP(final OP op) {
+		this.op = op;
 	}
 
 	/**
 	 * @param transaction the transaction to set
 	 */
-	public Operation setTransaction(Transaction transaction) {
+	public Operation setTransaction(final Transaction transaction) {
 		this.transaction = transaction;
 		return this;
 	}
-	
+
+	@Override
+	public String toInnerJson() {
+		return
+				"\"OP\":" + "\"" + op + "\"";
+	}
+
 }

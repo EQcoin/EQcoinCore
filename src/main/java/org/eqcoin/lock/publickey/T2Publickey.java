@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,7 +33,7 @@ package org.eqcoin.lock.publickey;
 
 import java.io.ByteArrayInputStream;
 
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
@@ -51,7 +53,7 @@ public class T2Publickey extends Publickey {
 	
 	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse publicKey
-		publickey = EQCType.parseNBytes(is, Util.P521_PUBLICKEY_LEN);
+		publickey = EQCCastle.parseNBytes(is, Util.P521_PUBLICKEY_LEN);
 	}
 
 	/* (non-Javadoc)

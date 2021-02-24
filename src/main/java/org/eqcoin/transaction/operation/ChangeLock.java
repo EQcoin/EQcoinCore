@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,8 +38,8 @@ import java.sql.SQLException;
 
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
 import org.eqcoin.util.ID;
@@ -73,19 +75,19 @@ public class ChangeLock extends Operation {
 	public void planting() throws Exception {
 		Passport passport = transaction.getWitness().getPassport();
 		LockMate lockMate = new LockMate();
-		lockMate.setId(transaction.getChangeLog().getNextLockId());
+		lockMate.setId(transaction.getEQCHive().getGlobalState().getLastLockMateId().getNextID());
 		lockMate.setLock(lock);
 		passport.setLockID(lockMate.getId());
-		lockMate.setChangeLog(transaction.getChangeLog()).planting();
-		passport.setChangeLog(transaction.getChangeLog()).planting();
+		lockMate.setEQCHive(transaction.getEQCHive()).planting();
+		passport.setEQCHive(transaction.getEQCHive()).planting();
 		// Due to from here doesn't need forbidden lock any more so just remove it's publickey to release space
 		// If light client want verify the forbidden lock proof can recovery it from relevant transaction's signature
 		transaction.getWitness().forbidden();
-		if(!transaction.getWitness().getLockMate().getPublickey().isNULL()) {
-			transaction.getWitness().getLockMate().getPublickey().setPublickey(null);
-		}
-		transaction.getWitness().getLockMate().setForbidden();
-		transaction.getWitness().getLockMate().setChangeLog(transaction.getChangeLog()).planting();
+//		if(!transaction.getWitness().getLockMate().getPublickey().isNULL()) {
+//			transaction.getWitness().getLockMate().getPublickey().setPublickey(null);
+//		}
+//		transaction.getWitness().getLockMate().setForbidden();
+//		transaction.getWitness().getLockMate().setChangeLog(transaction.getChangeLog()).planting();
 	}
 
 	/**
@@ -190,7 +192,7 @@ public class ChangeLock extends Operation {
 	 */
 	@Override
 	public boolean isValid() throws Exception {
-		if(transaction.getChangeLog().getFilter().isLockExists(lock, true) != null) {
+		if(transaction.getEQCHive().getGlobalState().isLockMateExists(lock) != null) {
 			Log.Error("Lock already exists: " + lock);
 			return false;
 		}
@@ -202,7 +204,7 @@ public class ChangeLock extends Operation {
 	 */
 	@Override
 	public Value getProofLength() {
-		return lock.getProofLength();
+		return lock.getGlobalStateLength();
 	}
 	
 }

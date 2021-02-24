@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,8 +35,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.util.Value;
 
 /**
@@ -42,7 +44,7 @@ import org.eqcoin.util.Value;
  * @date Sep 27, 2018
  * @email 10509759@qq.com
  */
-public class Lock extends EQCSerializable {
+public class Lock extends EQCObject {
 	protected LockType type;
 	protected byte[] proof;
 
@@ -75,11 +77,11 @@ public class Lock extends EQCSerializable {
 	 */
 	@Override
 	public Lock Parse(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
+		EQCCastle.assertNotNull(bytes);
 		Lock lock = null;
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		lock = Parse(is);
-		EQCType.assertNoRedundantData(is);
+		EQCCastle.assertNoRedundantData(is);
 		return lock;
 	}
 
@@ -87,7 +89,7 @@ public class Lock extends EQCSerializable {
 		LockType lockType = null;
 		try {
 			is.mark(0);
-			lockType = LockType.get(EQCType.parseID(is).intValue());
+			lockType = LockType.get(EQCCastle.parseID(is).intValue());
 		} finally {
 			is.reset();
 		}
@@ -99,7 +101,7 @@ public class Lock extends EQCSerializable {
 	 */
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		type = LockType.get(EQCType.parseID(is).intValue());
+		type = LockType.get(EQCCastle.parseID(is).intValue());
 	}
 
 	/* (non-Javadoc)
@@ -148,7 +150,7 @@ public class Lock extends EQCSerializable {
 		this.type = lockType;
 	}
 	
-	public Value getProofLength() {
+	public Value getGlobalStateLength() {
 		return  null;
 	}
 

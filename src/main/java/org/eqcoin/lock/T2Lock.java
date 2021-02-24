@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,7 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 import org.eqcoin.util.Value;
@@ -70,7 +72,7 @@ public class T2Lock extends Lock {
 	 */
 	@Override
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		proof = EQCType.parseNBytes(is, Util.SHA3_512_LEN);
+		proof = EQCCastle.parseNBytes(is, Util.SHA3_512_LEN);
 	}
 
 	/* (non-Javadoc)

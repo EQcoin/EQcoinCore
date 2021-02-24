@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,10 +37,10 @@ import java.io.IOException;
 import java.util.Objects;
 
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.AssetPassport;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQCoinSeed;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.seeds.EQCSeeds;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.AssetPassport;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction.TransactionType;
 import org.eqcoin.transaction.operation.ChangeLock;
 import org.eqcoin.transaction.operation.Operation;
@@ -72,7 +74,7 @@ public class ZionOPTransaction extends ZionTransaction {
 			Log.Error("operation == null");
 			return false;
 		}
-		if(!operation.isMeetPreconditions()) {
+		if(!operation.isMeetConstraint()) {
 			Log.Error("!operation.isMeetPreconditions()");
 			return false;
 		}

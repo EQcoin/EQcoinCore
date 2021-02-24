@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,12 +38,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.sql.SQLException;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.persistence.globalstate.GlobalStateH2;
-import org.eqcoin.rpc.Code;
-import org.eqcoin.rpc.Info;
-import org.eqcoin.rpc.NewEQCHive;
-import org.eqcoin.rpc.SP;
-import org.eqcoin.rpc.SPList;
+import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
+import org.eqcoin.rpc.client.avro.EQCMinerNetworkClient;
+import org.eqcoin.rpc.object.Code;
+import org.eqcoin.rpc.object.Info;
+import org.eqcoin.rpc.object.NewEQCHive;
+import org.eqcoin.rpc.object.SP;
+import org.eqcoin.rpc.object.SPList;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -88,7 +91,7 @@ class EQCMinerNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#registerSP(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCMinerNetworkClient#registerSP(org.eqcoin.rpc.object.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
@@ -102,7 +105,7 @@ class EQCMinerNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#getSPList(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCMinerNetworkClient#getSPList(org.eqcoin.rpc.object.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
@@ -115,7 +118,7 @@ class EQCMinerNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#broadcastNewEQCHive(org.eqcoin.rpc.NewEQCHive, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCMinerNetworkClient#broadcastNewEQCHive(org.eqcoin.rpc.object.NewEQCHive, org.eqcoin.rpc.object.SP)}.
 	 * @throws Exception 
 	 * @throws SQLException 
 	 * @throws ClassNotFoundException 
@@ -134,7 +137,7 @@ class EQCMinerNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCMinerNetworkClient#getFastestServer(org.eqcoin.rpc.SPList)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCMinerNetworkClient#getFastestServer(org.eqcoin.rpc.object.SPList)}.
 	 * @throws Exception 
 	 */
 	@Test

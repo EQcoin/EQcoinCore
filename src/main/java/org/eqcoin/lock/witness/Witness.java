@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,11 +45,11 @@ import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.lock.publickey.Publickey;
 import org.eqcoin.lock.publickey.T1Publickey;
 import org.eqcoin.lock.publickey.T2Publickey;
-import org.eqcoin.passport.Passport;
 import org.eqcoin.serialization.EQCInheritable;
+import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.Transaction.TransactionType;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
@@ -64,7 +66,7 @@ import org.eqcoin.util.Value;
  * @date Mar 5, 2020
  * @email 10509759@qq.com
  */
-public class Witness extends EQCSerializable {
+public class Witness extends EQCObject {
 	
 	protected byte[] witness;
 	protected Transaction transaction;
@@ -167,30 +169,29 @@ public class Witness extends EQCSerializable {
 		passport.increaseNonce();
 		// Update current Transaction's TxIn Account's relevant Asset's Balance
 		passport.withdraw(transaction.getBillingValue());
-		passport.setChangeLog(transaction.getChangeLog()).planting();
+		passport.setEQCHive(transaction.getEQCHive()).planting();
 
 		// Deposit TxFee
 		Value txFee = transaction.getTxFee();
 		Value minerTxFee = txFee.multiply(Value.valueOf(5)).divide(Value.valueOf(100));
 		Value eqCoinFederalTxFee = txFee.subtract(minerTxFee);
-		Passport eqCoinFederalPassport = transaction.getChangeLog().getFilter().getPassport(ID.ZERO, true);
+		Passport eqCoinFederalPassport = transaction.getEQCHive().getGlobalState().getPassport(ID.ZERO);
 		Passport minerPassport = null;
-		Transaction coinbaseTransaction = transaction.getChangeLog().getCurrentEQCHive().getEQCoinSeed().getEQCoinSeedRoot().getCoinbaseTransaction();
+		Transaction coinbaseTransaction = transaction.getEQCHive().getEQCoinSeeds().getNewTransactionList().get(0);
 		if (coinbaseTransaction instanceof TransferCoinbaseTransaction) {
 			TransferCoinbaseTransaction transferCoinbaseTransaction = (TransferCoinbaseTransaction) coinbaseTransaction;
-			minerPassport = transaction.getChangeLog().getFilter()
-					.getPassport(transferCoinbaseTransaction.getEqCoinMinerTxOut().getPassportId(), true);
+			minerPassport = transaction.getEQCHive().getGlobalState()
+					.getPassport(transferCoinbaseTransaction.getEqCoinMinerTxOut().getPassportId());
 		} else {
 			ZionCoinbaseTransaction zionCoinbaseTransaction = (ZionCoinbaseTransaction) coinbaseTransaction;
 			// Here may need do more job
-			ID minerLockId = transaction.getChangeLog().getFilter().isLockExists(zionCoinbaseTransaction.getEqCoinMinerTxOut().getLock(),
-					true);
-			minerPassport = transaction.getChangeLog().getFilter().getPassportFromLockId(minerLockId, true);
+			ID minerLockId = transaction.getEQCHive().getGlobalState().isLockMateExists(zionCoinbaseTransaction.getEqCoinMinerTxOut().getLock());
+			minerPassport = transaction.getEQCHive().getGlobalState().getPassportFromLockMateId(minerLockId);
 		}
 		eqCoinFederalPassport.deposit(eqCoinFederalTxFee);
 		minerPassport.deposit(minerTxFee);
-		eqCoinFederalPassport.setChangeLog(transaction.getChangeLog()).planting();
-		minerPassport.setChangeLog(transaction.getChangeLog()).planting();
+		eqCoinFederalPassport.setEQCHive(transaction.getEQCHive()).planting();
+		minerPassport.setEQCHive(transaction.getEQCHive()).planting();
 	}
 	
 	public void free() {
@@ -218,7 +219,7 @@ public class Witness extends EQCSerializable {
 	@Override
 	public boolean isValid() throws Exception {
 		// Check if TxIn's passport id is less than previous EQCHive's total passport numbers
-		if(passport.getId().compareTo(transaction.getChangeLog().getPreviousTotalPassportNumbers()) >= 0) {
+		if(passport.getId().compareTo(transaction.getEQCHive().getPreRoot().getTotalPassportNumbers()) >= 0) {
 			Log.Error("Transaction's Passport relevant ID should less than previous EQCHive's total passport numbers");
 			return false;
 		}

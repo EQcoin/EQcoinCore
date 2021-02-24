@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,186 +31,18 @@
  */
 package org.eqcoin.serialization;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import org.apache.velocity.runtime.directive.Parse;
-import org.eqcoin.lock.witness.Witness;
-import org.eqcoin.transaction.Transaction.TransactionShape;
-import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
-
 /**
  * @author Xun Wang
- * @date Mar 26, 2020
+ * @date Oct 4, 2018
  * @email 10509759@qq.com
  */
-public abstract class EQCSerializable implements EQCTypable, EQCInheritable {
-	
-	public EQCSerializable() {
-		init();
-	}
-	
-	/**
-	 * If derived class hasn't any sub class can override this constructor to create
-	 * new class from byte[] otherwise need override @see
-	 * com.eqcoin.serialization.EQCSerializable#Parse(byte[]) to support constructor
-	 * different sub class
-	 * 
-	 * @param bytes
-	 * @throws Exception
-	 */
-	public EQCSerializable(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		init();
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		parse(is);
-		EQCType.assertNoRedundantData(is);
-	}
-	
-	/**
-	 * If the sub class has multiple sub class then shouldn't implement this
-	 * constructor and use Parse(ByteArrayInputStream is) instead this.
-	 * 
-	 * @param is
-	 * @throws Exception
-	 */
-	public EQCSerializable(ByteArrayInputStream is) throws Exception {
-		init();
-		parse(is);
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parse(java.io.ByteArrayInputStream, java.lang.Object[])
-	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-		parseHeader(is);
- 		parseBody(is);
-	}
-
-	/**
-	 * When the object which extends from EQCSerializable have multiple sub classes
-	 * need implement this to support parse different sub class from the
-	 * ByteArrayInputStream.
-	 * 
-	 * @param is
-	 * @return
-	 * @throws Exception
-	 */
-	public <T extends EQCSerializable> T Parse(ByteArrayInputStream is) throws Exception {
-		return null;
-	}
-	
-	/**
-	 * When the object which extends from EQCSerializable have multiple sub classes
-	 * need implement this to support parse different sub class from the
-	 * byte[].
-	 * @param bytes
-	 * @return
-	 * @throws Exception
-	 */
-	public <T extends EQCSerializable> T Parse(byte[] bytes) throws Exception {
-		EQCType.assertNotNull(bytes);
-		T t = null;
-		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-		t = Parse(is);
-		EQCType.assertNoRedundantData(is);
-		return t;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parseHeader(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseHeader(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#parseBody(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#getHeaderBytes()
-	 */
-	@Override
-	public ByteArrayOutputStream getHeaderBytes(ByteArrayOutputStream os) throws Exception {
-		return os;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCInheritable#getBodyBytes()
-	 */
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
-		return os;
-	}
-
-	@Override
-	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
- 		getHeaderBytes(os);
-		getBodyBytes(os);
-		return os;
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCTypable#getBytes()
-	 */
-	@Override
-	public byte[] getBytes() throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		return getBytes(os).toByteArray();
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCTypable#getBin()
-	 */
-	@Override
-	public byte[] getBin() throws Exception {
-		return EQCType.bytesToBIN(getBytes());
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCTypable#isSanity()
-	 */
-	@Override
-	public boolean isSanity() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCTypable#isValid()
-	 */
-	@Override
-	public boolean isValid() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
-	protected void init() {
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "{\n" + toInnerJson() + "\n}";
-	}
-
-	public String toInnerJson() {
-		return null;
-	}
-	
+public interface EQCSerializable {
+	public byte[] getBin() throws Exception;
+	public byte[] getBodyBytes() throws Exception;
+	public byte[] getBytes() throws Exception;
+	public byte[] getHeaderBytes() throws Exception;
+	public boolean isSanity() throws Exception;
+	public boolean isValid() throws Exception;
+	public void parseBody(byte[] bytes) throws Exception;
+	public void parseHeader(byte[] bytes) throws Exception;
 }

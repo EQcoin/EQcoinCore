@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,9 +33,10 @@ package org.eqcoin.rpc.client;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.eqcoin.rpc.Code;
-import org.eqcoin.rpc.Info;
-import org.eqcoin.rpc.SPList;
+import org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient;
+import org.eqcoin.rpc.object.Code;
+import org.eqcoin.rpc.object.Info;
+import org.eqcoin.rpc.object.SPList;
 import org.eqcoin.util.Util;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -77,7 +80,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#registerSP(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#registerSP(org.eqcoin.rpc.object.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
@@ -90,7 +93,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getSPList(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#getSPList(org.eqcoin.rpc.object.SP)}.
 	 * @throws Exception 
 	 */
 	@Test
@@ -102,7 +105,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#sendTransaction(org.eqcoin.transaction.Transaction, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#sendTransaction(org.eqcoin.transaction.Transaction, org.eqcoin.rpc.object.SP)}.
 	 */
 	@Test
 	final void testSendTransaction() {
@@ -110,7 +113,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getLockInfo(org.eqcoin.rpc.LockStatus, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#getLockInfo(org.eqcoin.rpc.object.LockStatus, org.eqcoin.rpc.object.SP)}.
 	 */
 	@Test
 	final void testGetLockInfo() {
@@ -118,7 +121,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getPendingTransactionList(org.eqcoin.util.ID, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#getPendingTransactionList(org.eqcoin.util.ID, org.eqcoin.rpc.object.SP)}.
 	 */
 	@Test
 	final void testGetPendingTransactionList() {
@@ -126,7 +129,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#ping(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#ping(org.eqcoin.rpc.object.SP)}.
 	 */
 	@Test
 	final void testPing() {
@@ -134,7 +137,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getTransactionIndexList(org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#getTransactionIndexList(org.eqcoin.rpc.object.SP)}.
 	 */
 	@Test
 	final void testGetTransactionIndexList() {
@@ -142,7 +145,7 @@ class EQCTransactionNetworkClientTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.rpc.client.EQCTransactionNetworkClient#getTransactionList(org.eqcoin.rpc.TransactionIndexList, org.eqcoin.rpc.SP)}.
+	 * Test method for {@link org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient#getTransactionList(org.eqcoin.rpc.object.TransactionIndexList, org.eqcoin.rpc.object.SP)}.
 	 */
 	@Test
 	final void testGetTransactionList() {

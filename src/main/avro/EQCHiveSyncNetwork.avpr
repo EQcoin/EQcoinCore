@@ -28,16 +28,21 @@
    	 	 // H means height
          "request": [{"name": "H", "type": "O"}],
          "response": "O"
-    },
-   	"getEQCHiveRoot": {
+     },
+   	 "getEQCHiveRoot": {
    	 	 // H means height
          "request": [{"name": "H", "type": "O"}],
          "response": "O"
-    },
-   	"getEQCHive": {
+     },
+   	 "getEQCHive": {
    	 	 // H means height
          "request": [{"name": "H", "type": "O"}],
          "response": "O"
-   	}
+   	 },
+   	 "getLockInfo": {
+   	  	 // S means relevant lock status which is lock's id or readable lock
+         "request": [{"name": "S", "type": "O"}],
+         "response": "O"
+   	 }
  }
 }

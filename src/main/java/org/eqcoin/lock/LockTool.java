@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,13 +32,12 @@
 package org.eqcoin.lock;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Objects;
 
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.util.Base58;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -50,7 +51,7 @@ public class LockTool {
 
 	public enum LockType {
 		T1, T2;
-		public static final LockType get(int ordinal) {
+		public static final LockType get(final int ordinal) {
 			LockType lockType = null;
 			switch (ordinal) {
 			case 0:
@@ -66,41 +67,11 @@ public class LockTool {
 			return lockType;
 		}
 		public final byte[] getEQCBits() {
-			return EQCType.intToEQCBits(this.ordinal());
+			return EQCCastle.intToEQCBits(this.ordinal());
 		}
 	}
 
-	private LockTool() {
-	}
-
-	/**
-	 * @param lockType  EQC Lock's type Here need use lock type due to the others lock type's proof maybe not compressed publickey
-	 * @param bytes compressed publickey or code's hash. Each input will be extended 3 times
-	 *              using multipleExtend
-	 * @return EQC readable lock
-	 * @throws Exception 
-	 */
-	public static final String generateReadableLock(LockType lockType, byte[] compressedPublickey) throws Exception {
-		byte[] lock_proof = null;
-		if(lockType == LockType.T1) {
-			if(compressedPublickey.length != Util.P256_PUBLICKEY_LEN) {
-				throw new IllegalStateException("Invalid T1 publickey length: " + compressedPublickey.length);
-			}
-			lock_proof = MessageDigest.getInstance(Util.SHA3_256).digest(Util.multipleExtend(compressedPublickey, Util.THREE));
-		}
-		else if(lockType == LockType.T2) {
-			if(compressedPublickey.length != Util.P521_PUBLICKEY_LEN) {
-				throw new IllegalStateException("Invalid T2 publickey length: " + compressedPublickey.length);
-			}
-			lock_proof = MessageDigest.getInstance(Util.SHA3_512).digest(Util.multipleExtend(compressedPublickey, Util.THREE));
-		}
-		else {
-			throw new IllegalStateException("Invalid lock type: " + lockType);
-		}
-		return _generateReadableLock(lockType, lock_proof);
-	}
-	
-	private static String _generateReadableLock(LockType type, byte[] lockProof) throws Exception {
+	private static String _generateReadableLock(final LockType type, final byte[] lockProof) throws Exception {
 		byte[] type_publickey_hash = null;
 		byte[] virginCRC32C = null;
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -115,7 +86,7 @@ public class LockTool {
 		os.write(virginCRC32C);
 		os.write(lockProof);
 		os.write(type.ordinal());
-		
+
 		byte[] secondCRC32C = null;
 		secondCRC32C = Util.CRC32C(os.toByteArray());
 		// Generate lock Base58(type) + Base58(publickey_hash + secondCRC32C)
@@ -125,147 +96,133 @@ public class LockTool {
 
 		return Base58.encode(new byte[] { (byte) type.ordinal() }) + Base58.encode(os.toByteArray());
 	}
-	
-	public static final boolean verifyEQCLockAndPublickey(Lock eqcLock, byte[] compressedPublickey)
-			throws NoSuchAlgorithmException {
-		byte[] lock_proof = null;
-		int compressed_publickey_len = 0;
-		if (eqcLock.getType() == LockType.T1) {
-			lock_proof = MessageDigest.getInstance(Util.SHA3_256)
-					.digest(Util.multipleExtend(compressedPublickey, Util.THREE));
-			compressed_publickey_len = Util.P256_PUBLICKEY_LEN;
-		} else if (eqcLock.getType() == LockType.T2) {
-			lock_proof = MessageDigest.getInstance(Util.SHA3_512)
-					.digest(Util.multipleExtend(compressedPublickey, Util.THREE));
-			compressed_publickey_len = Util.P521_PUBLICKEY_LEN;
-		}
-		Log.info("Len: " + lock_proof.length + " Recovery publickey's hash: " + Util.bytesToHexString(lock_proof));
-    	Log.info("Len: " + eqcLock.getProof().length + " Lock code: " + Util.bytesToHexString(eqcLock.getProof()));
-		return (compressed_publickey_len == compressedPublickey.length  && Arrays.equals(lock_proof, eqcLock.getProof()));
-	}
-	
-	@Deprecated
-	public static final boolean verifyReadableLockAndPublickey(String readableLock, byte[] compressedPublickey) throws Exception {
-		byte[] lock_code0 = null;
-		byte[] lock_code = null;
-		LockType lockType = getLockType(readableLock);
-		if (lockType == LockType.T1) {
-			lock_code = MessageDigest.getInstance(Util.SHA3_256)
-					.digest(Util.multipleExtend(compressedPublickey, Util.THREE));
-		} else if (lockType == LockType.T2) {
-			lock_code = MessageDigest.getInstance(Util.SHA3_512)
-					.digest(Util.multipleExtend(compressedPublickey, Util.THREE));
-		}
-		lock_code0 = Base58.decode(readableLock.substring(1));
-		return Arrays.equals(lock_code, Arrays.copyOf(lock_code0, lock_code0.length - Util.CRC32C_LEN));
-	}
-	
-//	@Deprecated
-//	public static final byte[] readableLockToAI(String readableLock) throws Exception {
-//		byte[] bytes = null;
-//		ByteArrayOutputStream os = null;
-//		os = new ByteArrayOutputStream();
-//		os.write(Base58.decode(readableLock.substring(0, 1)));
-//		bytes = Base58.decode(readableLock.substring(1));
-//		os.write(bytes, 0, bytes.length - Util.CRC32C_LEN);
-//		return os.toByteArray();
-//	}
-	
-//	@Deprecated
-//	public static final byte[] publickeyToAI(byte[] compressedPublickey) throws Exception {
-//		LockType lockType = getLockType(compressedPublickey);
-//		ByteArrayOutputStream os = new ByteArrayOutputStream();
-//		if(lockType == LockType.T1) {
-//			os.write(lockType.ordinal());
-//			os.write(MessageDigest.getInstance(Util.SHA3_256).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
-//		}
-//		else if(lockType == LockType.T2) {
-//			os.write(lockType.ordinal());
-//			os.write(MessageDigest.getInstance(Util.SHA3_512).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
-//		}
-//		return os.toByteArray();
-//	}
-//
-//	@Deprecated
-//	public static final byte[] publickeyHashToAI(LockType lockType, byte[] publickeyHash) throws IOException {
-//		ByteArrayOutputStream os = new ByteArrayOutputStream();
-//		os.write(lockType.ordinal());
-//		os.write(publickeyHash);
-//		return os.toByteArray();
-//	}
-	
-	public static final String EQCLockToReadableLock(Lock eqcLock) throws Exception {
+
+	public static final String EQCLockToReadableLock(final Lock eqcLock) throws Exception {
 		Objects.requireNonNull(eqcLock);
 		return _generateReadableLock(eqcLock.getType(), eqcLock.getProof());
 	}
-	
-	public static final byte[] getLockProof(String readableLock) throws Exception {
+
+	/**
+	 * @param lockType  EQC Lock's type Here need use lock type due to the others lock type's proof maybe not compressed publickey
+	 * @param bytes compressed publickey or code's hash. Each input will be extended 3 times
+	 *              using multipleExtend
+	 * @return EQC readable lock
+	 * @throws Exception
+	 */
+	public static final String generateReadableLock(final LockType lockType, final byte[] compressedPublickey) throws Exception {
+		byte[] lock_proof = null;
+		if(lockType == LockType.T1) {
+			if(compressedPublickey.length != Util.P256_PUBLICKEY_LEN) {
+				throw new IllegalStateException("Invalid T1 publickey length: " + compressedPublickey.length);
+			}
+			lock_proof = MessageDigest.getInstance(Util.SHA3_256).digest(compressedPublickey);
+		}
+		else if(lockType == LockType.T2) {
+			if(compressedPublickey.length != Util.P521_PUBLICKEY_LEN) {
+				throw new IllegalStateException("Invalid T2 publickey length: " + compressedPublickey.length);
+			}
+			lock_proof = MessageDigest.getInstance(Util.SHA3_512).digest(compressedPublickey);
+		}
+		else {
+			throw new IllegalStateException("Invalid lock type: " + lockType);
+		}
+		return _generateReadableLock(lockType, lock_proof);
+	}
+
+	public static final byte[] getLockProof(final String readableLock) throws Exception {
 		byte[] bytes = null;
 		bytes = Base58.decode(readableLock.substring(1));
 		return Arrays.copyOfRange(bytes, 0, bytes.length - Util.CRC32C_LEN);
 	}
-	
-	public static final Lock readableLockToEQCLock(String readableLock) throws Exception {
-		Objects.requireNonNull(readableLock);
-		Lock eqcLock = null;
+
+	public static final LockType getLockType(final byte[] compressedPublickey) {
 		LockType lockType = null;
-		
-		if(!isReadableLockSanity(readableLock)) {
-			throw new IllegalStateException("Invalid readable lock: " + readableLock);
+		if(compressedPublickey.length == Util.P256_PUBLICKEY_LEN) {
+			lockType = LockType.T1;
 		}
-		
-		lockType = getLockType(readableLock);
-		if(lockType == LockType.T1) {
-			eqcLock = new T1Lock();
+		else if(compressedPublickey.length == Util.P521_PUBLICKEY_LEN) {
+			lockType = LockType.T2;
 		}
-		else if(lockType == LockType.T2) {
-			eqcLock = new T2Lock();
+		else {
+			throw new IllegalStateException("Invalid publickey length:" + compressedPublickey.length);
 		}
-		eqcLock.setProof(getLockProof(readableLock));
-		return eqcLock;
+		return lockType;
 	}
-	
-	public static final Lock publickeyToEQCLock(LockType lockType, byte[] compressedPublickey) throws Exception {
-		Lock eqcLock = null;
-		if(lockType == LockType.T1) {
-			eqcLock = new T1Lock();
-			eqcLock.setProof( MessageDigest.getInstance(Util.SHA3_256).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
+
+	//	@Deprecated
+	//	public static final byte[] readableLockToAI(String readableLock) throws Exception {
+	//		byte[] bytes = null;
+	//		ByteArrayOutputStream os = null;
+	//		os = new ByteArrayOutputStream();
+	//		os.write(Base58.decode(readableLock.substring(0, 1)));
+	//		bytes = Base58.decode(readableLock.substring(1));
+	//		os.write(bytes, 0, bytes.length - Util.CRC32C_LEN);
+	//		return os.toByteArray();
+	//	}
+
+	//	@Deprecated
+	//	public static final byte[] publickeyToAI(byte[] compressedPublickey) throws Exception {
+	//		LockType lockType = getLockType(compressedPublickey);
+	//		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	//		if(lockType == LockType.T1) {
+	//			os.write(lockType.ordinal());
+	// os.write(MessageDigest.getInstance(Util.SHA3_256).digest(compressedPublickey));
+	//		}
+	//		else if(lockType == LockType.T2) {
+	//			os.write(lockType.ordinal());
+	// os.write(MessageDigest.getInstance(Util.SHA3_512).digest(compressedPublickey));
+	//		}
+	//		return os.toByteArray();
+	//	}
+	//
+	//	@Deprecated
+	//	public static final byte[] publickeyHashToAI(LockType lockType, byte[] publickeyHash) throws IOException {
+	//		ByteArrayOutputStream os = new ByteArrayOutputStream();
+	//		os.write(lockType.ordinal());
+	//		os.write(publickeyHash);
+	//		return os.toByteArray();
+	//	}
+
+	public static final LockType getLockType(final String readableLock) throws Exception {
+		LockType lockType = null;
+		final char alphabet = readableLock.charAt(0);
+		if (alphabet == '1') {
+			lockType = LockType.T1;
+		} else if (alphabet == '2') {
+			lockType = LockType.T2;
+		} else {
+			throw new IllegalStateException("Invalid lock type: " + alphabet);
 		}
-		else if(lockType == LockType.T2) {
-			eqcLock = new T2Lock();
-			eqcLock.setProof(MessageDigest.getInstance(Util.SHA3_512).digest(Util.multipleExtend(compressedPublickey, Util.THREE)));
-		}
-		return eqcLock;
+		return lockType;
 	}
-	
-//	@Deprecated
-//	public static final String AIToReadableLock(byte[] bytes) throws Exception {
-//		EQCType.assertNotNull(bytes);
-//		LockType lockType = null;
-//		if (bytes[0] == 0) {
-//			lockType = LockType.T1;
-//		} else if (bytes[0] == 1) {
-//			lockType = LockType.T2;
-//		} 
-//		else {
-//			throw new UnsupportedOperationException("Unsupport lock type: " + bytes[0]);
-//		}
-//		
-//		return _generateReadableLock(lockType, Arrays.copyOfRange(bytes, 1, bytes.length));
-//	}
-	
-	public static final boolean isReadableLockSanity(String readableLock) throws Exception {
+
+	@Deprecated
+	public static final LockType getLockTypeFromAI(final byte[] aiLock) {
+		byte type = 0;
+		LockType lockType = null;
+		type = aiLock[0];
+		if (type == 0) {
+			lockType = LockType.T1;
+		} else if (type == 1) {
+			lockType = LockType.T2;
+		} else {
+			throw new IllegalStateException("Invalid lock type: " + type);
+		}
+		return lockType;
+	}
+
+	public static final boolean isReadableLockSanity(final String readableLock) throws Exception {
 		char[] addressChar = null;
 		LockType lockType = null;
 		byte[] lock_proof_dual_crc32c = null;
 		byte[] lock_type_byte = null;
-		byte[] dualCrc32c = new byte[Util.CRC32C_LEN];
+		final byte[] dualCrc32c = new byte[Util.CRC32C_LEN];
 		byte[] calculatedDualCrc32c = null;
 		byte[] virginCrc32c = null;
 		byte[] type_lock_proof = null;
 		int lock_proof_len = 0;
 		ByteArrayOutputStream os = null;
-		
+
 		// Verify lock type
 		addressChar = readableLock.toCharArray();
 		if(addressChar[0] == '1') {
@@ -278,15 +235,15 @@ public class LockTool {
 			Log.Error("Invalid lock type: " + addressChar[0]);
 			return false;
 		}
-		
-		// Verify lock character set 
-		for (char alphabet : addressChar) {
+
+		// Verify lock character set
+		for (final char alphabet : addressChar) {
 			if (!Base58.isBase58Char(alphabet)) {
 				Log.Error("Invalid character set which exceed Base1001");
 				return false;
 			}
 		}
-		
+
 		// Verify lock proof's length and crc32c
 		lock_type_byte = Base58.decode(readableLock.substring(0, 1));
 		lock_proof_dual_crc32c = Base58.decode(readableLock.substring(1));
@@ -321,14 +278,97 @@ public class LockTool {
 		if(!Arrays.equals(dualCrc32c, calculatedDualCrc32c)) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
-	public static final boolean verifyReadableLockCRC32C(String readableLock) throws Exception {
+
+	public static final Lock publickeyToEQCLock(final LockType lockType, final byte[] compressedPublickey) throws Exception {
+		Lock eqcLock = null;
+		if(lockType == LockType.T1) {
+			eqcLock = new T1Lock();
+			eqcLock.setProof(MessageDigest.getInstance(Util.SHA3_256).digest(compressedPublickey));
+		}
+		else if(lockType == LockType.T2) {
+			eqcLock = new T2Lock();
+			eqcLock.setProof(MessageDigest.getInstance(Util.SHA3_512).digest(compressedPublickey));
+		}
+		return eqcLock;
+	}
+
+	//	@Deprecated
+	//	public static final String AIToReadableLock(byte[] bytes) throws Exception {
+	//		EQCType.assertNotNull(bytes);
+	//		LockType lockType = null;
+	//		if (bytes[0] == 0) {
+	//			lockType = LockType.T1;
+	//		} else if (bytes[0] == 1) {
+	//			lockType = LockType.T2;
+	//		}
+	//		else {
+	//			throw new UnsupportedOperationException("Unsupport lock type: " + bytes[0]);
+	//		}
+	//
+	//		return _generateReadableLock(lockType, Arrays.copyOfRange(bytes, 1, bytes.length));
+	//	}
+
+	public static final Lock readableLockToEQCLock(final String readableLock) throws Exception {
+		Objects.requireNonNull(readableLock);
+		Lock eqcLock = null;
+		LockType lockType = null;
+
+		if(!isReadableLockSanity(readableLock)) {
+			throw new IllegalStateException("Invalid readable lock: " + readableLock);
+		}
+
+		lockType = getLockType(readableLock);
+		if(lockType == LockType.T1) {
+			eqcLock = new T1Lock();
+		}
+		else if(lockType == LockType.T2) {
+			eqcLock = new T2Lock();
+		}
+		eqcLock.setProof(getLockProof(readableLock));
+		return eqcLock;
+	}
+
+	public static final boolean verifyEQCLockAndPublickey(final Lock eqcLock, final byte[] compressedPublickey)
+			throws NoSuchAlgorithmException {
+		byte[] lock_proof = null;
+		int compressed_publickey_len = 0;
+		if (eqcLock.getType() == LockType.T1) {
+			lock_proof = MessageDigest.getInstance(Util.SHA3_256)
+					.digest(compressedPublickey);
+			compressed_publickey_len = Util.P256_PUBLICKEY_LEN;
+		} else if (eqcLock.getType() == LockType.T2) {
+			lock_proof = MessageDigest.getInstance(Util.SHA3_512)
+					.digest(compressedPublickey);
+			compressed_publickey_len = Util.P521_PUBLICKEY_LEN;
+		}
+		Log.info("Len: " + lock_proof.length + " Recovery publickey's hash: " + Util.bytesToHexString(lock_proof));
+		Log.info("Len: " + eqcLock.getProof().length + " Lock code: " + Util.bytesToHexString(eqcLock.getProof()));
+		return (compressed_publickey_len == compressedPublickey.length  && Arrays.equals(lock_proof, eqcLock.getProof()));
+	}
+
+	@Deprecated
+	public static final boolean verifyReadableLockAndPublickey(final String readableLock, final byte[] compressedPublickey) throws Exception {
+		byte[] lock_code0 = null;
+		byte[] lock_code = null;
+		final LockType lockType = getLockType(readableLock);
+		if (lockType == LockType.T1) {
+			lock_code = MessageDigest.getInstance(Util.SHA3_256)
+					.digest(compressedPublickey);
+		} else if (lockType == LockType.T2) {
+			lock_code = MessageDigest.getInstance(Util.SHA3_512)
+					.digest(compressedPublickey);
+		}
+		lock_code0 = Base58.decode(readableLock.substring(1));
+		return Arrays.equals(lock_code, Arrays.copyOf(lock_code0, lock_code0.length - Util.CRC32C_LEN));
+	}
+
+	public static final boolean verifyReadableLockCRC32C(final String readableLock) throws Exception {
 		byte[] lock_code_dual_crc32c = null;
 		byte[] lock_type_byte = null;
-		byte[] dualCrc32c = new byte[Util.CRC32C_LEN];
+		final byte[] dualCrc32c = new byte[Util.CRC32C_LEN];
 		byte[] calculatedDualCrc32c = null;
 		byte[] virginCrc32c = null;
 		byte[] type_lock_code = null;
@@ -339,7 +379,7 @@ public class LockTool {
 		System.arraycopy(lock_code_dual_crc32c, lock_code_dual_crc32c.length - Util.CRC32C_LEN, dualCrc32c, 0,
 				Util.CRC32C_LEN);
 		lock_code_len =  lock_code_dual_crc32c.length - Util.CRC32C_LEN;
-				
+
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		os.write(lock_type_byte);
 		os.write(lock_code_dual_crc32c, 0, lock_code_len);
@@ -355,47 +395,8 @@ public class LockTool {
 
 		return Arrays.equals(dualCrc32c, calculatedDualCrc32c);
 	}
-	
-	public static final LockType getLockType(byte[] compressedPublickey) {
-		LockType lockType = null;
-		if(compressedPublickey.length == Util.P256_PUBLICKEY_LEN) {
-			lockType = LockType.T1;
-		}
-		else if(compressedPublickey.length == Util.P521_PUBLICKEY_LEN) {
-			lockType = LockType.T2;
-		}
-		else {
-			throw new IllegalStateException("Invalid publickey length:" + compressedPublickey.length);
-		}
-		return lockType;
-	}
 
-	public static final LockType getLockType(String readableLock) throws Exception {
-		LockType lockType = null;
-		char alphabet = readableLock.charAt(0);
-		if (alphabet == '1') {
-			lockType = LockType.T1;
-		} else if (alphabet == '2') {
-			lockType = LockType.T2;
-		} else {
-			throw new IllegalStateException("Invalid lock type: " + alphabet);
-		}
-		return lockType;
-	}
-
-	@Deprecated
-	public static final LockType getLockTypeFromAI(byte[] aiLock) {
-		byte type = 0;
-		LockType lockType = null;
-		type = aiLock[0];
-		if (type == 0) {
-			lockType = LockType.T1;
-		} else if (type == 1) {
-			lockType = LockType.T2;
-		} else {
-			throw new IllegalStateException("Invalid lock type: " + type);
-		}
-		return lockType;
+	private LockTool() {
 	}
 
 }

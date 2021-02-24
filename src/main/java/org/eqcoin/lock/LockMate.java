@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,11 +33,12 @@ package org.eqcoin.lock;
 
 import java.io.ByteArrayOutputStream;
 
-import org.eqcoin.changelog.ChangeLog;
+import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.publickey.Publickey;
+import org.eqcoin.persistence.globalstate.GlobalState;
 import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -46,7 +49,7 @@ import org.eqcoin.util.Util;
  * @date Apr 10, 2020
  * @email 10509759@qq.com
  */
-public class LockMate extends EQCSerializable {
+public class LockMate extends EQCObject {
 	
 	private ID id;
 	private boolean isIDUpdated;
@@ -56,7 +59,7 @@ public class LockMate extends EQCSerializable {
 	private boolean isStatusUpdated;
 	private Publickey publickey;
 	private boolean isPublickeyUpdated;
-	private ChangeLog changeLog;
+	private EQCHive eqcHive;
 	
 	public enum STATUS {
 		MASTER((byte)0), SUB((byte)1), LIVELY((byte)253), FORBIDDEN((byte)2);
@@ -206,18 +209,6 @@ public class LockMate extends EQCSerializable {
 				"\n}";
 	}
 
-	/**
-	 * @param changeLog the changeLog to set
-	 */
-	public LockMate setChangeLog(ChangeLog changeLog) {
-		this.changeLog = changeLog;
-		return this;
-	}
-	
-	public void planting() throws Exception {
-		changeLog.getFilter().saveLock(this);
-	}
-	
 	public void setMaster() {
 		status &= STATUS.MASTER.getStatus();
 //		isStatusUpdated = true;
@@ -305,6 +296,32 @@ public class LockMate extends EQCSerializable {
 	
 	public boolean isSync() {
 		return isLockUpdated && isStatusUpdated && isPublickeyUpdated;
+	}
+	
+	public void planting() throws Exception {
+		eqcHive.getGlobalState().saveLockMate(this);
+	}
+	
+	/**
+	 * Forbidden relevant lock mate:
+	 * Set it's status to forbidden and clear it's publickey.
+	 * @throws Exception
+	 */
+	public LockMate forbidden() throws Exception {
+		if(!publickey.isNULL()) {
+			publickey.setPublickey(null);
+		}
+		setForbidden();
+		return this;
+	}
+
+	public EQCHive getEQCHive() {
+		return eqcHive;
+	}
+
+	public LockMate setEQCHive(EQCHive eqcHive) {
+		this.eqcHive = eqcHive;
+		return this;
 	}
 	
 }

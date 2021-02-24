@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,12 +37,12 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Vector;
 
-import org.eqcoin.changelog.ChangeLog;
+import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.AssetPassport;
-import org.eqcoin.passport.EQcoinRootPassport;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.AssetPassport;
+import org.eqcoin.stateobject.passport.EQcoinRootPassport;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.transaction.Transaction.TransactionType;
 import org.eqcoin.transaction.txout.TransferTxOut;
@@ -87,17 +89,17 @@ public class ZionCoinbaseTransaction extends Transaction {
 	 */
 	@Override
 	public boolean isValid() throws NoSuchFieldException, IllegalStateException, IOException, Exception {
-		if(!nonce.equals(changeLog.getHeight().getNextID())) {
-			Log.Error("!nonce.equals(changeLog.getHeight().getNextID())");
+		if(!nonce.equals(eqcHive.getRoot().getHeight().getNextID())) {
+			Log.Error("!nonce.equals(eqcHive.getRoot().getHeight().getNextID())");
 			return false;
 		}
-		ID lockId = changeLog.getFilter().isLockExists(eqCoinMinerTxOut.getLock(), true);
+		ID lockId = eqcHive.getGlobalState().isLockMateExists(eqCoinMinerTxOut.getLock());
 		if(lockId != null) {
 			Log.Error("Miner Coinbase Passport relevant Lock shouldn't exists.");
 			return false;
 		}
-		Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(changeLog));
-		if(!eqCoinFederalTxOut.getValue().equals(Util.getCurrentCoinbaseReward(changeLog).subtract(minerCoinbaseReward))) {
+		Value minerCoinbaseReward = Util.getCurrentMinerCoinbaseReward(Util.getCurrentCoinbaseReward(eqcHive.getGlobalState()));
+		if(!eqCoinFederalTxOut.getValue().equals(Util.getCurrentCoinbaseReward(eqcHive.getGlobalState()).subtract(minerCoinbaseReward))) {
 			Log.Error("EQcoinFederal's coinbase reward is invalid");
 			return false;
 		}
@@ -124,13 +126,14 @@ public class ZionCoinbaseTransaction extends Transaction {
 		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#isTxInSanity()
-	 */
 	@Override
 	protected boolean isStatusSanity() {
-		if(status != null) {
-			Log.Error("status != null");
+		if(priority != null) {
+			Log.Error("priority != null");
+			return false;
+		}
+		if(lockType != null) {
+			Log.Error("lockType != null");
 			return false;
 		}
 		return true;
@@ -182,19 +185,19 @@ public class ZionCoinbaseTransaction extends Transaction {
 		LockMate lock = null;
 		// Planting CoinbaseTransaction's relevant Passport
 		// Planting EQcoin Federal's Passport
-		passport = changeLog.getFilter().getPassport(eqCoinFederalTxOut.getPassportId(), true);
+		passport = eqcHive.getGlobalState().getPassport(eqCoinFederalTxOut.getPassportId());
 		passport.deposit(eqCoinFederalTxOut.getValue());
-		changeLog.getFilter().savePassport(passport);
+		passport.setEQCHive(eqcHive).planting();
 		// Planting Miner's Passport
 		lock = new LockMate();
 		lock.setLock(eqCoinMinerTxOut.getLock());
-		lock.setId(changeLog.getNextLockId());
-		lock.setChangeLog(changeLog).planting();
+		lock.setId(eqcHive.getGlobalState().getLastLockMateId().getNextID());
+		lock.setEQCHive(eqcHive).planting();
 		passport = new AssetPassport();
-		passport.setId(changeLog.getNextPassportId());
+		passport.setId(eqcHive.getGlobalState().getLastPassportId().getNextID());
 		passport.setLockID(lock.getId());
 		passport.deposit(eqCoinMinerTxOut.getValue());
-		passport.setChangeLog(changeLog).planting();
+		passport.setEQCHive(eqcHive).planting();
 	}
 	
 	public String toInnerJson() {
@@ -212,9 +215,9 @@ public class ZionCoinbaseTransaction extends Transaction {
 	@Override
 	public void parseHeader(ByteArrayInputStream is) throws Exception {
 		// Parse Transaction type
-		transactionType = TransactionType.get(EQCType.parseID(is).intValue());
+		transactionType = TransactionType.get(EQCCastle.parseID(is).intValue());
 		// Parse nonce
-		nonce = EQCType.parseID(is);
+		nonce = EQCCastle.parseID(is);
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
@@ -230,7 +233,7 @@ public class ZionCoinbaseTransaction extends Transaction {
 		// Serialization Transaction type
 		os.write(transactionType.getEQCBits());
 		// Serialization nonce
-		os.write(EQCType.bigIntegerToEQCBits(nonce));
+		os.write(EQCCastle.bigIntegerToEQCBits(nonce));
 		return os;
 	}
 
@@ -281,12 +284,9 @@ public class ZionCoinbaseTransaction extends Transaction {
 		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.blockchain.transaction.Transaction#init(com.eqcoin.blockchain.changelog.ChangeLog)
-	 */
 	@Override
-	public void init(ChangeLog changeLog) throws Exception {
-		this.changeLog = changeLog;
+	public void init(EQCHive eqcHive) throws Exception {
+		this.eqcHive = eqcHive;
 	}
 	
 	/* (non-Javadoc)

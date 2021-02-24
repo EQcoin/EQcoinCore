@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,18 +34,18 @@ package org.eqcoin.service;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import org.eqcoin.keystore.Keystore;
-import org.eqcoin.passport.EQcoinRootPassport;
-import org.eqcoin.persistence.globalstate.GlobalStateH2;
 import org.eqcoin.persistence.globalstate.GlobalState.Mode;
-import org.eqcoin.rpc.NewEQCHive;
-import org.eqcoin.rpc.client.EQCHiveSyncNetworkClient;
-import org.eqcoin.rpc.client.EQCMinerNetworkClient;
+import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
+import org.eqcoin.rpc.client.avro.EQCHiveSyncNetworkClient;
+import org.eqcoin.rpc.client.avro.EQCMinerNetworkClient;
+import org.eqcoin.rpc.object.NewEQCHive;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.NewEQCHiveState;
 import org.eqcoin.service.state.PossibleSPState;
 import org.eqcoin.service.state.SleepState;
 import org.eqcoin.service.state.EQCHiveSyncState;
 import org.eqcoin.service.state.EQCServiceState.State;
+import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -101,7 +103,7 @@ public class PendingNewEQCHiveService extends EQCService {
 			this.state.set(State.PENDINGNEWEQCHIVE);
 			newBlockState = (NewEQCHiveState) state;
 			Log.info("PendingNewBlockService receive new hive from: " + newBlockState.getNewEQCHive().getSp()
-					+ " height: " + newBlockState.getNewEQCHive().getEQCHive().getHeight());
+					+ " height: " + newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight());
 
 //			onPause();
 //			if (!isRunning.get()) {
@@ -120,13 +122,13 @@ public class PendingNewEQCHiveService extends EQCService {
 			ID localTailHeight = Util.GS().getEQCHiveTailHeight();
 			// Here need do more job to check if the checkpoint is valid need add checkpoint
 			// transaction in NewBlock add isValid in NewBlock to handle this
-			if (newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(localTailHeight) > 0
+			if (newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight().compareTo(localTailHeight) > 0
 					&& newBlockState.getNewEQCHive().getCheckPointHeight()
 							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
-					&& newBlockState.getNewEQCHive().getEQCHive().getEQCHiveRoot().isDifficultyValid()) {
-				if(newBlockState.getNewEQCHive().getEQCHive().getHeight().compareTo(Util.GS().getEQCHiveTailHeight().getNextID()) > 0) {
+					&& newBlockState.getNewEQCHive().getEQCHive().getRoot().isDifficultyValid()) {
+				if(newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight().compareTo(Util.GS().getEQCHiveTailHeight().getNextID()) > 0) {
 					if(EQCHiveSyncNetworkClient.registerSP(newBlockState.getNewEQCHive().getSp()).getPing() == -1) {
-						Log.info("Received new EQCHive height:" + newBlockState.getNewEQCHive().getEQCHive().getHeight() + " is more than one bigger than local tail:" + Util.GS().getEQCHiveTailHeight() + " but the SP:" + newBlockState.getNewEQCHive().getSp() + " can't access have to discard it");
+						Log.info("Received new EQCHive height:" + newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " is more than one bigger than local tail:" + Util.GS().getEQCHiveTailHeight() + " but the SP:" + newBlockState.getNewEQCHive().getSp() + " can't access have to discard it");
 						return;
 					}
 				}
@@ -144,7 +146,7 @@ public class PendingNewEQCHiveService extends EQCService {
 				EQCServiceProvider.getInstance().offerState(syncBlockState);
 				Log.info("New EQCHive is valid call SyncBlockService valid it");
 			} else {
-				Log.info("New EQCHive's height: " + newBlockState.getNewEQCHive().getEQCHive().getHeight() + " is less than local tail: " + localTailHeight + " just discard it");
+				Log.info("New EQCHive's height: " + newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " is less than local tail: " + localTailHeight + " just discard it");
 			}
 //			}
 		} catch (Exception e) {

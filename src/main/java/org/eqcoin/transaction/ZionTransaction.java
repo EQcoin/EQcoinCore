@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,10 +37,10 @@ import java.io.IOException;
 import java.util.Vector;
 
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.AssetPassport;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.seed.EQCoinSeed;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.seeds.EQCSeeds;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.AssetPassport;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction.TransactionType;
 import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
@@ -95,7 +97,7 @@ public class ZionTransaction extends TransferTransaction {
 	public boolean isDerivedValid() throws Exception {
 		ID lockId = null;
 		for(ZionTxOut txOut:txOutList) {
-			lockId = changeLog.getFilter().isLockExists(txOut.getLock(), true);
+			lockId = eqcHive.getGlobalState().isLockMateExists(txOut.getLock());
 			if(lockId != null) {
 				Log.Error("The Lock already exists this is invalid.");
 				return false;
@@ -152,13 +154,13 @@ public class ZionTransaction extends TransferTransaction {
 		for (ZionTxOut txOut : txOutList) {
 			lockMate = new LockMate();
 			lockMate.setLock(txOut.getLock());
-			lockMate.setId(changeLog.getNextLockId());
+			lockMate.setId(eqcHive.getGlobalState().getLastLockMateId().getNextID());
+			lockMate.setEQCHive(eqcHive).planting();
 			passport = new AssetPassport();
-			passport.setId(changeLog.getNextPassportId());
+			passport.setId(eqcHive.getGlobalState().getLastPassportId().getNextID());
 			passport.setLockID(lockMate.getId());
 			passport.deposit(txOut.getValue());
-			lockMate.setChangeLog(changeLog).planting();
-			passport.setChangeLog(changeLog).planting();
+			passport.setEQCHive(eqcHive).planting();
 		}
 	}
 
@@ -168,23 +170,23 @@ public class ZionTransaction extends TransferTransaction {
 	@Override
 	protected void parseDerivedBody(ByteArrayInputStream is) throws Exception {
 		// Parse TxOut
-		txOutList = EQCType.parseArray(is, new ZionTxOut());
+		txOutList = EQCCastle.parseArray(is, new ZionTxOut());
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.Transaction#getProofLength()
 	 */
 	@Override
-	protected Value getProofLength() throws Exception {
+	protected Value getGlobalStateLength() throws Exception {
 		Value proofLength = null;
 		for(ZionTxOut aiTxOut:txOutList) {
 			if(proofLength == null) {
 				proofLength = new Value(Util.ASSET_PASSPORT_PROOF_SPACE_COST);
-				proofLength = proofLength.add(aiTxOut.getLock().getProofLength());
+				proofLength = proofLength.add(aiTxOut.getLock().getGlobalStateLength());
 			}
 			else {
 				proofLength = proofLength.add(Util.ASSET_PASSPORT_PROOF_SPACE_COST);
-				proofLength = proofLength.add(aiTxOut.getLock().getProofLength());
+				proofLength = proofLength.add(aiTxOut.getLock().getGlobalStateLength());
 			}
 		}
 		return proofLength;
@@ -218,7 +220,7 @@ public class ZionTransaction extends TransferTransaction {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			// Serialization TxOut
-			os.write(EQCType.eqcSerializableListToArray(txOutList));
+			os.write(EQCCastle.eqcSerializableListToArray(txOutList));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

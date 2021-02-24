@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,10 +35,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Vector;
 
-import org.eqcoin.passport.Passport;
-import org.eqcoin.passport.storage.StateVariable.STATE;
-import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.passport.storage.PassportStateVariable.PassportState;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.serialization.EQCObject;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.util.Log;
 
 /**
@@ -45,37 +47,62 @@ import org.eqcoin.util.Log;
  * @date May 4, 2020
  * @email 10509759@qq.com
  */
-public class Storage extends EQCSerializable {
-	private Vector<StateVariable> stateVariableList;
+public class Storage extends EQCObject {
+	private Vector<PassportStateVariable> stateVariableList;
+
 	private Passport passport;
-	
+
 	public Storage() {
 		super();
 	}
-	
-	public Storage(ByteArrayInputStream is) throws Exception {
-		super(is);
-	}
-	
-	public Storage(byte[] bytes) throws Exception {
+
+	public Storage(final byte[] bytes) throws Exception {
 		super(bytes);
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-		stateVariableList = EQCType.parseArray(is, new StateVariable().setPassport(passport));
+
+	public Storage(final ByteArrayInputStream is) throws Exception {
+		super(is);
+	}
+
+	public void addStateVariable(final PassportStateVariable stateVariable) {
+		if(isStateVariableExists(stateVariable)) {
+			throw new IllegalStateException("Exists duplicate state variable");
+		}
+		stateVariableList.add(stateVariable);
 	}
 
 	/* (non-Javadoc)
 	 * @see org.eqcoin.serialization.EQCSerializable#getBytes(java.io.ByteArrayOutputStream)
 	 */
 	@Override
-	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
-		os.write(EQCType.eqcSerializableListToArray(stateVariableList));
+	public ByteArrayOutputStream getBytes(final ByteArrayOutputStream os) throws Exception {
+		os.write(EQCCastle.eqcSerializableListToArray(stateVariableList));
 		return os;
+	}
+
+	/**
+	 * @return the passport
+	 */
+	public Passport getPassport() {
+		return passport;
+	}
+
+	public PassportStateVariable getStateVariable(final PassportState state) {
+		PassportStateVariable stateVariable = null;
+		for(final PassportStateVariable stateVariable2:stateVariableList) {
+			if(stateVariable2.getState() == state) {
+				stateVariable = stateVariable2;
+			}
+		}
+		return stateVariable;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.eqcoin.serialization.EQCSerializable#init()
+	 */
+	@Override
+	protected void init() {
+		stateVariableList = new Vector<>();
 	}
 
 	/* (non-Javadoc)
@@ -106,12 +133,51 @@ public class Storage extends EQCSerializable {
 		return true;
 	}
 
+	public boolean isStateVariableExists(final PassportStateVariable stateVariable) {
+		for(final PassportStateVariable stateVariable2:stateVariableList) {
+			if(stateVariable2.getState() == stateVariable.getState()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/* (non-Javadoc)
-	 * @see org.eqcoin.serialization.EQCSerializable#init()
+	 * @see org.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	protected void init() {
-		stateVariableList = new Vector<>();
+	public void parse(final ByteArrayInputStream is) throws Exception {
+		stateVariableList = EQCCastle.parseArray(is, new PassportStateVariable().setPassport(passport));
+	}
+
+	public void planting() throws Exception {
+		for(final PassportStateVariable stateVariable:stateVariableList) {
+			//			if(stateVariable instanceof UpdateHeight && stateVariable.isMeetConstraint()) {
+			//				stateVariable.planting();
+			//			}
+		}
+	}
+
+	public void removeStateVariable(final PassportStateVariable stateVariable) {
+		if(!isStateVariableExists(stateVariable)) {
+			throw new IllegalStateException(stateVariable + " doesn't exists");
+		}
+		for (final PassportStateVariable stateVariable2 : stateVariableList) {
+			if (stateVariable2.getState() == stateVariable.getState()) {
+				stateVariableList.remove(stateVariable2);
+			}
+		}
+	}
+
+	/**
+	 * @param passport the passport to set
+	 */
+	public Storage setPassport(final Passport passport) {
+		this.passport = passport;
+		for(final PassportStateVariable stateVariable:stateVariableList) {
+			stateVariable.setPassport(passport);
+		}
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -122,56 +188,4 @@ public class Storage extends EQCSerializable {
 		return super.toInnerJson();
 	}
 
-	/**
-	 * @return the passport
-	 */
-	public Passport getPassport() {
-		return passport;
-	}
-
-	/**
-	 * @param passport the passport to set
-	 */
-	public Storage setPassport(Passport passport) {
-		this.passport = passport;
-		for(StateVariable stateVariable:stateVariableList) {
-			stateVariable.setPassport(passport);
-		}
-		return this;
-	}
-	
-	public void planting() throws Exception {
-		for(StateVariable stateVariable:stateVariableList) {
-			if(stateVariable instanceof UpdateHeight && stateVariable.isMeetPreconditions()) {
-				stateVariable.planting();
-			}
-		}
-	}
-	
-	public boolean isStateVariableExists(StateVariable stateVariable) {
-		for(StateVariable stateVariable2:stateVariableList) {
-			if(stateVariable2.getState() == stateVariable.getState()) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public void addStateVariable(StateVariable stateVariable) {
-		if(isStateVariableExists(stateVariable)) {
-			throw new IllegalStateException("Exists duplicate state variable");
-		}
-		stateVariableList.add(stateVariable);
-	}
-	
-	public StateVariable getStateVariable(STATE state) {
-		StateVariable stateVariable = null;
-		for(StateVariable stateVariable2:stateVariableList) {
-			if(stateVariable2.getState() == state) {
-				stateVariable = stateVariable2;
-			}
-		}
-		return stateVariable;
-	}
-	
 }

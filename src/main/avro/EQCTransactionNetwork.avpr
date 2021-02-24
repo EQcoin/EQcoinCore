@@ -30,11 +30,6 @@
          "request": [{"name": "T", "type": "O"}],
          "response": "O"
      },
-   	  "getLockInfo": {
-   	  	 // S means relevant lock status which is lock's id or readable lock
-         "request": [{"name": "S", "type": "O"}],
-         "response": "O"
-   	  },
    	  "getPendingTransactionList": {
    	  	 // I means relevant Passport's ID
          "request": [{"name": "I", "type": "O"}],

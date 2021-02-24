@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,9 +37,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.passport.EQcoinRootPassport;
-import org.eqcoin.passport.Passport;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.stateobject.passport.EQcoinRootPassport;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.ModerateOPTransaction;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.TransferOPTransaction;
@@ -75,16 +77,16 @@ public class ChangeTxFeeRate extends Operation {
 	 */
 	@Override
 	public void planting() throws Exception {
-		EQcoinRootPassport eQcoinSeedPassport = (EQcoinRootPassport) transaction.getChangeLog().getFilter().getPassport(ID.ONE, true);
+		EQcoinRootPassport eQcoinSeedPassport = (EQcoinRootPassport) transaction.getEQCHive().getGlobalState().getPassport(ID.ZERO);
 		eQcoinSeedPassport.setTxFeeRate(txFeeRate);
-		transaction.getChangeLog().getFilter().savePassport(eQcoinSeedPassport);
+		transaction.getEQCHive().getGlobalState().savePassport(eQcoinSeedPassport);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isMeetPreconditions()
 	 */
 	@Override
-	public boolean isMeetPreconditions() throws Exception {
+	public boolean isMeetConstraint() throws Exception {
 		if(!(transaction instanceof ModerateOPTransaction)) {
 			Log.Error("Only ModerateOPTransaction can execute ChangeTxFeeRateOP");
 			return false;
@@ -130,7 +132,7 @@ public class ChangeTxFeeRate extends Operation {
 	public void parseBody(ByteArrayInputStream is)
 			throws NoSuchFieldException, IOException, IllegalArgumentException {
 		// Parse TxFeeRate
-		txFeeRate = EQCType.parseBIN(is)[0];
+		txFeeRate = EQCCastle.parseBIN(is)[0];
 	}
 
 	/* (non-Javadoc)
@@ -139,7 +141,7 @@ public class ChangeTxFeeRate extends Operation {
 	@Override
 	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
 		// Serialization TxFeeRate
-		os.write(EQCType.bytesToBIN(new byte[] { txFeeRate }));
+		os.write(EQCCastle.bytesToBIN(new byte[] { txFeeRate }));
 		return os;
 	}
 

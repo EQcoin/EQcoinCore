@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -46,8 +48,8 @@ import org.eqcoin.keystore.Keystore.ECCTYPE;
 import org.eqcoin.lock.LockTool;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCTypable;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.transaction.TransferTransaction;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.Log;
@@ -60,7 +62,7 @@ import org.h2.engine.User;
  * @date 9-19-2018
  * @email 10509759@qq.com
  */
-public class UserProfile extends EQCSerializable {
+public class UserProfile extends EQCObject {
 
 	private String userName;
 	private byte[] pwdProof;
@@ -86,22 +88,22 @@ public class UserProfile extends EQCSerializable {
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse userName
-		userName = EQCType.bytesToASCIISting(EQCType.parseBIN(is));
+		userName = EQCCastle.bytesToASCIISting(EQCCastle.parseBIN(is));
 
 		// Parse pwdHash
-		pwdProof = EQCType.parseNBytes(is, Util.SHA3_512_LEN);
+		pwdProof = EQCCastle.parseNBytes(is, Util.SHA3_512_LEN);
 
 		// Parse ECCTYPE
-		eccType = ECCTYPE.get(EQCType.parseID(is).intValue());
+		eccType = ECCTYPE.get(EQCCastle.parseID(is).intValue());
 				
 		// Parse privateKey
-		privateKey = EQCType.parseBIN(is);
+		privateKey = EQCCastle.parseBIN(is);
 
 		// Parse publicKey
-		publicKey = EQCType.parseBIN(is);
+		publicKey = EQCCastle.parseBIN(is);
 
 		// Parse alais
-		alais =  EQCType.bytesToASCIISting(EQCType.parseBIN(is));
+		alais =  EQCCastle.bytesToASCIISting(EQCCastle.parseBIN(is));
 	}
 	
 	/* (non-Javadoc)
@@ -116,17 +118,17 @@ public class UserProfile extends EQCSerializable {
 	public byte[] getBytes() throws Exception {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		// userName
-		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(userName)));
+		os.write(EQCCastle.bytesToBIN(EQCCastle.stringToASCIIBytes(userName)));
 		// pwdHash
 		os.write(pwdProof);
 		// eccType
 		os.write(eccType.getEQCBits());
 		// privateKey
-		os.write(EQCType.bytesToBIN(privateKey));
+		os.write(EQCCastle.bytesToBIN(privateKey));
 		// publicKey
-		os.write(EQCType.bytesToBIN(publicKey));
+		os.write(EQCCastle.bytesToBIN(publicKey));
 		// alais
-		os.write(EQCType.bytesToBIN(EQCType.stringToASCIIBytes(alais)));
+		os.write(EQCCastle.bytesToBIN(EQCCastle.stringToASCIIBytes(alais)));
 		return os.toByteArray();
 	}
 

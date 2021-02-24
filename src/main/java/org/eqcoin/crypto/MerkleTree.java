@@ -1,5 +1,8 @@
 /**
  * EQcoin core - EQcoin Federation's EQcoin core library
+ *
+ * http://www.eqcoin.org
+ *
  * @copyright 2018-present EQcoin Federation All rights reserved...
  * Copyright of all works released by EQcoin Federation or jointly released by
  * EQcoin Federation with cooperative partners are owned by EQcoin Federation
@@ -13,8 +16,7 @@
  * or without prior written permission, EQcoin Federation reserves all rights to
  * take any legal action and pursue any right or remedy available under applicable
  * law.
- * https://www.eqcoin.org
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -66,7 +68,6 @@ public class MerkleTree {
 			while ((nodes = getNextNodeList(nodes)).size() > 1) {
 			}
 		}
-		
 		root = nodes.get(0);
 	}
 
@@ -86,7 +87,10 @@ public class MerkleTree {
 				System.arraycopy(right, 0, bytes, left.length, right.length);
 			}
 			else {
-				bytes = left;
+				// Left node and pre right node's flip's hash
+				bytes = new byte[left.length + right.length];
+				System.arraycopy(left, 0, bytes, 0, left.length);
+				System.arraycopy(right, 0, bytes, left.length, right.length);
 			}
 			nextNodeList.add(messageDigest.digest(bytes));
 		}
