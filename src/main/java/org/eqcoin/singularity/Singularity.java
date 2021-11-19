@@ -13,10 +13,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, EQcoin Planet reserves all rights to take
  * any legal action and pursue any right or remedy available under applicable
  * law.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,6 +32,15 @@
 package org.eqcoin.singularity;
 
 
+import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
+import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cluster.ClusterState;
+import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.DataStorageConfiguration;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
@@ -56,6 +65,34 @@ public class Singularity {
 			//			EQCHiveH2.getInstance().saveEQCHiveFile(new EQCHive(Util.DB().getEQCHive(ID.ZERO)));
 			//			Log.info("TH: " + Util.DB().getEQCHiveTailHeight());
 			Util.IsDeleteTransactionInPool = true;
+
+			Ignite ignite;
+			final String passportCache = "passportCache";
+			final String passportCacheBinary = "passportCacheBinary";
+			IgniteCache<Long, Passport> cache;
+			IgniteCache<Long, byte[]> cacheBinary;
+			final IgniteConfiguration igniteConfiguration = new IgniteConfiguration();
+			final DataStorageConfiguration dataStorageConfiguration = new DataStorageConfiguration();
+			dataStorageConfiguration.getDefaultDataRegionConfiguration().setPersistenceEnabled(true);
+			dataStorageConfiguration.getDefaultDataRegionConfiguration().setMaxSize(251 * 1024 * 1024);
+			// dataStorageConfiguration.setWalMode(WALMode.NONE);
+			igniteConfiguration.setDataStorageConfiguration(dataStorageConfiguration);
+			igniteConfiguration.setConsistentId("abc");
+			ignite = Ignition.start(igniteConfiguration);
+			if (ignite.cluster().state() != ClusterState.ACTIVE) {
+				ignite.cluster().state(ClusterState.ACTIVE);
+			}
+			final CacheConfiguration cacheCfg = new CacheConfiguration();
+			cacheCfg.setName(passportCache);
+			cacheCfg.setCacheMode(CacheMode.PARTITIONED);
+			cache = ignite.getOrCreateCache(cacheCfg);
+			final CacheConfiguration cacheCfgBinary = new CacheConfiguration();
+			cacheCfgBinary.setName(passportCacheBinary);
+			cacheCfgBinary.setCacheMode(CacheMode.PARTITIONED);
+			// cacheCfgBinary.setWriteBehindEnabled(false);
+			cacheBinary = ignite.getOrCreateCache(cacheCfgBinary);
+			// ignite.cluster().disableWal(passportCache);
+			// ignite.cluster().disableWal(passportCacheBinary);
 			//			EQCDesktopWalletH2.getInstance().setUserName("nju2006");
 			//			Util.LOCAL_SP.setIp(args[0]);
 			////			Util.SINGULARITY_SP.setIp(args[0]);

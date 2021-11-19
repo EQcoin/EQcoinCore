@@ -61,8 +61,8 @@ import org.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class EQCDesktopWalletH2 extends GlobalStateH2 implements EQCKeystore {
-	private static String JDBC_URL = "jdbc:h2:" + Util.WALLET_DATABASE_NAME;
-	private static EQCDesktopWalletH2 instance;
+	String JDBC_URL = "jdbc:h2:" + Util.WALLET_DATABASE_NAME;
+	EQCDesktopWalletH2 instance;
 	private String userName;
 	private String password;
 

@@ -66,13 +66,13 @@
 //@Deprecated
 //public abstract class EQCWalletH2 {
 //
-//	private static final String JDBC_URL = "jdbc:h2:" + Util.WALLET_DATABASE_NAME;
-//	private static final String USER = "Believer";
-//	private static final String PASSWORD = "God bless us...";
-//	private static Connection connection;
-//	private static final int ONE_ROW = 1;
-//	private static final String LOCK_WALLET = "LOCK_WALLET";
-//	private static final String PASSPORT_WALLET = "PASSPORT_WALLET";
+//	final String JDBC_URL = "jdbc:h2:" + Util.WALLET_DATABASE_NAME;
+//	final String USER = "Believer";
+//	final String PASSWORD = "God bless us...";
+//	Connection connection;
+//	final int ONE_ROW = 1;
+//	final String LOCK_WALLET = "LOCK_WALLET";
+//	final String PASSPORT_WALLET = "PASSPORT_WALLET";
 //
 //	private String createLockTable(String tableName) {
 //		return "CREATE TABLE IF NOT EXISTS " + tableName + " (" + "id BIGINT PRIMARY KEY CHECK id >= 0,"

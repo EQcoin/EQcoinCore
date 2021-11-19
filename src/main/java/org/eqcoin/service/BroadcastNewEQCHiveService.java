@@ -13,10 +13,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, EQcoin Planet reserves all rights to take
  * any legal action and pursue any right or remedy available under applicable
  * law.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,17 +33,13 @@ package org.eqcoin.service;
 
 import java.io.IOException;
 
-import org.eqcoin.avro.O;
-import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
 import org.eqcoin.rpc.client.avro.EQCMinerNetworkClient;
 import org.eqcoin.rpc.object.Info;
 import org.eqcoin.rpc.object.SP;
 import org.eqcoin.rpc.object.SPList;
-import org.eqcoin.rpc.service.avro.EQCMinerNetworkService;
 import org.eqcoin.service.state.EQCServiceState;
-import org.eqcoin.service.state.NewEQCHiveState;
 import org.eqcoin.service.state.EQCServiceState.State;
+import org.eqcoin.service.state.NewEQCHiveState;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 import org.eqcoin.util.Util.SP_MODE;
@@ -55,11 +51,7 @@ import org.eqcoin.util.Util.SP_MODE;
  */
 public class BroadcastNewEQCHiveService extends EQCService {
 	private static BroadcastNewEQCHiveService instance;
-	
-	private BroadcastNewEQCHiveService() {
-		super();
-	}
-	
+
 	public static BroadcastNewEQCHiveService getInstance() {
 		if (instance == null) {
 			synchronized (BroadcastNewEQCHiveService.class) {
@@ -69,6 +61,59 @@ public class BroadcastNewEQCHiveService extends EQCService {
 			}
 		}
 		return instance;
+	}
+
+	private BroadcastNewEQCHiveService() {
+		super();
+	}
+
+	public void offerNewEQCHiveState(final NewEQCHiveState newEQCHiveState) {
+		//		Log.info("offerNewBlockState: " + newBlockState);
+		offerState(newEQCHiveState);
+	}
+
+	/* (non-Javadoc)
+	 * @see com.eqchains.service.EQCService#onDefault(com.eqchains.service.state.EQCServiceState)
+	 */
+	@Override
+	protected void onDefault(final EQCServiceState state) {
+		NewEQCHiveState newEQCHiveState = null;
+		try {
+			this.state.set(State.BROADCASTNEWEQCHIVE);
+			newEQCHiveState = (NewEQCHiveState) state;
+			if(!Util.LOCAL_SP.equals(Util.SINGULARITY_SP)) {
+				try {
+					Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to SINGULARITY_SP");
+					final Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), Util.SINGULARITY_SP);
+					Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to SINGULARITY_SP result: " + info.getCode());
+				}
+				catch (final Exception e) {
+					Log.Error(e.getMessage());
+				}
+			}
+			final SPList spList = Util.MC().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK));
+			if(!spList.isEmpty()) {
+				for(final SP sp:spList.getSPList()) {
+					if(!Util.LOCAL_SP.equals(sp)) {
+						try {
+							Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to: " + sp);
+							final Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), sp);
+							Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to: " + sp + " result: " + info.getCode());
+						}
+						catch (final Exception e) {
+							if(e instanceof IOException) {
+								Util.updateDisconnectSPStatus(sp);
+							}
+							Log.Error(e.getMessage());
+						}
+					}
+				}
+			}
+		} catch (final Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(name + e.getMessage());
+		}
 	}
 
 	/* (non-Javadoc)
@@ -81,55 +126,6 @@ public class BroadcastNewEQCHiveService extends EQCService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.eqchains.service.EQCService#onDefault(com.eqchains.service.state.EQCServiceState)
-	 */
-	@Override
-	protected void onDefault(EQCServiceState state) {
-		NewEQCHiveState newEQCHiveState = null;
-		try {
-			this.state.set(State.BROADCASTNEWEQCHIVE);
-			newEQCHiveState = (NewEQCHiveState) state;
-			if(!Util.LOCAL_SP.equals(Util.SINGULARITY_SP)) {
-				try {
-					Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to SINGULARITY_SP");
-					Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), Util.SINGULARITY_SP);
-					Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to SINGULARITY_SP result: " + info.getCode());
-				}
-				catch (Exception e) {
-					Log.Error(e.getMessage());
-				}
-			}
-			SPList spList = Util.MC().getSPList(SP_MODE.getFlag(SP_MODE.EQCMINERNETWORK));
-			if(!spList.isEmpty()) {
-				for(SP sp:spList.getSPList()) {
-					if(!Util.LOCAL_SP.equals(sp)) {
-						try {
-							Log.info("Begin Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to: " + sp);
-							Info info = EQCMinerNetworkClient.broadcastNewEQCHive(newEQCHiveState.getNewEQCHive(), sp);
-							Log.info("Broadcast new EQCHive with height: " + newEQCHiveState.getNewEQCHive().getEQCHive().getRoot().getHeight() + " to: " + sp + " result: " + info.getCode());
-						}
-						catch (Exception e) {
-							if(e instanceof IOException) {
-								Util.updateDisconnectSPStatus(sp);
-							}
-							Log.Error(e.getMessage());
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(name + e.getMessage());
-		}
-	}
-
-	public void offerNewEQCHiveState(NewEQCHiveState newEQCHiveState) {
-//		Log.info("offerNewBlockState: " + newBlockState);
-		offerState(newEQCHiveState);
-	}
-
-	/* (non-Javadoc)
 	 * @see org.eqcoin.service.EQCService#stop()
 	 */
 	@Override
@@ -137,5 +133,5 @@ public class BroadcastNewEQCHiveService extends EQCService {
 		super.stop();
 		instance = null;
 	}
-	
+
 }

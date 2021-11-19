@@ -47,7 +47,7 @@ public class ID extends BigInteger implements Gateway {
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = -8644553965845085710L;
+	final long serialVersionUID = -8644553965845085710L;
 
 	public static final ID ZERO = new ID(BigInteger.ZERO);
 

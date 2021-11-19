@@ -58,27 +58,18 @@
 */
 package org.eqcoin.service;
 
-import java.io.IOException;
-import java.math.BigInteger;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.keystore.Keystore;
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.lock.publickey.Publickey;
 import org.eqcoin.persistence.globalstate.GlobalState;
-import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
-import org.eqcoin.rpc.object.NewEQCHive;
 import org.eqcoin.service.state.EQCServiceState;
-import org.eqcoin.service.state.NewEQCHiveState;
 import org.eqcoin.service.state.EQCServiceState.State;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
+import org.eqcoin.service.state.NewEQCHiveState;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
@@ -86,9 +77,20 @@ import org.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public final class PlantService extends EQCService {
+	public static PlantService getInstance() {
+		if (instance == null) {
+			synchronized (PlantService.class) {
+				if (instance == null) {
+					instance = new PlantService();
+				}
+			}
+		}
+		return instance;
+	}
 	private static PlantService instance;
-	private static GlobalState globalState;
+	GlobalState globalState;
 	private ID newEQCHiveHeight;
+
 	protected AtomicBoolean isMining;
 
 	private PlantService() {
@@ -101,107 +103,28 @@ public final class PlantService extends EQCService {
 		}
 	}
 
-	public static PlantService getInstance() {
-		if (instance == null) {
-			synchronized (PlantService.class) {
-				if (instance == null) {
-					instance = new PlantService();
-				}
-			}
-		}
-		return instance;
+	/**
+	 * @return the newEQCHiveHeight
+	 */
+	public ID getNewEQCHiveHeight() {
+		return newEQCHiveHeight;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqchains.service.EQCService#start()
-	 */
-	@Override
-	public synchronized void start() {
-		getInstance();
-		super.start();
-		worker.setPriority(Thread.MAX_PRIORITY);
-//		startMining();
-		isMining.set(true);
-		Log.info(name + "started");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqchains.service.EQCService#stop()
-	 */
-	@Override
-	public synchronized void stop() {
-		isRunning.set(false);
-		stopMining();
-		super.stop();
-		if(globalState != null) {
+	private void halt() {
+		synchronized (name) {
 			try {
-				globalState.close();
-			} catch (Exception e) {
+				name.wait(1000);//Util.getCurrentEQCHiveInterval().divide(BigInteger.TEN).intValue());// 1000);
+			} catch (final Exception e) {
 				Log.Error(e.getMessage());
 			}
-			globalState = null;
-		}
-		instance = null;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.eqchains.service.EQCService#onDefault(com.eqchains.service.state.
-	 * EQCServiceState)
-	 */
-	@Override
-	protected void onDefault(EQCServiceState state) {
-		switch (state.getState()) {
-		case MINING:
-			this.state.set(State.MINING);
-			isMining.set(true);
-			onMinering(state);
-			break;
-		default:
-			break;
 		}
 	}
 
-	public void stopMining() {
-		Log.info(name + "begin stop mining progress");
-		isMining.set(false);
-		if (isPausing.get()) {
-			resumePause();
-		}
-		resumeHalt();
+	public boolean isMining() {
+		return isMining.get();
 	}
 
-	public void startMining() {
-		offerState(new EQCServiceState(State.MINING));
-	}
-
-	private void onMinering(EQCServiceState state) {
-		Log.info("Begin minering...");
-		this.state.set(State.MINER);
-		while (isRunning.get() && isMining.get()) {
-			onPause("prepare minering");
-			if (!isRunning.get() || !isMining.get()) {
-				Log.info("Exit from prepare minering");
-				break;
-			}
-			try {
-				miningOneEQCHive();
-			} catch (Exception e) {
-				Log.Error("Due to error occur have to restart MinerService: " + e.getMessage());
-				stop();
-				EQCServiceProvider.getInstance().offerState(new EQCServiceState(State.FIND));
-				break;
-			}
-		}
-		Log.info("End of mining");
-	}
-
-	public void miningOneEQCHive() throws Exception {
+	public void plantingNewEQCHive() throws Exception {
 		ID tailHeight = null;
 		EQCHive newEQCHive = null;
 		Savepoint savepoint = null;
@@ -221,8 +144,8 @@ public final class PlantService extends EQCService {
 
 		// Use this only for debug when after test will remove this
 		try {
-			EQCHive eqcHive1 = new EQCHive(newEQCHive.getBytes());
-		} catch (Exception e) {
+			final EQCHive eqcHive1 = new EQCHive(newEQCHive.getBytes());
+		} catch (final Exception e) {
 			Log.Error(e.getMessage());
 		}
 
@@ -239,7 +162,7 @@ public final class PlantService extends EQCService {
 			}
 		}
 
-		// Mining successful
+		// Planting successful
 		synchronized (EQCService.class) {
 			// Here add lock to avoid conflict with handle new received EQCHive in
 			// EQCServiceProvider
@@ -265,10 +188,10 @@ public final class PlantService extends EQCService {
 				try {
 					// Send new EQCHive to EQCMinerNetwork and EQCHiveSyncNetwork if at here exists
 					// any exception shouldn't block the mining
-					NewEQCHiveState newEQCHiveState = new NewEQCHiveState();
+					final NewEQCHiveState newEQCHiveState = new NewEQCHiveState();
 					newEQCHiveState.getNewEQCHive().setEQCHive(newEQCHive);
 					BroadcastNewEQCHiveService.getInstance().offerNewEQCHiveState(newEQCHiveState);
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					Log.Error(e.getMessage());
 				}
 				
@@ -285,29 +208,44 @@ public final class PlantService extends EQCService {
 
 	}
 
-	private void halt() {
-		synchronized (name) {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.eqchains.service.EQCService#onDefault(com.eqchains.service.state.
+	 * EQCServiceState)
+	 */
+	@Override
+	protected void onDefault(final EQCServiceState state) {
+		switch (state.getState()) {
+		case MINING:
+			this.state.set(State.MINING);
+			isMining.set(true);
+			onMinering(state);
+			break;
+		default:
+			break;
+		}
+	}
+
+	private void onMinering(final EQCServiceState state) {
+		Log.info("Begin minering...");
+		this.state.set(State.MINER);
+		while (isRunning.get() && isMining.get()) {
+			onPause("prepare minering");
+			if (!isRunning.get() || !isMining.get()) {
+				Log.info("Exit from prepare minering");
+				break;
+			}
 			try {
-				name.wait(1000);//Util.getCurrentEQCHiveInterval().divide(BigInteger.TEN).intValue());// 1000);
-			} catch (Exception e) {
-				Log.Error(e.getMessage());
+				plantingNewEQCHive();
+			} catch (final Exception e) {
+				Log.Error("Due to error occur have to restart MinerService: " + e.getMessage());
+				stop();
+				EQCServiceProvider.getInstance().offerState(new EQCServiceState(State.FIND));
+				break;
 			}
 		}
-	}
-
-	private void resumeHalt() {
-		synchronized (name) {
-			Log.info("Begin resumeHalt");
-			name.notify();
-			Log.info("End resumeHalt");
-		}
-	}
-
-	/**
-	 * @return the newEQCHiveHeight
-	 */
-	public ID getNewEQCHiveHeight() {
-		return newEQCHiveHeight;
+		Log.info("End of mining");
 	}
 
 	/* (non-Javadoc)
@@ -322,9 +260,62 @@ public final class PlantService extends EQCService {
 		resumeHalt();
 		super.pause();
 	}
+
+	private void resumeHalt() {
+		synchronized (name) {
+			Log.info("Begin resumeHalt");
+			name.notify();
+			Log.info("End resumeHalt");
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.eqchains.service.EQCService#start()
+	 */
+	@Override
+	public synchronized void start() {
+		getInstance();
+		super.start();
+		worker.setPriority(Thread.MAX_PRIORITY);
+//		startMining();
+		isMining.set(true);
+		Log.info(name + "started");
+	}
+
+	public void startMining() {
+		offerState(new EQCServiceState(State.MINING));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.eqchains.service.EQCService#stop()
+	 */
+	@Override
+	public synchronized void stop() {
+		isRunning.set(false);
+		stopMining();
+		super.stop();
+		if(globalState != null) {
+			try {
+				globalState.close();
+			} catch (final Exception e) {
+				Log.Error(e.getMessage());
+			}
+			globalState = null;
+		}
+		instance = null;
+	}
 	
-	public boolean isMining() {
-		return isMining.get();
+	public void stopMining() {
+		Log.info(name + "begin stop mining progress");
+		isMining.set(false);
+		if (isPausing.get()) {
+			resumePause();
+		}
+		resumeHalt();
 	}
 	
 }

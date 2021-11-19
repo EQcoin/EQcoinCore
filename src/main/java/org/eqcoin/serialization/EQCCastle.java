@@ -13,10 +13,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, EQcoin Planet reserves all rights to take
  * any legal action and pursue any right or remedy available under applicable
  * law.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -560,7 +560,8 @@ public class EQCCastle {
 	//		return Util.reverseBytes(bytes);
 	//	}
 
-	private static <T extends EQCObject> byte[] eqcSerializableListToBytes(final Vector<T> eqcSerializableList) throws Exception {
+	private final static <T extends EQCObject> byte[] eqcSerializableListToBytes(final Vector<T> eqcSerializableList)
+			throws Exception {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		if (eqcSerializableList == null || eqcSerializableList.size() == 0) {
 			os.write(NULL);
@@ -653,7 +654,7 @@ public class EQCCastle {
 		return type >= MIN_BINX_LEN && type <= MAX_BINX_LEN;
 	}
 
-	private static boolean isElementLenValid(final int type, final long elementLen) {
+	public static final	boolean isElementLenValid(final int type, final long elementLen) {
 		if(type >= MIN_BINX_LEN && type <= MAX_BINX_LEN) {
 			if(elementLen >= MIN_BINX_LEN && elementLen <= MAX_BINX_LEN) {
 				return true;

@@ -45,8 +45,8 @@ import org.eqcoin.util.Util;
  */
 public abstract class EQCH2 {
 	protected String JDBC_URL;
-	private static final String USER = "Believer";
-	private static final String PASSWORD = "God bless us...";
+	final String USER = "Believer";
+	final String PASSWORD = "God bless us...";
 	protected Connection connection;
 	protected static final int ONE_ROW = 1;
 	

@@ -75,7 +75,7 @@ import org.eqcoin.util.Value;
 public class GlobalStateH2 extends EQCH2 implements GlobalState {
 	private final static String JDBC_URL = "jdbc:h2:" + Util.GLOBAL_STATE_DATABASE_NAME + ";DB_CLOSE_DELAY=60";// +
 	// ";TRACE_LEVEL_FILE=3;";
-	private static GlobalStateH2 instance;
+	GlobalStateH2 instance;
 	protected static String LOCKMATE_TABLE;
 	protected static String PASSPORT_TABLE;
 

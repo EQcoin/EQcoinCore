@@ -13,10 +13,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, EQcoin Planet reserves all rights to take
  * any legal action and pursue any right or remedy available under applicable
  * law.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -52,7 +52,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Vector;
 
 import org.eqcoin.crypto.EQCECCPublicKey;
-import org.eqcoin.serialization.EQCType;
+import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
@@ -81,7 +81,7 @@ public class Keystore {
 		}
 
 		public final byte[] getEQCBits() {
-			return EQCType.intToEQCBits(this.ordinal());
+			return EQCCastle.intToEQCBits(this.ordinal());
 		}
 	}
 	public static final int P256 = 1;
@@ -192,7 +192,7 @@ public class Keystore {
 			try {
 				is = new FileInputStream(file);
 				final ByteArrayInputStream bis = new ByteArrayInputStream(is.readAllBytes());
-				userProfileList = EQCType.parseArray(bis, new UserProfile());
+				userProfileList = EQCCastle.parseArray(bis, new UserProfile());
 			} catch (final FileNotFoundException e) {
 				Log.info("EQCoin.keystore not found: " + e.getMessage());
 			} catch (final Exception e) {
@@ -226,7 +226,7 @@ public class Keystore {
 
 			// Save all userProfileList to EQCoin.keystore
 			final OutputStream os = new FileOutputStream(file);
-			os.write(EQCType.eqcSerializableListToArray(userProfileList));
+			os.write(EQCCastle.eqcSerializableListToArray(userProfileList));
 			os.flush();
 			os.close();
 

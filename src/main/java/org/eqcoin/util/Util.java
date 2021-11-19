@@ -251,7 +251,7 @@ public final class Util {
 	/*
 	 * Set the default PATH value WINDOWS_PATH
 	 */
-	private static String CURRENT_PATH = System.getProperty("user.dir");
+	String CURRENT_PATH = System.getProperty("user.dir");
 
 	public final static String WINDOWS = "C:";
 
@@ -323,7 +323,7 @@ public final class Util {
 
 	public final static ID PROTOCOL_VERSION = DEFAULT_PROTOCOL_VERSION;
 
-	private static Info info = null;
+	Info info = null;
 
 	public final static long DEFAULT_TIMEOUT = 3000;
 
@@ -498,7 +498,7 @@ public final class Util {
 		return result;
 	}
 
-	//	private static void init(final OS os) {
+	//	void init(final OS os) {
 	//		switch (os) {
 	//		case MAC:
 	//			PATH = MAC_PATH;

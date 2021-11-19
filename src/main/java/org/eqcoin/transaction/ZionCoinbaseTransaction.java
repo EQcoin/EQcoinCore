@@ -41,7 +41,6 @@ import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.stateobject.passport.AssetPassport;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.transaction.Transaction.TransactionType;

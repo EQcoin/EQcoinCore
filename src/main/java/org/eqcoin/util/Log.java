@@ -50,14 +50,14 @@ import java.util.logging.Logger;
  */
 public final class Log {
 
-	private static Logger log;
-	private static FileHandler fileHandler;
-	private static ConsoleHandler consoleHandler;
-	private static boolean DEBUG = true;
+	Logger log;
+	FileHandler fileHandler;
+	ConsoleHandler consoleHandler;
+	boolean DEBUG = true;
 
 	private Log() {}
 
-	private static void instance() {
+	void instance() {
 		if (log == null) {
 			try {
 				log = Logger.getLogger(MethodHandles.lookup().lookupClass().getSimpleName());

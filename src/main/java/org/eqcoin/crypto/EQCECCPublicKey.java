@@ -13,10 +13,10 @@
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, EQcoin Planet reserves all rights to take
  * any legal action and pursue any right or remedy available under applicable
  * law.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,55 +31,24 @@
  */
 package org.eqcoin.crypto;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
-import java.util.Objects;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSequenceGenerator;
-import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.DLTaggedObject;
-import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.math.ec.ECAlgorithms;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECCurve.Fp;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.util.Properties;
-import org.eqcoin.keystore.Keystore;
 import org.eqcoin.keystore.Keystore.ECCTYPE;
-import org.eqcoin.lock.Lock;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 
 /**
  * EQCPublicKey is an EQC tool you can use it as PublicKey to verify the
  * signature or get the PublicKey's compressed encode
- * 
+ *
  * @author Xun Wang
  * @date Sep 26, 2018
  * @email 10509759@qq.com
@@ -90,17 +59,17 @@ import org.eqcoin.util.Util;
  * @email 10509759@qq.com
  */
 public class EQCECCPublicKey implements PublicKey {
-	private static final long serialVersionUID = 1303765568188200263L;
+	final long serialVersionUID = 1303765568188200263L;
 
 	private ECDSACurve ecdsaCurve;
-	
+
 	/**
 	 * ECC publickey relevant variable which depend on different ECC publickey object
 	 */
 	private ECPoint ecPoint;
 	private ECPublicKey pk;
 
-	public EQCECCPublicKey(ECCTYPE type) {
+	public EQCECCPublicKey(final ECCTYPE type) {
 		if(type == ECCTYPE.P256) {
 			ecdsaCurve = SECP256R1Curve.getInstance();
 		}
@@ -108,47 +77,17 @@ public class EQCECCPublicKey implements PublicKey {
 			ecdsaCurve = SECP521R1Curve.getInstance();
 		}
 	}
-	
 
-	/**
-	 * Construct EQPublicKey using the official ECPublicKey of java then you can use
-	 * EQPublicKey get the compressed public key
-	 * 
-	 * @param ecPublicKey The interface to an elliptic curve (EC) public key
-	 */
-	public void setECPoint(final ECPublicKey ecPublicKey) {
-		final java.security.spec.ECPoint publicPointW = ecPublicKey.getW();
-		final BigInteger xCoord = publicPointW.getAffineX();
-		final BigInteger yCoord = publicPointW.getAffineY();
-		ecPoint = ecdsaCurve.getCURVE().getCurve().createPoint(xCoord, yCoord);
-	}
 
-	/**
-	 * Construct an EQPublicKey with a compressed public key then you can use it to
-	 * verify the signature
-	 * 
-	 * @param bytes Compressed public key
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.security.Key#getAlgorithm()
 	 */
-	public void setECPoint(final byte[] compressedPublicKey) {
-		ecPoint = ecdsaCurve.getCURVE().getCurve().decodePoint(compressedPublicKey);
-		ECPointUtil.decodePoint(ecdsaCurve.getEcParams().getCurve(), ecPoint.getEncoded(true));
-		KeyFactory kf = null;
-		try {
-			kf = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
-		ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(
-				ECPointUtil.decodePoint(ecdsaCurve.getEcParams().getCurve(), ecPoint.getEncoded(true)), ecdsaCurve.getEcParams());
-		try {
-			pk = (ECPublicKey) kf.generatePublic(pubKeySpec);
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+	@Override
+	public String getAlgorithm() {
+		// TODO Auto-generated method stub
+		return "EC";
 	}
 
 	/**
@@ -160,18 +99,17 @@ public class EQCECCPublicKey implements PublicKey {
 
 	/*
 	 * (non-Javadoc)
-	 * 
-	 * @see java.security.Key#getAlgorithm()
+	 *
+	 * @see java.security.Key#getEncoded()
 	 */
 	@Override
-	public String getAlgorithm() {
-		// TODO Auto-generated method stub
-		return "EC";
+	public byte[] getEncoded() {
+		return pk.getEncoded();
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.security.Key#getFormat()
 	 */
 	@Override
@@ -179,14 +117,45 @@ public class EQCECCPublicKey implements PublicKey {
 		return "X.509";
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.security.Key#getEncoded()
+	/**
+	 * Construct an EQPublicKey with a compressed public key then you can use it to
+	 * verify the signature
+	 *
+	 * @param bytes Compressed public key
 	 */
-	@Override
-	public byte[] getEncoded() {
-		return pk.getEncoded();
+	public void setECPoint(final byte[] compressedPublicKey) {
+		ecPoint = ecdsaCurve.getCURVE().getCurve().decodePoint(compressedPublicKey);
+		ECPointUtil.decodePoint(ecdsaCurve.getEcParams().getCurve(), ecPoint.getEncoded(true));
+		KeyFactory kf = null;
+		try {
+			kf = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
+		} catch (final NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+		final ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(
+				ECPointUtil.decodePoint(ecdsaCurve.getEcParams().getCurve(), ecPoint.getEncoded(true)), ecdsaCurve.getEcParams());
+		try {
+			pk = (ECPublicKey) kf.generatePublic(pubKeySpec);
+		} catch (final InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			Log.Error(e.getMessage());
+		}
+	}
+
+	/**
+	 * Construct EQPublicKey using the official ECPublicKey of java then you can use
+	 * EQPublicKey get the compressed public key
+	 *
+	 * @param ecPublicKey The interface to an elliptic curve (EC) public key
+	 */
+	public void setECPoint(final ECPublicKey ecPublicKey) {
+		final java.security.spec.ECPoint publicPointW = ecPublicKey.getW();
+		final BigInteger xCoord = publicPointW.getAffineX();
+		final BigInteger yCoord = publicPointW.getAffineY();
+		ecPoint = ecdsaCurve.getCURVE().getCurve().createPoint(xCoord, yCoord);
 	}
 
 }

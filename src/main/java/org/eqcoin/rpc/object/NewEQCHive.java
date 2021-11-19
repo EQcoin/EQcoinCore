@@ -39,7 +39,6 @@ import org.eqcoin.avro.O;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.persistence.globalstate.GlobalState.Mode;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Util;
 

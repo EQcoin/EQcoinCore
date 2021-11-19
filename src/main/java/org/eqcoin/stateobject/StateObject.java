@@ -7,7 +7,8 @@ public abstract class StateObject extends EQCObject {
 	public StateObject() {
 	}
 
-	public StateObject(final byte[] bytes) {
+	public StateObject(final byte[] bytes) throws Exception {
+		super(bytes);
 	}
 
 	abstract public <K> K getKey() throws Exception;

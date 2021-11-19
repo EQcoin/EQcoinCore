@@ -7,7 +7,7 @@ package org.eqcoin.avro;
 
 @org.apache.avro.specific.AvroGenerated
 public interface EQCMinerNetwork {
-  public static final org.eqcoin.rpc.gateway.Gateway PROTOCOL = org.apache.avro.Gateway.parse("{\"protocol\":\"EQCMinerNetwork\",\"namespace\":\"org.eqcoin.avro\",\"types\":[{\"type\":\"record\",\"name\":\"O\",\"fields\":[{\"name\":\"o\",\"type\":\"bytes\"}]}],\"messages\":{\"registerSP\":{\"request\":[{\"name\":\"S\",\"type\":\"O\"}],\"response\":\"O\"},\"getSPList\":{\"request\":[{\"name\":\"F\",\"type\":\"O\"}],\"response\":\"O\"},\"broadcastNewEQCHive\":{\"request\":[{\"name\":\"E\",\"type\":\"O\"}],\"response\":\"O\"}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"EQCMinerNetwork\",\"namespace\":\"org.eqcoin.avro\",\"types\":[{\"type\":\"record\",\"name\":\"O\",\"fields\":[{\"name\":\"o\",\"type\":\"bytes\"}]}],\"messages\":{\"registerSP\":{\"request\":[{\"name\":\"S\",\"type\":\"O\"}],\"response\":\"O\"},\"getSPList\":{\"request\":[{\"name\":\"F\",\"type\":\"O\"}],\"response\":\"O\"},\"broadcastNewEQCHive\":{\"request\":[{\"name\":\"E\",\"type\":\"O\"}],\"response\":\"O\"}}}");
   /**
    */
   org.eqcoin.avro.O registerSP(org.eqcoin.avro.O S);
@@ -20,7 +20,7 @@ public interface EQCMinerNetwork {
 
   @SuppressWarnings("all")
   public interface Callback extends EQCMinerNetwork {
-    public static final org.eqcoin.rpc.gateway.Gateway PROTOCOL = org.eqcoin.avro.EQCMinerNetwork.PROTOCOL;
+    public static final org.apache.avro.Protocol PROTOCOL = org.eqcoin.avro.EQCMinerNetwork.PROTOCOL;
     /**
      * @throws java.io.IOException The async call could not be completed.
      */

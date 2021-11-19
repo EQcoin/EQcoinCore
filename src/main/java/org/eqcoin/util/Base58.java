@@ -45,8 +45,8 @@ import java.math.BigInteger;
  */
 public class Base58 {
 	/** All alphanumeric characters except for "0", "I", "O", and "l" */
-	private static final String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-	private static final BigInteger BASE58 = BigInteger.valueOf(58);
+	private final static String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+	private final static BigInteger BASE58 = BigInteger.valueOf(58);
 
 	public static String encode(final byte[] bytes) {
 		BigInteger remainder = null;

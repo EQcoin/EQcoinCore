@@ -7,7 +7,7 @@ package org.eqcoin.avro;
 
 @org.apache.avro.specific.AvroGenerated
 public interface EQCTransactionNetwork {
-  public static final org.eqcoin.rpc.gateway.Gateway PROTOCOL = org.apache.avro.Gateway.parse("{\"protocol\":\"EQCTransactionNetwork\",\"namespace\":\"org.eqcoin.avro\",\"types\":[{\"type\":\"record\",\"name\":\"O\",\"fields\":[{\"name\":\"o\",\"type\":\"bytes\"}]}],\"messages\":{\"ping\":{\"request\":[],\"response\":\"O\"},\"registerSP\":{\"request\":[{\"name\":\"S\",\"type\":\"O\"}],\"response\":\"O\"},\"getSPList\":{\"request\":[{\"name\":\"F\",\"type\":\"O\"}],\"response\":\"O\"},\"sendTransaction\":{\"request\":[{\"name\":\"T\",\"type\":\"O\"}],\"response\":\"O\"},\"getPendingTransactionList\":{\"request\":[{\"name\":\"I\",\"type\":\"O\"}],\"response\":\"O\"},\"getTransactionIndexList\":{\"request\":[{\"name\":\"T\",\"type\":\"O\"}],\"response\":\"O\"},\"getTransactionList\":{\"request\":[{\"name\":\"L\",\"type\":\"O\"}],\"response\":\"O\"}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"EQCTransactionNetwork\",\"namespace\":\"org.eqcoin.avro\",\"types\":[{\"type\":\"record\",\"name\":\"O\",\"fields\":[{\"name\":\"o\",\"type\":\"bytes\"}]}],\"messages\":{\"ping\":{\"request\":[],\"response\":\"O\"},\"registerSP\":{\"request\":[{\"name\":\"S\",\"type\":\"O\"}],\"response\":\"O\"},\"getSPList\":{\"request\":[{\"name\":\"F\",\"type\":\"O\"}],\"response\":\"O\"},\"sendTransaction\":{\"request\":[{\"name\":\"T\",\"type\":\"O\"}],\"response\":\"O\"},\"getPendingTransactionList\":{\"request\":[{\"name\":\"I\",\"type\":\"O\"}],\"response\":\"O\"},\"getTransactionIndexList\":{\"request\":[{\"name\":\"T\",\"type\":\"O\"}],\"response\":\"O\"},\"getTransactionList\":{\"request\":[{\"name\":\"L\",\"type\":\"O\"}],\"response\":\"O\"}}}");
   /**
    */
   org.eqcoin.avro.O ping();
@@ -32,7 +32,7 @@ public interface EQCTransactionNetwork {
 
   @SuppressWarnings("all")
   public interface Callback extends EQCTransactionNetwork {
-    public static final org.eqcoin.rpc.gateway.Gateway PROTOCOL = org.eqcoin.avro.EQCTransactionNetwork.PROTOCOL;
+    public static final org.apache.avro.Protocol PROTOCOL = org.eqcoin.avro.EQCTransactionNetwork.PROTOCOL;
     /**
      * @throws java.io.IOException The async call could not be completed.
      */
