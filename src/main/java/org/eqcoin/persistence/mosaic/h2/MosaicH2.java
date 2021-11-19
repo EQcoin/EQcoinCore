@@ -58,7 +58,7 @@ import org.eqcoin.util.Util;
  */
 public class MosaicH2 extends EQCH2 implements Mosaic {
 	private final static String JDBC_URL = "jdbc:h2:" + Util.TRANSACTION_POOL_DATABASE_NAME + ";DB_CLOSE_DELAY=60";
-	MosaicH2 instance;
+	private static MosaicH2 instance;
 
 	public static MosaicH2 getInstance() throws ClassNotFoundException, SQLException {
 		if(instance == null) {
