@@ -2,18 +2,17 @@
  * EQcoin core
  *
  * http://www.eqcoin.org
- *
- * @copyright 2018-present EQcoin Planet All rights reserved...
- * Copyright of all works released by EQcoin Planet or jointly released by
- * EQcoin Planet with cooperative partners are owned by EQcoin Planet
- * and entitled to protection available from copyright law by country as well as
- * international conventions.
+ * 
+ * @Copyright 2018-present Xun Wang All Rights Reserved...
+ * Copyright of all works released by Xun Wang or jointly released by Xun Wang
+ * with cooperative partners are owned by Xun Wang and entitled to protection 
+ * available from copyright law by country as well as international conventions.
  * Attribution — You must give appropriate credit, provide a link to the license.
  * Non Commercial — You may not use the material for commercial purposes.
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, Xun Wang reserves all rights to take 
  * any legal action and pursue any right or remedy available under applicable
  * law.
  * 
@@ -95,7 +94,6 @@ import org.eqcoin.rpc.object.Info;
 import org.eqcoin.rpc.object.SP;
 import org.eqcoin.rpc.object.SPList;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
 import org.eqcoin.transaction.ZionCoinbaseTransaction;
@@ -156,9 +154,9 @@ public final class Util {
 	}
 
 	/*
-	 * Singularity - EQC's basic unit of measure. 1 EQC = 10000 singularity
+	 * Singularity - EQC's basic unit of measure. 1 EQC = 100000000 singularity
 	 */
-	public final static BigInteger ABC = BigInteger.valueOf(10000);
+	public final static BigInteger ABC = BigInteger.valueOf(100000000);
 
 	public final static BigInteger TARGET_INTERVAL = BigInteger.valueOf(51);
 
@@ -251,7 +249,7 @@ public final class Util {
 	/*
 	 * Set the default PATH value WINDOWS_PATH
 	 */
-	String CURRENT_PATH = System.getProperty("user.dir");
+	public final static String CURRENT_PATH = System.getProperty("user.dir");
 
 	public final static String WINDOWS = "C:";
 
@@ -323,7 +321,7 @@ public final class Util {
 
 	public final static ID PROTOCOL_VERSION = DEFAULT_PROTOCOL_VERSION;
 
-	Info info = null;
+	public static Info info = null;
 
 	public final static long DEFAULT_TIMEOUT = 3000;
 

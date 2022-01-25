@@ -2,18 +2,17 @@
  * EQcoin core
  *
  * http://www.eqcoin.org
- *
- * @copyright 2018-present EQcoin Planet All rights reserved...
- * Copyright of all works released by EQcoin Planet or jointly released by
- * EQcoin Planet with cooperative partners are owned by EQcoin Planet
- * and entitled to protection available from copyright law by country as well as
- * international conventions.
+ * 
+ * @Copyright 2018-present Xun Wang All Rights Reserved...
+ * Copyright of all works released by Xun Wang or jointly released by Xun Wang
+ * with cooperative partners are owned by Xun Wang and entitled to protection 
+ * available from copyright law by country as well as international conventions.
  * Attribution — You must give appropriate credit, provide a link to the license.
  * Non Commercial — You may not use the material for commercial purposes.
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, EQcoin Planet reserves all rights to take 
+ * or without prior written permission, Xun Wang reserves all rights to take 
  * any legal action and pursue any right or remedy available under applicable
  * law.
  * 
@@ -75,7 +74,7 @@ import org.eqcoin.util.Value;
 public class GlobalStateH2 extends EQCH2 implements GlobalState {
 	private final static String JDBC_URL = "jdbc:h2:" + Util.GLOBAL_STATE_DATABASE_NAME + ";DB_CLOSE_DELAY=60";// +
 	// ";TRACE_LEVEL_FILE=3;";
-	GlobalStateH2 instance;
+	private static GlobalStateH2 instance;
 	protected static String LOCKMATE_TABLE;
 	protected static String PASSPORT_TABLE;
 
@@ -1285,6 +1284,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				Log.info("Commit successful at EQCHive No." + eqcHive.getRoot().getHeight());
 			}
 			try {
+				// Here need change to a service
 				Util.MC().deleteTransactionsInPool(eqcHive);
 			} catch (final Exception e) {
 				Log.Error(e.getMessage());

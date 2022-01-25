@@ -530,5 +530,15 @@ public class MiscTest {
 		}
 		//		   assertEquals(readableAddress, userAccount.getReadableLock());
 	}
+	
+	@Test
+	void optimalNumOfBits() {
+		long n = 1000000000;
+		double p = 0.001;
+		if (p == 0) {
+			p = Double.MIN_VALUE;
+		}
+		Log.info("" + (long) (-n * Math.log(p) / (Math.log(2) * Math.log(2))));
+	}
 
 }

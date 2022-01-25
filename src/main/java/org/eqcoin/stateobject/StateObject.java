@@ -14,5 +14,7 @@ public abstract class StateObject extends EQCObject {
 	abstract public <K> K getKey() throws Exception;
 
 	abstract public <V> V getValue() throws Exception;
+	
+	abstract public byte[] getHash() throws Exception;
 
 }
