@@ -37,7 +37,7 @@ import java.util.Vector;
 import org.eqcoin.passport.storage.PassportStateVariable.PassportState;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.util.Log;
 
 /**

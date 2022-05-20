@@ -30,6 +30,9 @@
  */
 package org.eqcoin.serialization;
 
+import org.eqcoin.protocol.EQCConstraint;
+import org.eqcoin.protocol.EQCProtocol;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
@@ -38,7 +41,7 @@ import java.io.ByteArrayOutputStream;
  * @date Mar 26, 2020
  * @email 10509759@qq.com
  */
-public abstract class EQCObject implements EQCSerializable, EQCInheritable {
+public abstract class EQCObject implements EQCSerializable, EQCInheritable, EQCConstraint {
 
 	public EQCObject() {
 		init();
@@ -146,12 +149,8 @@ public abstract class EQCObject implements EQCSerializable, EQCInheritable {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCTypable#isValid()
-	 */
 	@Override
-	public boolean isValid() throws Exception {
-		// TODO Auto-generated method stub
+	public boolean isMeetConstraint(EQCProtocol eqcProtocol) throws Exception {
 		return false;
 	}
 

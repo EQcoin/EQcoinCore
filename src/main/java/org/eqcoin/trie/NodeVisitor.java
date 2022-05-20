@@ -30,15 +30,15 @@
  */
 package org.eqcoin.trie;
 
-import org.eqcoin.stateobject.StateObject;
+import org.eqcoin.serialization.EQCStateObject;
 
 /**
  * @author Xun Wang
  * @date 2022年1月16日
  * @email 10509759@qq.com
  */
-public interface NodeVisitor<V extends StateObject> {
+public interface NodeVisitor<V extends EQCStateObject> {
 	
-	public void visit(INode<V> node);
+	public void visit(Node<V> node);
 	
 }

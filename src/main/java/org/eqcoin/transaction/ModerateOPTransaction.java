@@ -32,18 +32,10 @@ package org.eqcoin.transaction;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.stateobject.passport.AssetPassport;
-import org.eqcoin.stateobject.passport.Passport;
-import org.eqcoin.transaction.Transaction.TransactionType;
-import org.eqcoin.transaction.operation.ChangeCheckPoint;
-import org.eqcoin.transaction.operation.ChangeLock;
+import org.eqcoin.protocol.EQCProtocol;
 import org.eqcoin.transaction.operation.Operation;
-import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 
 /**
  * @author Xun Wang
@@ -82,7 +74,8 @@ public class ModerateOPTransaction extends Transaction {
 			Log.Error("operation == null");
 			return false;
 		}
-		if (!operation.isMeetConstraint()) {
+		EQCProtocol eqcProtocol = null;
+		if (!operation.isMeetConstraint(eqcProtocol)) {
 			Log.Error("Operation " + operation + " doesn't meet preconditions.");
 			return false;
 		}
@@ -157,10 +150,10 @@ public class ModerateOPTransaction extends Transaction {
 			Log.Error("operation == null");
 			return false;
 		}
-		if(!(operation instanceof ChangeCheckPoint)) {
-			Log.Error("!(operation instanceof ChangeCheckPointOP)");
-			return false;
-		}
+//		if(!(operation instanceof ChangeCheckPoint)) {
+//			Log.Error("!(operation instanceof ChangeCheckPointOP)");
+//			return false;
+//		}
 		if (!operation.isSanity()) {
 			Log.Error("!operation.isSanity()");
 			return false;

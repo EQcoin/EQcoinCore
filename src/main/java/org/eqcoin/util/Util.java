@@ -94,7 +94,7 @@ import org.eqcoin.rpc.object.Info;
 import org.eqcoin.rpc.object.SP;
 import org.eqcoin.rpc.object.SPList;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
 import org.eqcoin.transaction.ZionCoinbaseTransaction;
 import org.eqcoin.transaction.txout.TransferTxOut;
@@ -205,7 +205,7 @@ public final class Util {
 	// +
 	// EQC_FEDERATION_COINBASE_REWARD;
 
-	public final static byte DEFAULT_TXFEE_RATE = 10;
+	public final static byte DEFAULT_POWER_PRICE = 10;
 
 	public final static int ZERO = 0;
 

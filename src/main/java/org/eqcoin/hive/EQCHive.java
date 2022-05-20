@@ -43,7 +43,7 @@ import org.eqcoin.persistence.globalstate.GlobalState.Statistics;
 import org.eqcoin.rpc.gateway.Gateway;
 import org.eqcoin.seeds.EQCSeeds;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.StateObject;
+import org.eqcoin.serialization.EQCStateObject;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -55,7 +55,7 @@ import org.eqcoin.util.Value;
  * @date Oct 1, 2018
  * @email 10509759@qq.com
  */
-public class EQCHive extends StateObject implements Plantable, Gateway {
+public class EQCHive extends EQCStateObject implements Plantable, Gateway {
 	private EQCHiveRoot root;
 	private EQCSeeds eqCoinSeeds;
 	private GlobalState globalState;
@@ -78,7 +78,7 @@ public class EQCHive extends StateObject implements Plantable, Gateway {
 		super();
 		this.globalState = globalState;
 		if(currentHeight.equals(ID.ZERO)) {
-			txFeeRate = new Value(Util.DEFAULT_TXFEE_RATE);
+			txFeeRate = new Value(Util.DEFAULT_POWER_PRICE);
 		}
 		else {
 			//			final EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
@@ -282,7 +282,7 @@ public class EQCHive extends StateObject implements Plantable, Gateway {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.eqcoin.stateobject.StateObject#getKey()
+	 * @see org.eqcoin.serialization.StateObject#getKey()
 	 */
 	@Override
 	public byte[] getKey() throws Exception {
@@ -325,7 +325,7 @@ public class EQCHive extends StateObject implements Plantable, Gateway {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.eqcoin.stateobject.StateObject#getValue()
+	 * @see org.eqcoin.serialization.StateObject#getValue()
 	 */
 	@Override
 	public byte[] getValue() throws Exception {

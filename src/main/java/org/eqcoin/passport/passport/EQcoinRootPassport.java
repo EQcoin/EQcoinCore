@@ -1,4 +1,4 @@
-package org.eqcoin.stateobject.passport;
+package org.eqcoin.passport.passport;
 ///**
 // * EQcoin core - EQcoin Federation's EQcoin core library
 // * @copyright 2018-present EQcoin Federation All rights reserved...

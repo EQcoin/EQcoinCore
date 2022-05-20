@@ -35,7 +35,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.eqcoin.persistence.globalstate.GlobalState.Plantable;
-import org.eqcoin.protocol.Constraint;
+import org.eqcoin.protocol.EQCConstraint;
+import org.eqcoin.protocol.EQCProtocol;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.transaction.Transaction;
@@ -46,7 +47,7 @@ import org.eqcoin.util.Value;
  * @date Mar 27, 2019
  * @email 10509759@qq.com
  */
-public class Operation extends EQCObject implements Constraint, Plantable {
+public class Operation extends EQCObject implements EQCConstraint, Plantable {
 	public enum OP {
 		LOCK;//, CHECKPOINT, BLOCKINTERVAL, MAXBLOCKSIZE, TXFEERATE, UPDATESCRIPT;
 		public static OP get(final int ordinal) {
@@ -168,7 +169,7 @@ public class Operation extends EQCObject implements Constraint, Plantable {
 
 	// Due to the expand ability so here need use isMeetPreconditions
 	@Override
-	public boolean isMeetConstraint() throws Exception {
+	public boolean isMeetConstraint(EQCProtocol eqcProtocol) throws Exception {
 		return true;
 	}
 

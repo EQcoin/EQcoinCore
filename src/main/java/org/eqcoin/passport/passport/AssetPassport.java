@@ -28,52 +28,43 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.wallet;
+package org.eqcoin.passport.passport;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.serialization.EQCObject;
+import java.sql.ResultSet;
 
 /**
  * @author Xun Wang
- * @date May 9, 2020
+ * @date May 11, 2019
  * @email 10509759@qq.com
  */
-@Deprecated
-public class WalletLock extends EQCObject {
-	private LockMate lockMate;
+public class AssetPassport extends Passport {
 
 	/* (non-Javadoc)
-	 * @see org.eqcoin.serialization.EQCSerializable#parseBody(java.io.ByteArrayInputStream)
+	 * @see com.eqcoin.blockchain.passport.Passport#init()
 	 */
+	public AssetPassport() throws Exception {
+		super();
+	}
+
+	public AssetPassport(final byte[] bytes) throws Exception {
+		super(bytes);
+	}
+
+	public AssetPassport(final ResultSet resultSet) throws Exception {
+		super(resultSet);
+	}
+
 	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		lockMate = new LockMate().Parse(is);
+	protected void init() {
+		super.init();
+		type = PassportType.ASSET;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eqcoin.serialization.EQCSerializable#getBodyBytes(java.io.ByteArrayOutputStream)
-	 */
 	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
-		os.write(lockMate.getBytes());
-		return os;
+	public String toInnerJson() {
+		return "\"AssetPassport\":" + "{\n" +
+				super.toInnerJson() +
+				"\n}";
 	}
 
-	/**
-	 * @return the lockMate
-	 */
-	public LockMate getLockMate() {
-		return lockMate;
-	}
-
-	/**
-	 * @param lockMate the lockMate to set
-	 */
-	public void setLockMate(LockMate lockMate) {
-		this.lockMate = lockMate;
-	}
-	
 }

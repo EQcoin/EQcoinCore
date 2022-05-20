@@ -28,52 +28,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.wallet;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.serialization.EQCObject;
+package org.eqcoin.protocol;
 
 /**
  * @author Xun Wang
- * @date May 9, 2020
+ * @date Aug 10, 2020
  * @email 10509759@qq.com
  */
-@Deprecated
-public class WalletLock extends EQCObject {
-	private LockMate lockMate;
-
-	/* (non-Javadoc)
-	 * @see org.eqcoin.serialization.EQCSerializable#parseBody(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parseBody(ByteArrayInputStream is) throws Exception {
-		lockMate = new LockMate().Parse(is);
-	}
-
-	/* (non-Javadoc)
-	 * @see org.eqcoin.serialization.EQCSerializable#getBodyBytes(java.io.ByteArrayOutputStream)
-	 */
-	@Override
-	public ByteArrayOutputStream getBodyBytes(ByteArrayOutputStream os) throws Exception {
-		os.write(lockMate.getBytes());
-		return os;
-	}
-
-	/**
-	 * @return the lockMate
-	 */
-	public LockMate getLockMate() {
-		return lockMate;
-	}
-
-	/**
-	 * @param lockMate the lockMate to set
-	 */
-	public void setLockMate(LockMate lockMate) {
-		this.lockMate = lockMate;
-	}
-	
+public interface EQCConstraint {
+	public boolean isMeetConstraint(EQCProtocol eqcProtocol) throws Exception;
 }

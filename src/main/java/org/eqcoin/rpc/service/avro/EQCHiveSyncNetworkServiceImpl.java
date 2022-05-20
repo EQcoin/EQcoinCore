@@ -29,23 +29,12 @@
  */
 package org.eqcoin.rpc.service.avro;
 
-import java.nio.ByteBuffer;
-
-import org.apache.avro.AvroRemoteException;
 import org.eqcoin.avro.EQCHiveSyncNetwork;
 import org.eqcoin.avro.O;
-import org.eqcoin.hive.EQCHive;
 import org.eqcoin.hive.EQCHiveRoot;
-import org.eqcoin.persistence.globalstate.GlobalState.Mode;
-import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
 import org.eqcoin.rpc.gateway.Gateway;
-import org.eqcoin.rpc.object.SP;
 import org.eqcoin.rpc.object.TailInfo;
-import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.service.PossibleSPService;
-import org.eqcoin.service.state.PossibleSPState;
 import org.eqcoin.stateobject.passport.EQcoinRootPassport;
-import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;

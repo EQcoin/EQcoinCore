@@ -33,7 +33,7 @@ package org.eqcoin.wallet;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 
 /**
  * @author Xun Wang

@@ -36,11 +36,9 @@ import java.io.IOException;
 import java.util.Vector;
 
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.seeds.EQCSeeds;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.AssetPassport;
-import org.eqcoin.stateobject.passport.Passport;
-import org.eqcoin.transaction.Transaction.TransactionType;
+import org.eqcoin.passport.passport.AssetPassport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;

@@ -38,7 +38,7 @@
 //
 //import org.eqcoin.lock.LockMate;
 //import org.eqcoin.serialization.EQCCastle;
-//import org.eqcoin.stateobject.passport.Passport;
+//import Passport;
 //import org.eqcoin.transaction.ModerateOPTransaction;
 //import org.eqcoin.transaction.Transaction;
 //import org.eqcoin.transaction.TransferOPTransaction;

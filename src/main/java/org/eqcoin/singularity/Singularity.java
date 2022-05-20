@@ -31,15 +31,6 @@
 package org.eqcoin.singularity;
 
 
-import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.cluster.ClusterState;
-import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.DataStorageConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
-import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 

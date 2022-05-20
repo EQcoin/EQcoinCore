@@ -33,25 +33,10 @@ package org.eqcoin.transaction;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Vector;
 
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.seeds.EQCSeeds;
-import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.AssetPassport;
-import org.eqcoin.stateobject.passport.Passport;
-import org.eqcoin.transaction.Transaction.TransactionType;
-import org.eqcoin.transaction.operation.ChangeLock;
+import org.eqcoin.protocol.EQCProtocol;
 import org.eqcoin.transaction.operation.Operation;
-import org.eqcoin.transaction.operation.Operation.OP;
-import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 import org.eqcoin.util.Value;
 
 /**
@@ -171,7 +156,8 @@ public class TransferOPTransaction extends TransferTransaction {
 			Log.Error("");
 			return false;
 		}
-		if(!operation.isMeetConstraint()) {
+		EQCProtocol eqcProtocol = null;
+		if(!operation.isMeetConstraint(eqcProtocol)) {
 			Log.Error("!operation.isMeetPreconditions()");
 			return false;
 		}

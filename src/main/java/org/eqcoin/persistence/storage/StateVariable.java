@@ -34,7 +34,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.eqcoin.persistence.globalstate.GlobalState.Plantable;
-import org.eqcoin.protocol.Constraint;
+import org.eqcoin.protocol.EQCConstraint;
+import org.eqcoin.protocol.EQCProtocol;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.util.ID;
@@ -45,7 +46,7 @@ import org.eqcoin.util.Log;
  * @date Aug 10, 2020
  * @email 10509759@qq.com
  */
-public class StateVariable<T extends Enum> extends EQCObject implements Constraint, Plantable {
+public class StateVariable<T extends Enum> extends EQCObject implements EQCConstraint, Plantable {
 	protected ID serialNumber;
 	protected T state;
 
@@ -77,7 +78,7 @@ public class StateVariable<T extends Enum> extends EQCObject implements Constrai
 
 	// Due to the expand ability so here need use isMeetPreconditions
 	@Override
-	public boolean isMeetConstraint() throws Exception {
+	public boolean isMeetConstraint(EQCProtocol eqcProtocol) throws Exception {
 		return true;
 	}
 

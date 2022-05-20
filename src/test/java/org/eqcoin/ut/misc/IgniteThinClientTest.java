@@ -34,7 +34,7 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.configuration.ClientConfiguration;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.util.Log;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

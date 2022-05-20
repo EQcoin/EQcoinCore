@@ -36,7 +36,7 @@ import java.io.IOException;
 
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;

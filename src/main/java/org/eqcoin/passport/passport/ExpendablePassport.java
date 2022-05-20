@@ -28,7 +28,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.eqcoin.stateobject.passport;
+package org.eqcoin.passport.passport;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

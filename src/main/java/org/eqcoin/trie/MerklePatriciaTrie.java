@@ -30,30 +30,32 @@
  */
 package org.eqcoin.trie;
 
-import org.eqcoin.stateobject.StateObject;
-import org.eqcoin.util.ID;
+import org.eqcoin.persistence.statedb.StateDB;
+import org.eqcoin.serialization.EQCStateObject;
 
 /**
  * @author Xun Wang
  * @date 2022年1月16日
  * @email 10509759@qq.com
  */
-public interface INode<V extends StateObject> {
+public interface MerklePatriciaTrie<O extends Node, K, V extends EQCStateObject> {
 	
-	public INode<V> accept(NodeVisitor<V> nodeVisitor);
+	public void create(K key, V value) throws Exception;
 	
-	public byte getOrbit();
+	public V get(K key) throws Exception;
 	
-	public ID getID();
+	public void put(K key, V value) throws Exception;
 	
-	public boolean isDirty();
+	public void del(K key) throws Exception;
 	
-	public void markDirty();
+	public byte[] getRootHash() throws Exception;
 	
-	public boolean isLoaded();
+	public void genRootHash() throws Exception;
 	
-	public void load();
-	
-	public void unload();
+	public Proof<V> getProof(K key) throws Exception;
+
+	public void setStateDB(StateDB stateDB);
+
+	public void commit() throws Exception;
 	
 }

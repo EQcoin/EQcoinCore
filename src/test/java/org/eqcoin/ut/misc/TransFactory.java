@@ -37,14 +37,10 @@ import org.eqcoin.keystore.Keystore;
 import org.eqcoin.keystore.UserProfile;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.lock.LockTool;
-import org.eqcoin.lock.T2Lock;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.lock.witness.T2Witness;
 import org.eqcoin.lock.witness.Witness;
-import org.eqcoin.persistence.globalstate.GlobalState.Mode;
-import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
-import org.eqcoin.rpc.client.avro.EQCTransactionNetworkClient;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.TransferOPTransaction;
 import org.eqcoin.transaction.TransferTransaction;
 import org.eqcoin.transaction.ZionTransaction;
@@ -76,7 +72,7 @@ public class TransFactory {
 			witness.setPassport(passport);
 			transaction.setWitness(witness);
 			transaction.setLockType(LockType.T2);
-			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_TXFEE_RATE));
+			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_POWER_PRICE));
 	
 			for (int id : toIds) {
 				TransferTxOut txOut = new TransferTxOut();
@@ -119,7 +115,7 @@ public class TransFactory {
 			witness.setPassport(passport);
 			transaction.setWitness(witness);
 			transaction.setLockType(LockType.T2);
-			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_TXFEE_RATE));
+			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_POWER_PRICE));
 
 			for (int id : toIds) {
 				TransferTxOut txOut = new TransferTxOut();
@@ -166,7 +162,7 @@ public class TransFactory {
 			witness.setPassport(passport);
 			transaction.setWitness(witness);
 			transaction.setLockType(LockType.T2);
-			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_TXFEE_RATE));
+			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_POWER_PRICE));
 
 			for (int i : zions) {
 				ZionTxOut txOut = new ZionTxOut();

@@ -33,9 +33,8 @@ package org.eqcoin.rpc.object;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import org.eqcoin.rpc.object.LockStatus.LOCKSTATUS;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.util.Log;
 import org.eqcoin.wallet.WalletStatus.Status;
 

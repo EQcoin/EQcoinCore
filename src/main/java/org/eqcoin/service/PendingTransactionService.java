@@ -30,14 +30,10 @@
  */
 package org.eqcoin.service;
 
-import org.apache.commons.lang3.Validate;
-import org.eqcoin.keystore.Keystore;
-import org.eqcoin.persistence.globalstate.GlobalState.Mode;
-import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.PendingTransactionState;
 import org.eqcoin.stateobject.passport.EQcoinRootPassport;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.ID;

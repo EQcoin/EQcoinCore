@@ -32,7 +32,6 @@ package org.eqcoin.rpc.client.avro;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 
 import org.apache.avro.ipc.netty.NettyTransceiver;
@@ -40,7 +39,6 @@ import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.eqcoin.avro.EQCMinerNetwork;
 import org.eqcoin.avro.EQCTransactionNetwork;
 import org.eqcoin.avro.O;
-import org.eqcoin.persistence.globalstate.h2.GlobalStateH2;
 import org.eqcoin.rpc.gateway.Gateway;
 import org.eqcoin.rpc.object.Info;
 import org.eqcoin.rpc.object.LockInfo;
@@ -49,13 +47,10 @@ import org.eqcoin.rpc.object.SP;
 import org.eqcoin.rpc.object.SPList;
 import org.eqcoin.rpc.object.TransactionIndexList;
 import org.eqcoin.rpc.object.TransactionList;
-import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.Passport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
-import org.eqcoin.util.Value;
 import org.eqcoin.util.Util.SP_MODE;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 

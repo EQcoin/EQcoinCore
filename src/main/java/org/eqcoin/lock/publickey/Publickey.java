@@ -32,29 +32,11 @@ package org.eqcoin.lock.publickey;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Objects;
-import org.eqcoin.lock.LockTool;
+
 import org.eqcoin.lock.LockTool.LockType;
-import org.eqcoin.serialization.EQCSerializable;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
-import org.eqcoin.stateobject.passport.Passport;
-import org.eqcoin.transaction.ModerateOPTransaction;
 import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.TransferCoinbaseTransaction;
-import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.ZeroZionCoinbaseTransaction;
-import org.eqcoin.transaction.ZionCoinbaseTransaction;
-import org.eqcoin.transaction.ZionOPTransaction;
-import org.eqcoin.transaction.ZionTransaction;
-import org.eqcoin.transaction.Transaction.TransactionType;
-import org.eqcoin.util.ID;
-import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 
 

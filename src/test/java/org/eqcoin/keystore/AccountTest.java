@@ -33,11 +33,11 @@ package org.eqcoin.keystore;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.eqcoin.passport.passport.Passport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -77,7 +77,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#hashCode()}.
+	 * Test method for {@link Passport.Account#hashCode()}.
 	 */
 	@Test
 	void testHashCode() {
@@ -85,7 +85,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#Account(java.lang.String, byte[], byte[], java.lang.String, long)}.
+	 * Test method for {@link Passport.Account#Account(java.lang.String, byte[], byte[], java.lang.String, long)}.
 	 */
 	@Test
 	void testAccountStringByteArrayByteArrayStringLong() {
@@ -93,7 +93,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#Account()}.
+	 * Test method for {@link Passport.Account#Account()}.
 	 */
 	@Test
 	void testAccount() {
@@ -101,7 +101,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#getUserName()}.
+	 * Test method for {@link Passport.Account#getUserName()}.
 	 */
 	@Test
 	void testGetUserName() {
@@ -109,7 +109,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#setUserName(java.lang.String)}.
+	 * Test method for {@link Passport.Account#setUserName(java.lang.String)}.
 	 */
 	@Test
 	void testSetUserName() {
@@ -117,7 +117,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#getPwdProof()}.
+	 * Test method for {@link Passport.Account#getPwdProof()}.
 	 */
 	@Test
 	void testGetPwdHash() {
@@ -125,7 +125,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#setPwdProof(byte[])}.
+	 * Test method for {@link Passport.Account#setPwdProof(byte[])}.
 	 */
 	@Test
 	void testSetPwdHash() {
@@ -133,7 +133,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#getPrivateKey()}.
+	 * Test method for {@link Passport.Account#getPrivateKey()}.
 	 */
 	@Test
 	void testGetPrivateKey() {
@@ -141,7 +141,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#setPrivateKey(byte[])}.
+	 * Test method for {@link Passport.Account#setPrivateKey(byte[])}.
 	 */
 	@Test
 	void testSetPrivateKey() {
@@ -149,7 +149,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#getLock()}.
+	 * Test method for {@link Passport.Account#getLock()}.
 	 */
 	@Test
 	void testGetAddress() {
@@ -157,7 +157,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#setLock(java.lang.String)}.
+	 * Test method for {@link Passport.Account#setLock(java.lang.String)}.
 	 */
 	@Test
 	void testSetAddress() {
@@ -165,7 +165,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#getBalance()}.
+	 * Test method for {@link Passport.Account#getBalance()}.
 	 */
 	@Test
 	void testGetBalance() {
@@ -173,7 +173,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#setBalance(long)}.
+	 * Test method for {@link Passport.Account#setBalance(long)}.
 	 */
 	@Test
 	void testSetBalance() {
@@ -181,7 +181,7 @@ class AccountTest {
 	}
 
 	/**
-	 * Test method for {@link org.eqcoin.stateobject.passport.Passport.Account#equals(java.lang.Object)}.
+	 * Test method for {@link Passport.Account#equals(java.lang.Object)}.
 	 */
 	@Test
 	void testEqualsObject() {

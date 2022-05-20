@@ -32,18 +32,11 @@ package org.eqcoin.transaction.operation;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
 
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockMate;
-import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.Passport;
-import org.eqcoin.transaction.Transaction;
-import org.eqcoin.transaction.TransferOPTransaction;
-import org.eqcoin.util.ID;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
 import org.eqcoin.util.Value;
 
 /**

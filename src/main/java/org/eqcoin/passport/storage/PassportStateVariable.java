@@ -36,7 +36,7 @@ import java.io.ByteArrayOutputStream;
 import org.eqcoin.passport.storage.PassportStateVariable.PassportState;
 import org.eqcoin.persistence.storage.StateVariable;
 import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 
 /**
  * @author Xun Wang

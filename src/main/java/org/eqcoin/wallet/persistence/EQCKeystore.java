@@ -30,18 +30,10 @@
  */
 package org.eqcoin.wallet.persistence;
 
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.sql.Connection;
-import java.util.Vector;
 
 import org.eqcoin.keystore.Keystore.ECCTYPE;
-import org.eqcoin.lock.Lock;
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.stateobject.passport.Passport;
-import org.eqcoin.transaction.Transaction;
-import org.eqcoin.util.ID;
 
 /**
  * @author Xun Wang

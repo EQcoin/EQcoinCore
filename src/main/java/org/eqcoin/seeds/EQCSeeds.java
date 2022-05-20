@@ -130,7 +130,6 @@ public class EQCSeeds extends EQCObject {
 		newTransactionList = new Vector<>();
 	}
 	
-	@Override
 	public boolean isValid() {
 		try {
 			// Verify CoinBaseTransaction

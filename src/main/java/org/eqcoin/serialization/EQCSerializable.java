@@ -41,7 +41,6 @@ public interface EQCSerializable {
 	public byte[] getBytes() throws Exception;
 	public byte[] getHeaderBytes() throws Exception;
 	public boolean isSanity() throws Exception;
-	public boolean isValid() throws Exception;
 	public void parseBody(byte[] bytes) throws Exception;
 	public void parseHeader(byte[] bytes) throws Exception;
 }

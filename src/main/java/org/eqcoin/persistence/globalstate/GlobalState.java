@@ -39,7 +39,7 @@ import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockMate;
 import org.eqcoin.persistence.globalstate.storage.GSStateVariable;
 import org.eqcoin.persistence.globalstate.storage.GSStateVariable.GSState;
-import org.eqcoin.stateobject.passport.Passport;
+import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Value;
 
