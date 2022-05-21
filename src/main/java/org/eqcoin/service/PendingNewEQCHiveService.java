@@ -30,6 +30,7 @@
  */
 package org.eqcoin.service;
 
+import java.math.BigInteger;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import org.eqcoin.keystore.Keystore;
@@ -44,7 +45,6 @@ import org.eqcoin.service.state.PossibleSPState;
 import org.eqcoin.service.state.SleepState;
 import org.eqcoin.service.state.EQCHiveSyncState;
 import org.eqcoin.service.state.EQCServiceState.State;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -117,13 +117,14 @@ public class PendingNewEQCHiveService extends EQCService {
 //						+ " just return");
 //				return;
 //			} else {
-			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
+//			EQcoinRootPassport eQcoinSubchainAccount = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
 			ID localTailHeight = Util.GS().getEQCHiveTailHeight();
 			// Here need do more job to check if the checkpoint is valid need add checkpoint
 			// transaction in NewBlock add isValid in NewBlock to handle this
 			if (newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight().compareTo(localTailHeight) > 0
 					&& newBlockState.getNewEQCHive().getCheckPointHeight()
-							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
+					.compareTo(BigInteger.ZERO) >= 0
+//							.compareTo(eQcoinSubchainAccount.getCheckPointHeight()) >= 0
 					&& newBlockState.getNewEQCHive().getEQCHive().getRoot().isDifficultyValid()) {
 				if(newBlockState.getNewEQCHive().getEQCHive().getRoot().getHeight().compareTo(Util.GS().getEQCHiveTailHeight().getNextID()) > 0) {
 					if(EQCHiveSyncNetworkClient.registerSP(newBlockState.getNewEQCHive().getSp()).getPing() == -1) {

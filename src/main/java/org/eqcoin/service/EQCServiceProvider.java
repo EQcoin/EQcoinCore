@@ -54,7 +54,6 @@ import org.eqcoin.service.state.EQCHiveSyncState;
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.EQCServiceState.State;
 import org.eqcoin.service.state.SleepState;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;

@@ -94,7 +94,7 @@ import org.eqcoin.util.Value;
  * For the most efficient use of bytes, the remainder of the transfer value in
  * TransferTxOut divided by 100 must be equal to 0.
  * <p>
- * | SSXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
+ * | XXXXXXSS | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
  * <p>
  * @author Xun Wang
  * @date 9-21-2018
@@ -297,6 +297,12 @@ public class EQCCastle {
 		Objects.requireNonNull(amount0);
 		Objects.requireNonNull(amount1);
 		if(amount0.compareTo(amount1) > 0) {
+			throw new IllegalStateException(amount0 + " shouldn't bigger than " + amount1);
+		}
+	}
+
+	public final static void assertNotBigger(final int amount0, final int amount1) throws IllegalStateException {
+		if(amount0 > amount1) {
 			throw new IllegalStateException(amount0 + " shouldn't bigger than " + amount1);
 		}
 	}
@@ -972,6 +978,57 @@ public class EQCCastle {
 			return NULL_ARRAY;
 		}
 		return bytesToBIN(foo.getBytes());
+	}
+
+	/**
+	 * EQCLight is a series of consecutive bytes which length is from 5 to 8
+	 * bytes. The lowest 2 bits of the lowest byte of the current byte sequence
+	 * are the status bits used to indicate how many bytes it contains. The endian
+	 * is big endian. EQC uses EQCLight to store the transfer value in TransferTxOut.
+	 * For the most efficient use of bytes, the remainder of the transfer value in
+	 * TransferTxOut divided by 100 must be equal to 0.
+	 * <p>
+	 *
+	 * @param value the original value of relevant number
+	 * @return byte[] the original number's EQCBits
+	 */
+	public static byte[] bigIntegerToEQCLight(BigInteger value) {
+		EQCCastle.assertNotNegative(value);
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		BigInteger remainder = null;
+		byte[] bytes = null;
+		EQCCastle.assertNotLess(bytes.length, 5);
+		EQCCastle.assertNotBigger(bytes.length, 8);
+		if(!value.mod(BigInteger.valueOf(100)).equals(BigInteger.ZERO)){
+			throw new IllegalStateException("For the most efficient use of bytes, the remainder of the transfer value in TransferTxOut divided by 100 must be equal to 0.");
+		}
+		bytes = value.toByteArray();
+		bytes[bytes.length - 1]&=(bytes.length -1);
+		return bytes;
+	}
+
+	public static BigInteger eqcLightToBigInteger(final byte[] bytes) {
+		BigInteger foo = null;
+		bytes[bytes.length - 1]&=252;
+		foo = new BigInteger(bytes);
+		return foo;
+	}
+
+	public final static byte[] parseEQCLight(final ByteArrayInputStream is) throws Exception {
+		int type;
+		byte[] bytes = null;
+
+		// Parse EQCLight
+		is.mark(0);
+		type = is.read();
+		if (type != EOF) {
+			is.reset();
+			int n = (type & 3) + 1;
+			bytes = parseNBytes(is, n);
+		} else {
+			throw EOF_EXCEPTION;
+		}
+		return bytes;
 	}
 
 }

@@ -34,7 +34,6 @@ import org.eqcoin.avro.O;
 import org.eqcoin.hive.EQCHiveRoot;
 import org.eqcoin.rpc.gateway.Gateway;
 import org.eqcoin.rpc.object.TailInfo;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -50,18 +49,18 @@ public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements 
 	public O getEQCHiveTail() {
 		O io = null;
 		TailInfo tailInfo = null;
-		EQcoinRootPassport eQcoinSubchainPassport = null;
-		try {
-			tailInfo = new TailInfo();
-			tailInfo.setHeight(Util.GS().getEQCHiveTailHeight());
-			eQcoinSubchainPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
-			tailInfo.setCheckPointHeight(eQcoinSubchainPassport.getCheckPointHeight());
-			tailInfo.setTailProof(Util.GS().getEQCHiveRootProof(tailInfo.getHeight()));
-			tailInfo.setSp(Util.LOCAL_SP);
-			io = tailInfo.getProtocol(O.class);
-		} catch (Exception e) {
-			Log.Error(e.getMessage());
-		}
+//		EQcoinRootPassport eQcoinSubchainPassport = null;
+//		try {
+//			tailInfo = new TailInfo();
+//			tailInfo.setHeight(Util.GS().getEQCHiveTailHeight());
+//			eQcoinSubchainPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
+//			tailInfo.setCheckPointHeight(eQcoinSubchainPassport.getCheckPointHeight());
+//			tailInfo.setTailProof(Util.GS().getEQCHiveRootProof(tailInfo.getHeight()));
+//			tailInfo.setSp(Util.LOCAL_SP);
+//			io = tailInfo.getProtocol(O.class);
+//		} catch (Exception e) {
+//			Log.Error(e.getMessage());
+//		}
 		return io;
 	}
 
@@ -78,6 +77,14 @@ public class EQCHiveSyncNetworkServiceImpl extends EQCRPCServiceImpl implements 
 			Log.Error(e.getMessage());
 		}
 		return hive;
+	}
+
+	/**
+	 * @param S
+	 */
+	@Override
+	public O getLockInfo(O S) {
+		return null;
 	}
 
 	@Override

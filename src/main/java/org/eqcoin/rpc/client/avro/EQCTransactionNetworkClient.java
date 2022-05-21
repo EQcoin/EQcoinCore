@@ -142,7 +142,7 @@ public class EQCTransactionNetworkClient extends EQCRPCClient {
 			                Executors.newCachedThreadPool()),
 					Util.DEFAULT_TIMEOUT);
 			client = SpecificRequestor.getClient(EQCTransactionNetwork.class, nettyTransceiver);
-			lockInfo = new LockInfo(client.getLockInfo(lockStatus.getProtocol(O.class)).getO().array());
+//			lockInfo = new LockInfo(client.getLockInfo(lockStatus.getProtocol(O.class)).getO().array());
 		} catch (Exception e) {
 			Log.Error(e.getMessage());
 			throw e;

@@ -32,7 +32,6 @@ package org.eqcoin.service;
 
 import org.eqcoin.service.state.EQCServiceState;
 import org.eqcoin.service.state.PendingTransactionState;
-import org.eqcoin.stateobject.passport.EQcoinRootPassport;
 import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.Transaction.TransactionShape;
@@ -52,13 +51,13 @@ public class PendingTransactionService extends EQCService {
 	
 	private PendingTransactionService() {
 		super();
-		EQcoinRootPassport eQcoinRootPassport;
-		try {
-			eQcoinRootPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
-			txFeeRate = new Value(eQcoinRootPassport.getTxFeeRate());
-		} catch (Exception e) {
-			Log.Error(e.getMessage());
-		}
+//		EQcoinRootPassport eQcoinRootPassport;
+//		try {
+//			eQcoinRootPassport = (EQcoinRootPassport) Util.GS().getPassport(ID.ZERO);
+//			txFeeRate = new Value(eQcoinRootPassport.getTxFeeRate());
+//		} catch (Exception e) {
+//			Log.Error(e.getMessage());
+//		}
 	}
 	
 	public static PendingTransactionService getInstance() {

@@ -541,4 +541,32 @@ public class MiscTest {
 		Log.info("" + (long) (-n * Math.log(p) / (Math.log(2) * Math.log(2))));
 	}
 
+	@Test
+	void testEQCLight() throws Exception {
+		//			BigInteger bigInteger = BigInteger.valueOf(200000001);
+		final BigInteger bigInteger = BigInteger.valueOf(128);
+		//			Log.info(Util.dumpBytes(EQCType.bigIntegerToEQCBits(bigInteger), 16));
+		assertEquals(bigInteger, EQCCastle.eqcLightToBigInteger(EQCCastle.bigIntegerToEQCLight(bigInteger)));
+		final byte[] eqcBits = EQCCastle.bigIntegerToEQCBits(bigInteger);
+		final ByteArrayInputStream is = new ByteArrayInputStream(eqcBits);
+		final byte[] eqcBits1 = EQCCastle.parseEQCLight(is);
+		assertEquals(bigInteger, EQCCastle.eqcBitsToBigInteger(eqcBits1));
+		assertArrayEquals(eqcBits, eqcBits1);
+	}
+
+	@Test
+	void testEQCLight1() throws NoSuchFieldException, IllegalStateException, IOException {
+		for (long i = 0; i < 1000000000l; ++i) {
+			//			Log.info(""+i);
+			final BigInteger bigInteger = BigInteger.valueOf(i);
+			//			Log.info(Util.dumpBytes(EQCType.bigIntegerToEQCBits(bigInteger), 16));
+			assertEquals(bigInteger, EQCCastle.eqcBitsToBigInteger(EQCCastle.bigIntegerToEQCBits(bigInteger)));
+			final byte[] eqcBits = EQCCastle.bigIntegerToEQCBits(bigInteger);
+			final ByteArrayInputStream is = new ByteArrayInputStream(eqcBits);
+			final byte[] eqcBits1 = EQCCastle.parseEQCBits(is);
+			assertEquals(bigInteger, EQCCastle.eqcBitsToBigInteger(eqcBits1));
+			assertArrayEquals(eqcBits, eqcBits1);
+		}
+	}
+
 }

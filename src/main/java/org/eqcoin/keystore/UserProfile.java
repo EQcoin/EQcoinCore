@@ -54,7 +54,7 @@ import org.eqcoin.transaction.Transaction.TransactionShape;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
 import org.eqcoin.util.Value;
-import org.h2.engine.User;
+//import org.h2.engine.User;
 
 /**
  * @author Xun Wang
