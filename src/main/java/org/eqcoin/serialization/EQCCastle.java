@@ -96,6 +96,19 @@ import org.eqcoin.util.Value;
  * <p>
  * | XXXXXXSS | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
  * <p>
+ * 5. EQCBitsX
+ * <p>
+ * EQCBitsX is a series of consecutive bytes consisting of several atomic byte
+ * units. An atomic byte unit consists of n bytes, where n is a positive integer.
+ * The highest bit of each atomic byte unit is a continuous symbol. If it is 0, it
+ * means that there are other atomic units behind the current atomic unit. If
+ * it is 1, it means that the end of the current sequence has been reached. The
+ * last atomic unit of each byte series follows its continuous symbol is m-bit
+ * state symbol, where m^2=n. Limited by space and efficiency, only the cases
+ * of m=2, 3, and 4 are implemented here. The endian is big endian.
+ * <p>
+ * | 0XX...XX | 0XX...XX | 0XX...XX | ... | 1S...SXX...XX |
+ * <p>
  * @author Xun Wang
  * @date 9-21-2018
  * @email 10509759@qq.com
@@ -1028,6 +1041,94 @@ public class EQCCastle {
 		} else {
 			throw EOF_EXCEPTION;
 		}
+		return bytes;
+	}
+
+	/**
+	 * EQCBitsX is a series of consecutive bytes consisting of several atomic byte
+	 * units. An atomic byte unit consists of n bytes, where n is a positive integer.
+	 * The highest bit of each atomic byte unit is a continuous symbol. If it is 0, it
+	 * means that there are other atomic units behind the current atomic unit. If
+	 * it is 1, it means that the end of the current sequence has been reached. The
+	 * last atomic unit of each byte series follows its continuous symbol is m-bit
+	 * state symbol, where m^2=n. Limited by space and efficiency, only the cases
+	 * of m=2, 3, and 4 are implemented here. The endian is big endian.
+	 * <p>
+	 *
+	 * @param value the original value of relevant number
+	 * @param statusSize the status' size which value in current phase including 2, 3, 4
+	 * @return byte[] the original number's EQCBits
+	 */
+	public static byte[] bigIntegerToEQCBitsX(final BigInteger value, final int statusSize) {
+		EQCCastle.assertNotNegative(value);
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		BigInteger remainder = null;
+		byte[] bytes = null;
+		while (value.compareTo(BASE128) >= 0) {
+			remainder = value.mod(BASE128);
+			bytes = remainder.toByteArray();
+			os.write(bytes.length == 1?bytes[0]:bytes[1]);
+			value = value.subtract(remainder).divide(BASE128);
+		}
+		bytes = value.toByteArray();
+		os.write((bytes.length == 1?bytes[0]:bytes[1]) | EQCBITS);
+		return os.toByteArray();
+	}
+	public static BigInteger eqcBitsXToBigInteger(final byte[] bytes, final int statusSize) {
+		BigInteger foo = BigInteger.ZERO;
+		for(int i=0; i<bytes.length-1; ++i) {
+			foo = foo.add(BigInteger.valueOf(bytes[i]).multiply(BASE128.pow(i)));
+		}
+		foo = foo.add(BigInteger.valueOf(bytes[bytes.length - 1] & EQCBITS_MASK).multiply(BASE128.pow(bytes.length - 1)));
+		return foo;
+	}
+
+	public final static byte[] parseEQCBitsX(final ByteArrayInputStream is, final int statusSize) throws IOException, NoSuchFieldException, IllegalStateException {
+		int type;
+		byte[] bytes = null;
+
+		//		// Parse EQCBits
+		//		ByteBuffer buff = ByteBuffer.allocate(EQCBITS_BUFFER_LEN);
+		//		while ((((type = is.read()) != EOF) && ((byte) type & EQCBITS) != 0)) {
+		//			if(buff.remaining() == 0) {
+		//				throw new IllegalStateException("The EQCBits' length is exceed the max length " + EQCBITS_BUFFER_LEN + " bytes");
+		//			}
+		//			buff.put((byte) type);
+		//		}
+		//		if (type != EOF) {
+		//			buff.put((byte) type);
+		//			bytes = Arrays.copyOfRange(buff.array(), 0, buff.position());
+		//		}
+		//		else {
+		//			throw EOF_EXCEPTION;
+		//		}
+		//		if(bytes.length > 1) {
+		//			// 20200530 due to new implement method here maybe exists bug need do more job
+		//			if((bytes[0] == 128) && (bytes[1] < 192) ) {
+		//				throw new IllegalStateException("Bad EQCBits format the highest byte can't be zero");
+		//			}
+		//		}
+		// Parse EQCBits
+		final ByteBuffer buff = ByteBuffer.allocate(EQCBITS_BUFFER_LEN);
+		while (((type = is.read()) != EOF) && (type < EQCBITS)) {
+			if (buff.remaining() == 0) {
+				throw new IllegalStateException(
+						"The EQCBits' length is exceed the max length " + EQCBITS_BUFFER_LEN + " bytes");
+			}
+			buff.put((byte) type);
+		}
+		if (type != EOF) {
+			buff.put((byte) type);
+			bytes = Arrays.copyOfRange(buff.array(), 0, buff.position());
+		} else {
+			throw EOF_EXCEPTION;
+		}
+		//		if (bytes.length > 1) {
+		//			// 20200530 due to new implement method here maybe exists bug need do more job
+		//			if ((bytes[0] == 128) && (bytes[1] < 192)) {
+		//				throw new IllegalStateException("Bad EQCBits format the highest byte can't be zero");
+		//			}
+		//		}
 		return bytes;
 	}
 
