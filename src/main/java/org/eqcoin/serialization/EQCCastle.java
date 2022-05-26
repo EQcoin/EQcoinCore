@@ -87,14 +87,14 @@ import org.eqcoin.util.Value;
  * <p>
  * 4. EQCLight
  * <p>
- * EQCLight is a series of consecutive bytes which length is from 5 to 8
- * bytes. The lowest 2 bits of the lowest byte of the current byte sequence
+ * EQCLight is a series of consecutive bytes which length is from 2 to 9
+ * bytes. The lowest 3 bits of the lowest byte of the current byte sequence
  * are the status bits used to indicate how many bytes it contains. The endian
  * is big endian. EQC uses EQCLight to store the transfer value in TransferTxOut.
  * For the most efficient use of bytes, the remainder of the transfer value in
- * TransferTxOut divided by 100 must be equal to 0.
+ * TransferTxOut divided by 1000 must be equal to 0.
  * <p>
- * | XXXXXXSS | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
+ * | XXXXXSSS | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
  * <p>
  * 5. EQCBitsX
  * <p>
@@ -256,10 +256,28 @@ public class EQCCastle {
 	 * <p>
 	 * | 1XXXXXXX | ... | 1XXXXXXX | 0XXXXXXX |
 	 */
-	public final static int EQCBITS = 128;
-	public final static int EQCBITS_MASK = 127;
+	public final static int EQCBITS = 0x80;
+	public final static int EQCBITS_MASK = 0x7F;
 	public final static byte EQCBITS_BUFFER_LEN = 9;
-	public final static BigInteger BASE128 = BigInteger.valueOf(128);
+	public final static BigInteger BASE128 = BigInteger.valueOf(0x80);
+
+	/**
+	 * EQCLight is a series of consecutive bytes which length is from 2 to 9
+	 * bytes. The lowest 3 bits of the lowest byte of the current byte sequence
+	 * are the status bits used to indicate how many bytes it contains. The endian
+	 * is big endian. EQC uses EQCLight to store the transfer value in TransferTxOut.
+	 * For the most efficient use of bytes, the remainder of the transfer value in
+	 * TransferTxOut divided by 1000 must be equal to 0.
+	 * <p>
+	 * | XXXXXSSS | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
+	 */
+	public final static int EQCLIGHT_MASK = 0xF8;
+
+	public final static byte EQCLIGHT_MIN_LEN = 2;
+
+	public final static byte EQCLIGHT_MAX_LEN = 9;
+
+	public final static BigInteger EQCLIGHT_MIN_VALUE = BigInteger.valueOf(1000);
 
 	public final static NoSuchFieldException ZERO_EXCEPTION = new NoSuchFieldException("The ID shouldn't be zero");
 
@@ -994,12 +1012,12 @@ public class EQCCastle {
 	}
 
 	/**
-	 * EQCLight is a series of consecutive bytes which length is from 5 to 8
-	 * bytes. The lowest 2 bits of the lowest byte of the current byte sequence
+	 * EQCLight is a series of consecutive bytes which length is from 2 to 9
+	 * bytes. The lowest 3 bits of the lowest byte of the current byte sequence
 	 * are the status bits used to indicate how many bytes it contains. The endian
 	 * is big endian. EQC uses EQCLight to store the transfer value in TransferTxOut.
 	 * For the most efficient use of bytes, the remainder of the transfer value in
-	 * TransferTxOut divided by 100 must be equal to 0.
+	 * TransferTxOut divided by 1000 must be equal to 0.
 	 * <p>
 	 *
 	 * @param value the original value of relevant number
@@ -1010,10 +1028,10 @@ public class EQCCastle {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		BigInteger remainder = null;
 		byte[] bytes = null;
-		EQCCastle.assertNotLess(bytes.length, 5);
-		EQCCastle.assertNotBigger(bytes.length, 8);
-		if(!value.mod(BigInteger.valueOf(100)).equals(BigInteger.ZERO)){
-			throw new IllegalStateException("For the most efficient use of bytes, the remainder of the transfer value in TransferTxOut divided by 100 must be equal to 0.");
+		EQCCastle.assertNotLess(bytes.length, EQCLIGHT_MIN_LEN);
+		EQCCastle.assertNotBigger(bytes.length, EQCLIGHT_MAX_LEN);
+		if(!value.mod(EQCLIGHT_MIN_VALUE).equals(BigInteger.ZERO)){
+			throw new IllegalStateException("For the most efficient use of bytes, the remainder of the transfer value in TransferTxOut divided by 1000 must be equal to 0.");
 		}
 		bytes = value.toByteArray();
 		bytes[bytes.length - 1]&=(bytes.length -1);
@@ -1022,7 +1040,7 @@ public class EQCCastle {
 
 	public static BigInteger eqcLightToBigInteger(final byte[] bytes) {
 		BigInteger foo = null;
-		bytes[bytes.length - 1]&=252;
+		bytes[bytes.length - 1] &= EQCLIGHT_MASK;
 		foo = new BigInteger(bytes);
 		return foo;
 	}
@@ -1059,7 +1077,7 @@ public class EQCCastle {
 	 * @param statusSize the status' size which value in current phase including 2, 3, 4
 	 * @return byte[] the original number's EQCBits
 	 */
-	public static byte[] bigIntegerToEQCBitsX(final BigInteger value, final int statusSize) {
+	public static byte[] bigIntegerToEQCBitsX(BigInteger value, final int statusSize) {
 		EQCCastle.assertNotNegative(value);
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		BigInteger remainder = null;

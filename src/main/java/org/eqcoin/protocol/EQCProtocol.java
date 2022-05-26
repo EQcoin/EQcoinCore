@@ -34,7 +34,7 @@ import org.eqcoin.util.ID;
 
 /**
  * @author Xun Wang
- * @date 2022-02-11
+ * @date Feb 22, 2021
  * @email 10509759@qq.com
  */
 public interface EQCProtocol {
