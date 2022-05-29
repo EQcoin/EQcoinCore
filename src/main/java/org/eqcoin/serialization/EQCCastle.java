@@ -109,6 +109,45 @@ import org.eqcoin.util.Value;
  * <p>
  * | 0XX...XX | 0XX...XX | 0XX...XX | ... | 1S...SXX...XX |
  * <p>
+ * 6. EQCAtom
+ * <p>
+ * EQCAtom is a series of consecutive bytes which length is from 1 to 2
+ * bytes. The lowest 1 bit of the lowest byte of the current byte sequence are
+ * the status bits used to indicate how many bytes it contains. If the highest
+ * bit of the highest byte of the current byte sequence is 0, then its highest bit
+ * can be used as status bit, and the position of this byte will be inverted to the
+ * position of the lowest byte. On the contrary, a new byte is added whose
+ * highest bit is the status bit and the rest of the bits are zero, followed by the
+ * byte sequence it includes. The endian is big endian.
+ * <p>
+ * | SXXXXXXX | ... | XXXXXXXX | or | S0000000 | XXXXXXXX | ... |XXXXXXXX |
+ * <p>
+ * 7. EQCQuantum
+ * <p>
+ * EQCQuantum is a series of consecutive bytes which length is from 1 to 4
+ * bytes. The lowest 2 bits of the lowest byte of the current byte sequence are
+ * the status bits used to indicate how many bytes it contains. If the highest
+ * 2 bits of the highest byte of the current byte sequence is 0, then its highest
+ * 2 bits can be used as status bit, and the position of this byte will be inverted
+ * to the position of the lowest byte. On the contrary, a new byte is added whose
+ * highest 2 bits is the status bit and the rest of the bits are zero, followed by
+ * the byte sequence it includes. The endian is big endian.
+ * <p>
+ * | SSXXXXXX | ... | XXXXXXXX | or | SS000000 | XXXXXXXX | ... |XXXXXXXX |
+ * <p>
+ * 8. EQCTrinity
+ * <p>
+ * EQCTrinity is a series of consecutive bytes which length is from 2 to 9
+ * bytes. The lowest 3 bits of the lowest byte of the current byte sequence are
+ * the status bits used to indicate how many bytes it contains. If the highest
+ * 2 bits of the highest byte of the current byte sequence is 0, then its highest
+ * 2 bits can be used as status bit, and the position of this byte will be inverted
+ * to the position of the lowest byte. On the contrary, a new byte is added whose
+ * highest 3 bits is the status bit and the rest of the bits are zero, followed by
+ * the byte sequence it includes. The endian is big endian.
+ * <p>
+ * | SSSXXXXX | ... | XXXXXXXX | or | SSS00000 | XXXXXXXX | ... |XXXXXXXX |
+ * <p>
  * @author Xun Wang
  * @date 9-21-2018
  * @email 10509759@qq.com
