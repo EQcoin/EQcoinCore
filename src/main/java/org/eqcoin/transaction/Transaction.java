@@ -37,6 +37,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.sql.Savepoint;
 import java.util.Comparator;
+import java.util.Vector;
 
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.LockTool.LockType;
@@ -44,6 +45,7 @@ import org.eqcoin.lock.witness.Witness;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.transaction.operation.Operation;
+import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -167,16 +169,23 @@ public class Transaction extends EQCObject implements Comparator<Transaction>, C
 	/**
 	 * Header
 	 */
-	protected TransactionType transactionType;
-	protected ID nonce;
 	protected ID status;
+	protected ID passportID;
+	protected ID nonce;
+
 	@Deprecated
 	protected TRANSACTION_PRIORITY priority;
 
 	/**
-	 * Body
+	 * Body maybe include:
+	 * [ZionTxOut]
+	 * [TransferTxOut]
+	 * [Operation]]
 	 */
 	protected Value vipTxFee;
+
+	protected Vector<ZionTxOut> zionTxOutList;
+
 	// Here need change to operation vector
 	protected Operation operation;
 
@@ -434,13 +443,6 @@ public class Transaction extends EQCObject implements Comparator<Transaction>, C
 		return bytes;
 	}
 
-	/**
-	 * @return the transactionType
-	 */
-	public TransactionType getTransactionType() {
-		return transactionType;
-	}
-
 	public Value getTxFee() throws Exception {
 		return calculateTxFee(getBillingLength());
 	}
@@ -635,7 +637,6 @@ public class Transaction extends EQCObject implements Comparator<Transaction>, C
 	 * @throws NoSuchFieldException
 	 * @throws Exception
 	 */
-	@Override
 	public boolean isValid() throws Exception {
 		if (!isBaseValid()) {
 			Log.Error("Transaction's isBaseValid verify failed");
