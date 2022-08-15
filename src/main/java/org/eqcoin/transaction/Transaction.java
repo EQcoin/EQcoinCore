@@ -180,7 +180,7 @@ public class Transaction extends EQCObject implements Comparator<Transaction>, C
 	 * Body maybe include:
 	 * [ZionTxOut]
 	 * [TransferTxOut]
-	 * [Operation]]
+	 * [OperationTxOut]
 	 */
 	protected Value vipTxFee;
 
@@ -188,6 +188,7 @@ public class Transaction extends EQCObject implements Comparator<Transaction>, C
 
 	// Here need change to operation vector
 	protected Operation operation;
+	protected Vector<Operation> operationTxOutList;
 
 	protected Witness witness;
 	protected LockType lockType;
