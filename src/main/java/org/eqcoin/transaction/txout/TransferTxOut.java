@@ -50,7 +50,7 @@ import org.eqcoin.util.Value;
 public class TransferTxOut extends EQCObject {
 	private ID passportId;
 	private Value value;
-	
+
 	public TransferTxOut(byte[] bytes) throws Exception {
 		super(bytes);
 	}
@@ -69,15 +69,15 @@ public class TransferTxOut extends EQCObject {
 	@Override
 	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse Passport ID
-		passportId = EQCCastle.parseID(is);
+		passportId = new ID(EQCCastle.parseNBytes(is, nLen));
 		// Parse Value
-		value = EQCCastle.parseValue(is);
+		value = new Value(EQCCastle.parseEQCLight(is));
 	}
 	
 	@Override
 	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
-			os.write(passportId.getEQCBits());
-			os.write(value.getEQCBits());
+			os.write(passportId.toByteArray());
+			os.write(value.getEQCLight());
 		return os;
 	}
 	

@@ -117,10 +117,17 @@ public class ID extends BigInteger implements Gateway {
 	}
 
 	/**
-	 * @return current serial number's EQCBits
+	 * @return current ID's EQCBits
 	 */
 	public byte[] getEQCBits() {
 		return EQCCastle.bigIntegerToEQCBits(this);
+	}
+
+	/**
+	 * @return current ID's EQCQuantum
+	 */
+	public byte[] getEQCQuantum() {
+		return EQCCastle.bigIntegerToEQCQuantum(this);
 	}
 
 	/**

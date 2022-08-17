@@ -126,4 +126,11 @@ public class Value extends BigInteger {
 		return new Value(super.subtract(val));
 	}
 
+	/**
+	 * @return current ID's EQCLight
+	 */
+	public byte[] getEQCLight() {
+		return EQCCastle.bigIntegerToEQCLight(this);
+	}
+
 }
