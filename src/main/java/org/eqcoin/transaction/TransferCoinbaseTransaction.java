@@ -37,7 +37,7 @@ import java.io.IOException;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.passport.passport.Passport;
-import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.TransferTxOutQuantum;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -49,8 +49,8 @@ import org.eqcoin.util.Value;
  * @email 10509759@qq.com
  */
 public class TransferCoinbaseTransaction extends Transaction {
-	private TransferTxOut eqCoinFederalTxOut;
-	private TransferTxOut eqCoinMinerTxOut;
+	private TransferTxOutQuantum eqCoinFederalTxOut;
+	private TransferTxOutQuantum eqCoinMinerTxOut;
 	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#init()
@@ -200,8 +200,8 @@ public class TransferCoinbaseTransaction extends Transaction {
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		eqCoinFederalTxOut = new TransferTxOut(is);
-		eqCoinMinerTxOut = new TransferTxOut(is);
+		eqCoinFederalTxOut = new TransferTxOutQuantum(is);
+		eqCoinMinerTxOut = new TransferTxOutQuantum(is);
 	}
 	
 	/* (non-Javadoc)
@@ -225,28 +225,28 @@ public class TransferCoinbaseTransaction extends Transaction {
 	/**
 	 * @return the eqCoinFederalTxOut
 	 */
-	public TransferTxOut getEqCoinFederalTxOut() {
+	public TransferTxOutQuantum getEqCoinFederalTxOut() {
 		return eqCoinFederalTxOut;
 	}
 
 	/**
 	 * @param eqCoinFederalTxOut the eqCoinFederalTxOut to set
 	 */
-	public void setEqCoinFederalTxOut(TransferTxOut eqCoinFederalTxOut) {
+	public void setEqCoinFederalTxOut(TransferTxOutQuantum eqCoinFederalTxOut) {
 		this.eqCoinFederalTxOut = eqCoinFederalTxOut;
 	}
 
 	/**
 	 * @return the eqCoinMinerTxOut
 	 */
-	public TransferTxOut getEqCoinMinerTxOut() {
+	public TransferTxOutQuantum getEqCoinMinerTxOut() {
 		return eqCoinMinerTxOut;
 	}
 
 	/**
 	 * @param eqCoinMinerTxOut the eqCoinMinerTxOut to set
 	 */
-	public void setEqCoinMinerTxOut(TransferTxOut eqCoinMinerTxOut) {
+	public void setEqCoinMinerTxOut(TransferTxOutQuantum eqCoinMinerTxOut) {
 		this.eqCoinMinerTxOut = eqCoinMinerTxOut;
 	}
 	

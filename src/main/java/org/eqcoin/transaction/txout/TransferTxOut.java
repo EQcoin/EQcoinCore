@@ -1,21 +1,21 @@
 /**
  * EQcoin core
- *
+ * <p>
  * http://www.eqcoin.org
- * 
+ *
  * @Copyright 2018-present Xun Wang All Rights Reserved...
  * Copyright of all works released by Xun Wang or jointly released by Xun Wang
- * with cooperative partners are owned by Xun Wang and entitled to protection 
+ * with cooperative partners are owned by Xun Wang and entitled to protection
  * available from copyright law by country as well as international conventions.
  * Attribution — You must give appropriate credit, provide a link to the license.
  * Non Commercial — You may not use the material for commercial purposes.
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
  * For any use of above stated content of copyright beyond the scope of fair use
- * or without prior written permission, Xun Wang reserves all rights to take 
+ * or without prior written permission, Xun Wang reserves all rights to take
  * any legal action and pursue any right or remedy available under applicable
  * law.
- * 
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,125 +30,14 @@
  */
 package org.eqcoin.transaction.txout;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import org.eqcoin.lock.LockMate;
-import org.eqcoin.serialization.EQCCastle;
-import org.eqcoin.serialization.EQCObject;
-import org.eqcoin.util.ID;
-import org.eqcoin.util.Log;
-import org.eqcoin.util.Util;
-import org.eqcoin.util.Value;
-
 /**
  * @author Xun Wang
- * @date Mar 30, 2020
+ * @date 2022-08-16
  * @email 10509759@qq.com
  */
-public class TransferTxOut extends EQCObject {
-	private ID passportId;
-	private Value value;
+public class TransferTxOut extends TransferTxOutQuantum {
 
-	public TransferTxOut(byte[] bytes) throws Exception {
-		super(bytes);
-	}
-	
-	public TransferTxOut(ByteArrayInputStream is) throws Exception {
-		super(is);
-	}
-	
-	public TransferTxOut() {
-		super();
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public void parse(ByteArrayInputStream is) throws Exception {
-		// Parse Passport ID
-		passportId = new ID(EQCCastle.parseNBytes(is, nLen));
-		// Parse Value
-		value = new Value(EQCCastle.parseEQCLight(is));
-	}
-	
-	@Override
-	public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
-			os.write(passportId.toByteArray());
-			os.write(value.getEQCLight());
-		return os;
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
-	 */
-	@Override
-	public TransferTxOut Parse(ByteArrayInputStream is) throws Exception {
-		return new TransferTxOut(is);
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.eqcoin.serialization.EQCSerializable#isSanity()
-	 */
-	@Override
-	public boolean isSanity() throws Exception {
-		if(passportId == null) {
-			Log.Error("passportId == null");
-			return false;
-		}
-		if(!passportId.isSanity()) {
-			Log.Error("!passportId.isSanity()");
-			return false;
-		}
-		if(value == null) {
-			Log.Error("value == null");
-			return false;
-		}
-		if(!value.isSanity()) {
-			Log.Error("!value.isSanity()");
-			return false;
-		}
-		return true;
-	}
+    private int nLen;
 
-	/**
-	 * @return the passportId
-	 */
-	public ID getPassportId() {
-		return passportId;
-	}
 
-	/**
-	 * @param passportId the passportId to set
-	 */
-	public void setPassportId(ID passportId) {
-		this.passportId = passportId;
-	}
-
-	/**
-	 * @return the value
-	 */
-	public Value getValue() {
-		return value;
-	}
-
-	/**
-	 * @param value the value to set
-	 * @throws NoSuchFieldException 
-	 */
-	public void setValue(Value value) {
-		this.value = value;
-	}
-
-	public String toInnerJson() {
-		return 
-		"\"TransferTxOut\":" + 
-		"\n{" +
-		"\"PassportId\":" + passportId + ",\n" +
-		"\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
-		"}";
-	}
-	
 }

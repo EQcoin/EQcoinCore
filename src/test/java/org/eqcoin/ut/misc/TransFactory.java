@@ -47,7 +47,7 @@ import org.eqcoin.transaction.ZionTransaction;
 import org.eqcoin.transaction.Transaction;
 import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.transaction.operation.ChangeLock;
-import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.TransferTxOutQuantum;
 import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -75,7 +75,7 @@ public class TransFactory {
 			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_POWER_PRICE));
 	
 			for (int id : toIds) {
-				TransferTxOut txOut = new TransferTxOut();
+				TransferTxOutQuantum txOut = new TransferTxOutQuantum();
 				txOut.setPassportId(new ID(id));
 				txOut.setValue(Util.getValue(value));
 				transaction.addTxOut(txOut);
@@ -118,7 +118,7 @@ public class TransFactory {
 			transaction.setTxFeeRate(new Value((long) Util.DEFAULT_POWER_PRICE));
 
 			for (int id : toIds) {
-				TransferTxOut txOut = new TransferTxOut();
+				TransferTxOutQuantum txOut = new TransferTxOutQuantum();
 				txOut.setPassportId(new ID(id));
 				txOut.setValue(Util.getValue(value));
 				transaction.addTxOut(txOut);

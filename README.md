@@ -7,7 +7,7 @@ Q&A:
 <p>
 What’s EQcoin Passport?
 <p>
-EQcoin Passport has a Status, an ID, an EQC(EQcoin) balance, a nonce and a LockMate that can send transactions on EQcoin network. EQcoin Passport can be user controlled or deployed as smart contracts.
+EQcoin Passport has a Status, an ID, an EQC(EQcoin) balance, a nonce and a LockMate that can send transactions on EQcoin network. EQcoin Passport can be user controlled and deployed as smart contracts.
 Just like Bitcoin Address and Ethereum Account, EQcoin Passport is anonymous and do not contain information about the owner. 
 <p>
 Why is EQcoin not a security?

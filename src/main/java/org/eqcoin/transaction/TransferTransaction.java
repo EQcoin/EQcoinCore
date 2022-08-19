@@ -37,7 +37,7 @@ import java.util.Vector;
 
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.passport.passport.Passport;
-import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.TransferTxOutQuantum;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Value;
 
@@ -48,7 +48,7 @@ import org.eqcoin.util.Value;
  */
 public class TransferTransaction extends Transaction {
 	protected final static int MIN_TXOUT = 1;
-	protected Vector<TransferTxOut> txOutList;
+	protected Vector<TransferTxOutQuantum> txOutList;
 	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.Transaction#init()
@@ -90,7 +90,7 @@ public class TransferTransaction extends Transaction {
 	protected void derivedTxOutPlanting() throws Exception {
 		Passport passport = null;
 		// Update current Transaction's TxOut Account
-		for (TransferTxOut transferTxOut : txOutList) {
+		for (TransferTxOutQuantum transferTxOut : txOutList) {
 			passport = eqcHive.getGlobalState().getPassport(transferTxOut.getPassportId());
 			passport.deposit(transferTxOut.getValue());
 			passport.setEQCHive(eqcHive).planting();
@@ -106,7 +106,7 @@ public class TransferTransaction extends Transaction {
 	protected void parseDerivedBody(ByteArrayInputStream is)
 			throws Exception {
 		// Parse TxOut
-		txOutList = EQCCastle.parseArray(is, new TransferTxOut());
+		txOutList = EQCCastle.parseArray(is, new TransferTxOutQuantum());
 	}
 	
 	/* (non-Javadoc)
@@ -145,11 +145,11 @@ public class TransferTransaction extends Transaction {
 	/**
 	 * @return the txOutList
 	 */
-	public Vector<TransferTxOut> getTxOutList() {
+	public Vector<TransferTxOutQuantum> getTxOutList() {
 		return txOutList;
 	}
 
-	public void addTxOut(TransferTxOut txOut) {
+	public void addTxOut(TransferTxOutQuantum txOut) {
 		if (!isTxOutPassportExists(txOut)) {
 			txOutList.add(txOut);
 		} else {
@@ -159,7 +159,7 @@ public class TransferTransaction extends Transaction {
 
 	public Value getTxOutValues() {
 		Value totalTxOut = null;
-		for (TransferTxOut txOut : txOutList) {
+		for (TransferTxOutQuantum txOut : txOutList) {
 			if(totalTxOut == null) {
 				totalTxOut = new Value(txOut.getValue());
 			}
@@ -171,7 +171,7 @@ public class TransferTransaction extends Transaction {
 	}
 
 	public boolean isTxOutPassportIncludeTxInPassport(Passport passport) {
-		for (TransferTxOut txOut : txOutList) {
+		for (TransferTxOutQuantum txOut : txOutList) {
 			if (txOut.getPassportId().equals(passport.getId())) {
 				return true;
 			}
@@ -184,9 +184,9 @@ public class TransferTransaction extends Transaction {
 		return getTxFee().add(getTxOutValues());
 	}
 
-	public boolean isTxOutPassportExists(TransferTxOut transferTxOut) {
+	public boolean isTxOutPassportExists(TransferTxOutQuantum transferTxOut) {
 		boolean boolIsExists = false;
-		for (TransferTxOut transferTxOut2 : txOutList) {
+		for (TransferTxOutQuantum transferTxOut2 : txOutList) {
 			if (transferTxOut2.getPassportId().equals(transferTxOut.getPassportId())) {
 				boolIsExists = true;
 //				Log.info("TxOutAddressExists" + " a: " + txOut2.getAddress().getAddress() + " b: " + txOut.getAddress().getAddress());
@@ -222,7 +222,7 @@ public class TransferTransaction extends Transaction {
 	}
 
 	public boolean isAllTxOutLockIDValid() {
-		for (TransferTxOut transferTxOut : txOutList) {
+		for (TransferTxOutQuantum transferTxOut : txOutList) {
 			if (transferTxOut.getPassportId().compareTo(eqcHive.getPreRoot().getTotalPassportNumbers()) >= 0) {
 				Log.Error("isAllTxOutLockIDValid failed: " + transferTxOut);
 				return false;
@@ -241,7 +241,7 @@ public class TransferTransaction extends Transaction {
 			Log.Error("!(txOutList.size() >= MIN_TXOUT), txOutList.size: " + txOutList.size());
 			return false;
 		}
-		for (TransferTxOut txOut : txOutList) {
+		for (TransferTxOutQuantum txOut : txOutList) {
 			if (!txOut.isSanity()) {
 				Log.Error("!txOut.isSanity(): " + txOut);
 				return false;

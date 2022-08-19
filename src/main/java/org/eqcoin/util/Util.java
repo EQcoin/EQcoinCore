@@ -97,7 +97,7 @@ import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
 import org.eqcoin.transaction.ZionCoinbaseTransaction;
-import org.eqcoin.transaction.txout.TransferTxOut;
+import org.eqcoin.transaction.txout.TransferTxOutQuantum;
 import org.eqcoin.transaction.txout.ZionTxOut;
 
 /**
@@ -893,8 +893,8 @@ public final class Util {
 	public final static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(final ID minerPassportId,
 			final GlobalState globalState) throws Exception {
 		final TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
-		final TransferTxOut eqcFederalTxOut = new TransferTxOut();
-		final TransferTxOut minerTxOut = new TransferTxOut();
+		final TransferTxOutQuantum eqcFederalTxOut = new TransferTxOutQuantum();
+		final TransferTxOutQuantum minerTxOut = new TransferTxOutQuantum();
 		eqcFederalTxOut.setPassportId(ID.ZERO);
 		minerTxOut.setPassportId(minerPassportId);
 
@@ -911,7 +911,7 @@ public final class Util {
 	public final static ZionCoinbaseTransaction generateZionCoinbaseTransaction(final Lock minerLock, final GlobalState globalState)
 			throws Exception {
 		final ZionCoinbaseTransaction transaction = new ZionCoinbaseTransaction();
-		final TransferTxOut eqcFederalTxOut = new TransferTxOut();
+		final TransferTxOutQuantum eqcFederalTxOut = new TransferTxOutQuantum();
 		final ZionTxOut minerTxOut = new ZionTxOut();
 		eqcFederalTxOut.setPassportId(ID.ZERO);
 		minerTxOut.setLock(minerLock);
