@@ -30,6 +30,11 @@
  */
 package org.eqcoin.transaction.txout;
 
+import org.eqcoin.util.ID;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 /**
  * @author Xun Wang
  * @date 2022-08-16
@@ -39,5 +44,46 @@ public class TransferTxOut extends TransferTxOutQuantum {
 
     private int nLen;
 
+    public TransferTxOut(byte[] bytes) throws Exception {
+        super(bytes);
+    }
+
+    public TransferTxOut(ByteArrayInputStream is) throws Exception {
+        super(is);
+    }
+
+    public TransferTxOut() {
+        super();
+    }
+
+    @Override
+    public void parse(ByteArrayInputStream is) throws Exception {
+        super.parse(is);
+    }
+
+    @Override
+    public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
+        return super.getBytes(os);
+    }
+
+    @Override
+    public TransferTxOutQuantum Parse(ByteArrayInputStream is) throws Exception {
+        return super.Parse(is);
+    }
+
+    @Override
+    public boolean isSanity() throws Exception {
+        return super.isSanity();
+    }
+
+    @Override
+    public String toInnerJson() {
+        return
+                "\"TransferTxOut\":" +
+                        "\n{" +
+                        "\"PassportId\":" + passportId + ",\n" +
+                        "\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
+                        "}";
+    }
 
 }

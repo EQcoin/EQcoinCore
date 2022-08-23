@@ -32,6 +32,7 @@ package org.eqcoin.transaction.txout;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
@@ -45,8 +46,8 @@ import org.eqcoin.util.Value;
  * @email 10509759@qq.com
  */
 public class TransferTxOutQuantum extends EQCObject {
-	private ID passportId;
-	private Value value;
+	protected ID passportId;
+	protected Value value;
 
 	public TransferTxOutQuantum(byte[] bytes) throws Exception {
 		super(bytes);
@@ -99,12 +100,20 @@ public class TransferTxOutQuantum extends EQCObject {
 			Log.Error("!passportId.isSanity()");
 			return false;
 		}
+		if(passportId.mod(BigInteger.valueOf(4)) != BigInteger.ZERO){
+			Log.Error("The Passport'ID in TransferTxOutQuantum must divisible by 4.");
+			return false;
+		}
 		if(value == null) {
 			Log.Error("value == null");
 			return false;
 		}
 		if(!value.isSanity()) {
 			Log.Error("!value.isSanity()");
+			return false;
+		}
+		if(value.mod(BigInteger.valueOf(1000)) != BigInteger.ZERO){
+			Log.Error("The transfer value in TransferTxOutQuantum must divisible by 1000.");
 			return false;
 		}
 		return true;
@@ -141,7 +150,7 @@ public class TransferTxOutQuantum extends EQCObject {
 
 	public String toInnerJson() {
 		return 
-		"\"TransferTxOut\":" + 
+		"\"TransferTxOutQuantum\":" +
 		"\n{" +
 		"\"PassportId\":" + passportId + ",\n" +
 		"\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
