@@ -30,10 +30,14 @@
  */
 package org.eqcoin.transaction.txout;
 
+import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.util.ID;
+import org.eqcoin.util.Log;
+import org.eqcoin.util.Value;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 
 /**
  * @author Xun Wang
@@ -58,22 +62,51 @@ public class TransferTxOut extends TransferTxOutQuantum {
 
     @Override
     public void parse(ByteArrayInputStream is) throws Exception {
-        super.parse(is);
+        // Parse Passport ID
+        passportId = new ID(EQCCastle.parseEQCQuantum(is));
+        // Parse Value
+        value = new Value(EQCCastle.parseNBytes(is, nLen));
     }
 
     @Override
     public ByteArrayOutputStream getBytes(ByteArrayOutputStream os) throws Exception {
-        return super.getBytes(os);
+        os.write(passportId.toByteArray());
+        os.write(value.getEQCLight());
+        return os;
     }
 
     @Override
-    public TransferTxOutQuantum Parse(ByteArrayInputStream is) throws Exception {
-        return super.Parse(is);
+    public TransferTxOut Parse(ByteArrayInputStream is) throws Exception {
+        throw new IllegalStateException("TransferTxOut doesn't support Parse(ByteArrayInputStream is)");
     }
 
     @Override
     public boolean isSanity() throws Exception {
-        return super.isSanity();
+        if(passportId == null) {
+            Log.Error("passportId == null");
+            return false;
+        }
+        if(!passportId.isSanity()) {
+            Log.Error("!passportId.isSanity()");
+            return false;
+        }
+        if(passportId.mod(BigInteger.valueOf(4)) == BigInteger.ZERO){
+            Log.Error("The Passport'ID in TransferTxOutQuantum can't divisible by 4.");
+            return false;
+        }
+        if(value == null) {
+            Log.Error("value == null");
+            return false;
+        }
+        if(!value.isSanity()) {
+            Log.Error("!value.isSanity()");
+            return false;
+        }
+        if(value.mod(BigInteger.valueOf(1000)) != BigInteger.ZERO){
+            Log.Error("The transfer value in TransferTxOutQuantum must divisible by 1000.");
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -84,6 +117,15 @@ public class TransferTxOut extends TransferTxOutQuantum {
                         "\"PassportId\":" + passportId + ",\n" +
                         "\"Value\":" + "\"" +  Long.toString(value.longValue()) + "\"" + "\n" +
                         "}";
+    }
+
+    public int getnLen() {
+        return nLen;
+    }
+
+    public TransferTxOut setnLen(int nLen) {
+        this.nLen = nLen;
+        return this;
     }
 
 }
