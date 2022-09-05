@@ -97,7 +97,7 @@ import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.passport.passport.Passport;
 import org.eqcoin.transaction.TransferCoinbaseTransaction;
 import org.eqcoin.transaction.ZionCoinbaseTransaction;
-import org.eqcoin.transaction.txout.TransferTxOutQuantum;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.transaction.txout.ZionTxOut;
 
 /**
@@ -431,6 +431,7 @@ public final class Util {
 	public final static byte BIT_6 = 64;
 
 	public final static byte BIT_7 = (byte) 128;
+	public final static BigInteger MAX_PASSPORT_ID = BigInteger.valueOf(2^23-1);
 
 	public final static ID[] FIBONACCI = { new ID(1597), // 17
 			new ID(5702887), // 34
@@ -893,8 +894,8 @@ public final class Util {
 	public final static TransferCoinbaseTransaction generateTransferCoinbaseTransaction(final ID minerPassportId,
 			final GlobalState globalState) throws Exception {
 		final TransferCoinbaseTransaction transaction = new TransferCoinbaseTransaction();
-		final TransferTxOutQuantum eqcFederalTxOut = new TransferTxOutQuantum();
-		final TransferTxOutQuantum minerTxOut = new TransferTxOutQuantum();
+		final TransferTxOut eqcFederalTxOut = new TransferTxOut();
+		final TransferTxOut minerTxOut = new TransferTxOut();
 		eqcFederalTxOut.setPassportId(ID.ZERO);
 		minerTxOut.setPassportId(minerPassportId);
 
@@ -911,7 +912,7 @@ public final class Util {
 	public final static ZionCoinbaseTransaction generateZionCoinbaseTransaction(final Lock minerLock, final GlobalState globalState)
 			throws Exception {
 		final ZionCoinbaseTransaction transaction = new ZionCoinbaseTransaction();
-		final TransferTxOutQuantum eqcFederalTxOut = new TransferTxOutQuantum();
+		final TransferTxOut eqcFederalTxOut = new TransferTxOut();
 		final ZionTxOut minerTxOut = new ZionTxOut();
 		eqcFederalTxOut.setPassportId(ID.ZERO);
 		minerTxOut.setLock(minerLock);

@@ -146,7 +146,21 @@ import org.eqcoin.util.Value;
  * <p>
  * | SSSXXXXX | ... | XXXXXXXX | or | SSS00000 | XXXXXXXX | ... |XXXXXXXX |
  * <p>
- *
+ * 9. EQCHelix
+ * <p>
+ * EQCHelix is a series of consecutive bytes which length is from 2 to 9 bytes.
+ * EQCHelix can store positive integers divisible by 100000, so that the lowest
+ * 5 bits of its lowest byte can be used as status bits. EQC uses EQCHelix to
+ * store the transfer value and relevant Passport's bytes' length in TransferTxOut.
+ * For the most efficient use of bytes, the transfer value in TransferTxOut must
+ * divisible by 100000. The 3 bits from the 0th to the second bit of the lowest
+ * byte of the current byte sequence are the status bits used to indicate how
+ * many bytes it contains and the 2 bits from the 3rd to the 4th bit of the lowest
+ * byte of the current byte sequence are the status bits used to indicate how
+ * many bytes the relevant Passport contains. The endian is big endian.
+ * <p>
+ * | XXXQQSSS | XXXXXXXX | XXXXXXXX | XXXXXXXX | XXXXXXXX | ... | XXXXXXXX |
+ * <p>
  *
  * @author Xun Wang
  * @date 9-21-2018
@@ -341,6 +355,10 @@ public class EQCCastle {
 	public final static byte EQCQUANTUM_MAX_LEN = 4;
 
 	public final static BigInteger EQCQUANTUM_MIN_VALUE = BigInteger.valueOf(4);
+
+	public final static int EQCHELIX_PASSPORT_LEN_MASK = 0xE7;
+
+	public final static int EQCHELIX_VALUE_MASK = 0xE7;
 
 	public final static NoSuchFieldException ZERO_EXCEPTION = new NoSuchFieldException("The ID shouldn't be zero");
 
@@ -1259,17 +1277,51 @@ public class EQCCastle {
 		int type;
 		byte[] bytes = null;
 
-		// Parse EQCLight
+		// Parse EQCQuantum
 		is.mark(0);
 		type = is.read();
 		if (type != EOF) {
 			is.reset();
-			int n = (type & ~EQCQUANTUM_MASK) + EQCQUANTUM_MIN_LEN;
+			int n = (type & EQCQUANTUM_MASK) + EQCQUANTUM_MIN_LEN;
 			bytes = parseNBytes(is, n);
 		} else {
 			throw EOF_EXCEPTION;
 		}
 		return bytes;
+	}
+
+	public static class EQCHelix {
+		public Value value;
+		public int lenOfPassport;
+	}
+
+	public final static EQCHelix parseEQCHelix(final ByteArrayInputStream is) throws Exception {
+		int type;
+		byte[] bytes = null;
+		EQCHelix eqcHelix = new EQCHelix();
+
+		// Parse EQCHelix
+		is.mark(0);
+		type = is.read();
+		if (type != EOF) {
+			is.reset();
+			int n = (type & EQCLIGHT_MASK) + EQCLIGHT_MIN_LEN;
+			eqcHelix.lenOfPassport = type & EQCHELIX_PASSPORT_LEN_MASK;
+			bytes = parseNBytes(is, n);
+			bytes[--n] &= EQCHELIX_VALUE_MASK;
+			eqcHelix.value = new Value(bytes);
+		} else {
+			throw EOF_EXCEPTION;
+		}
+		return eqcHelix;
+	}
+
+	public final static byte[] parseEQCPassport(final ByteArrayInputStream is, EQCHelix eqcHelix) throws Exception {
+		int type;
+		EQCCastle.assertNotLess(eqcHelix.lenOfPassport, EQCQUANTUM_MIN_LEN);
+		EQCCastle.assertNotBigger(eqcHelix.lenOfPassport, EQCQUANTUM_MAX_LEN);
+		// Parse EQCPassport
+		return parseNBytes(is, eqcHelix.lenOfPassport);
 	}
 
 }

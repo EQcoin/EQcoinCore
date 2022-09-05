@@ -46,7 +46,6 @@ import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCObject;
 import org.eqcoin.transaction.operation.Operation;
 import org.eqcoin.transaction.txout.TransferTxOut;
-import org.eqcoin.transaction.txout.TransferTxOutQuantum;
 import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -190,7 +189,7 @@ public class Transaction extends EQCObject implements Comparator<Transaction>, C
 
 	protected  int maxZionTxOutNumbers = 255;
 
-	protected Vector<TransferTxOutQuantum> transferTxOutQuantumList;
+	protected Vector<TransferTxOut> transferTxOutQuantumList;
 
 	protected  int maxTransferTxOutQuantumNumbers = 7;
 

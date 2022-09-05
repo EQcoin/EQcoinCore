@@ -71,7 +71,7 @@ import org.eqcoin.rpc.object.SP;
 import org.eqcoin.rpc.object.SPList;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.transaction.TransferTransaction;
-import org.eqcoin.transaction.txout.TransferTxOutQuantum;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.Base58;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -732,7 +732,7 @@ public class Test {
 		Log.info(key.toString());
 		// Create Transaction
 		TransferTransaction transaction = new TransferTransaction();
-		TransferTxOutQuantum txOut = new TransferTxOutQuantum();
+		TransferTxOut txOut = new TransferTxOut();
 		txOut.setPassportId(ID.ONE);
 		txOut.setValue(Util.getValue(25));
 		transaction.addTxOut(txOut);

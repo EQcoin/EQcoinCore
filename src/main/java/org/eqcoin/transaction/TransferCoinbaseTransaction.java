@@ -37,7 +37,7 @@ import java.io.IOException;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.passport.passport.Passport;
-import org.eqcoin.transaction.txout.TransferTxOutQuantum;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -49,8 +49,8 @@ import org.eqcoin.util.Value;
  * @email 10509759@qq.com
  */
 public class TransferCoinbaseTransaction extends Transaction {
-	private TransferTxOutQuantum eqCoinFederalTxOut;
-	private TransferTxOutQuantum eqCoinMinerTxOut;
+	private TransferTxOut eqCoinFederalTxOut;
+	private TransferTxOut eqCoinMinerTxOut;
 	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.blockchain.transaction.TransferTransaction#init()
@@ -200,8 +200,8 @@ public class TransferCoinbaseTransaction extends Transaction {
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		eqCoinFederalTxOut = new TransferTxOutQuantum(is);
-		eqCoinMinerTxOut = new TransferTxOutQuantum(is);
+		eqCoinFederalTxOut = new TransferTxOut(is);
+		eqCoinMinerTxOut = new TransferTxOut(is);
 	}
 	
 	/* (non-Javadoc)
@@ -225,28 +225,28 @@ public class TransferCoinbaseTransaction extends Transaction {
 	/**
 	 * @return the eqCoinFederalTxOut
 	 */
-	public TransferTxOutQuantum getEqCoinFederalTxOut() {
+	public TransferTxOut getEqCoinFederalTxOut() {
 		return eqCoinFederalTxOut;
 	}
 
 	/**
 	 * @param eqCoinFederalTxOut the eqCoinFederalTxOut to set
 	 */
-	public void setEqCoinFederalTxOut(TransferTxOutQuantum eqCoinFederalTxOut) {
+	public void setEqCoinFederalTxOut(TransferTxOut eqCoinFederalTxOut) {
 		this.eqCoinFederalTxOut = eqCoinFederalTxOut;
 	}
 
 	/**
 	 * @return the eqCoinMinerTxOut
 	 */
-	public TransferTxOutQuantum getEqCoinMinerTxOut() {
+	public TransferTxOut getEqCoinMinerTxOut() {
 		return eqCoinMinerTxOut;
 	}
 
 	/**
 	 * @param eqCoinMinerTxOut the eqCoinMinerTxOut to set
 	 */
-	public void setEqCoinMinerTxOut(TransferTxOutQuantum eqCoinMinerTxOut) {
+	public void setEqCoinMinerTxOut(TransferTxOut eqCoinMinerTxOut) {
 		this.eqCoinMinerTxOut = eqCoinMinerTxOut;
 	}
 	

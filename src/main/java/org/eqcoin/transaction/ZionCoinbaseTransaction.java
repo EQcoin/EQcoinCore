@@ -39,7 +39,7 @@ import org.eqcoin.lock.LockMate;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.passport.passport.AssetPassport;
 import org.eqcoin.passport.passport.Passport;
-import org.eqcoin.transaction.txout.TransferTxOutQuantum;
+import org.eqcoin.transaction.txout.TransferTxOut;
 import org.eqcoin.transaction.txout.ZionTxOut;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
@@ -52,7 +52,7 @@ import org.eqcoin.util.Value;
  * @email 10509759@qq.com
  */
 public class ZionCoinbaseTransaction extends Transaction {
-	private TransferTxOutQuantum eqCoinFederalTxOut;
+	private TransferTxOut eqCoinFederalTxOut;
 	private ZionTxOut eqCoinMinerTxOut;
 	
 	/* (non-Javadoc)
@@ -139,7 +139,7 @@ public class ZionCoinbaseTransaction extends Transaction {
 			Log.Error("eqCoinFederalTxOut == null");
 			return false;
 		}
-		if(!(eqCoinFederalTxOut instanceof TransferTxOutQuantum)) {
+		if(!(eqCoinFederalTxOut instanceof TransferTxOut)) {
 			Log.Error("!(eqCoinFederalTxOut instanceof TransferTxOut)");
 			return false;
 		}
@@ -215,7 +215,7 @@ public class ZionCoinbaseTransaction extends Transaction {
 	}
 
 	public void parseBody(ByteArrayInputStream is) throws Exception {
-		eqCoinFederalTxOut = new TransferTxOutQuantum(is);
+		eqCoinFederalTxOut = new TransferTxOut(is);
 		eqCoinMinerTxOut = new ZionTxOut(is);
 	}
 	
@@ -241,14 +241,14 @@ public class ZionCoinbaseTransaction extends Transaction {
 	/**
 	 * @return the eqCoinFederalTxOut
 	 */
-	public TransferTxOutQuantum getEqCoinFederalTxOut() {
+	public TransferTxOut getEqCoinFederalTxOut() {
 		return eqCoinFederalTxOut;
 	}
 
 	/**
 	 * @param eqCoinFederalTxOut the eqCoinFederalTxOut to set
 	 */
-	public void setEqCoinFederalTxOut(TransferTxOutQuantum eqCoinFederalTxOut) {
+	public void setEqCoinFederalTxOut(TransferTxOut eqCoinFederalTxOut) {
 		this.eqCoinFederalTxOut = eqCoinFederalTxOut;
 	}
 
