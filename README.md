@@ -7,7 +7,9 @@ Q&A:
 <p>
 What’s Passport?
 <p>
-Passport has a status, an ID, an EQcoin balance, a nonce and a LockMate that can send transactions on EQcoin network. Passport can be user controlled and deployed as smart contracts. The EQcoin deployment smart contract service is provided by the owner of Passport. Passport can deploy multiple smart contracts. Passport owners can deploy smart contracts for everyone and decide how much EQcoin to charge. Just like Bitcoin Address and Ethereum Account, Passport is anonymous and do not contain information about the owner. 
+Passport has a status, an ID, an EQcoin balance, a nonce, a LockMate and a state root that can send transactions on EQcoin network. Passport can be user controlled and used to deploy multiple smart contracts. Passport owners can provide smart contract deployment services for everyone and decide how much EQcoin to charge for deploying smart contracts. Just like Bitcoin Address and Ethereum Account, Passport is anonymous and do not contain information about the owner. 
+<p>
+Note: In the Inception phase doesn't support the EQcoin smart contract deployment service, so there is no state root state object in the Passport.
 <p>
 Why is EQcoin not a security?
 <p>
