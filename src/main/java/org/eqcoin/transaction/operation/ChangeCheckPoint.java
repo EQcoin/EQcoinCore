@@ -130,9 +130,6 @@
 //		op = OP.CHECKPOINT;
 //	}
 //
-//	/* (non-Javadoc)
-//	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isMeetPreconditions()
-//	 */
 //	@Override
 //	public boolean isMeetConstraint() throws Exception {
 //		if(!transaction.getWitness().getPassport().getId().equals(ID.ONE)) {
@@ -197,9 +194,6 @@
 //		checkPointHeight = EQCCastle.parseID(is);
 //	}
 //
-//	/* (non-Javadoc)
-//	 * @see com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#execute()
-//	 */
 //	@Override
 //	public void planting() throws Exception {
 //		final EQcoinRootPassport eQcoinSeedPassport = (EQcoinRootPassport) transaction.getEQCHive().getGlobalState().getPassport(ID.ZERO);

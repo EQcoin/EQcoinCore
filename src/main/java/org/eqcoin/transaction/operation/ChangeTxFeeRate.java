@@ -71,9 +71,6 @@
 //		super(is);
 //	}
 //
-//	/* (non-Javadoc)
-//	 * @see com.eqzip.eqcoin.blockchain.OperationTransaction.Operation#execute()
-//	 */
 //	@Override
 //	public void planting() throws Exception {
 //		EQcoinRootPassport eQcoinSeedPassport = (EQcoinRootPassport) transaction.getEQCHive().getGlobalState().getPassport(ID.ZERO);
@@ -81,9 +78,6 @@
 //		transaction.getEQCHive().getGlobalState().savePassport(eQcoinSeedPassport);
 //	}
 //
-//	/* (non-Javadoc)
-//	 * @see com.eqzip.eqcoin.blockchain.transaction.operation.Operation#isMeetPreconditions()
-//	 */
 //	@Override
 //	public boolean isMeetConstraint() throws Exception {
 //		if(!(transaction instanceof ModerateOPTransaction)) {

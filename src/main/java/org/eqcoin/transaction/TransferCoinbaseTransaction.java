@@ -71,13 +71,6 @@ public class TransferCoinbaseTransaction extends Transaction {
 		super(is);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.eqzip.eqcoin.blockchain.Transaction#isValid(com.eqzip.eqcoin.blockchain.
-	 * AccountsMerkleTree)
-	 */
 	@Override
 	public boolean isValid() throws NoSuchFieldException, IllegalStateException, IOException, Exception {
 		if(eqCoinMinerTxOut.getPassportId().compareTo(eqcHive.getPreRoot().getTotalPassportNumbers()) >= 0) {

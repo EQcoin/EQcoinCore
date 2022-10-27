@@ -378,11 +378,6 @@ public class EQCHive extends EQCStateObject implements Plantable, Gateway {
 	public boolean isValid() {
 		try {
 
-			/**
-			 * Heal Protocol If height equal to a specific height then update the EQcoin Federal's
-			 * Lock to the new Lock the more information you can reference to
-			 * https://github.com/eqzip/eqcoin
-			 */
 
 			// Check if Target is valid
 			if (!root.isDifficultyValid(globalState)) {
@@ -504,11 +499,6 @@ public class EQCHive extends EQCStateObject implements Plantable, Gateway {
 
 	@Override
 	public void planting() throws Exception {
-		/**
-		 * Heal Protocol If height equal to a specific height then update the EQcoin Federal's
-		 * Lock to the new Lock the more information you can reference to
-		 * https://github.com/eqzip/eqcoin
-		 */
 
 		// Retrieve all transactions from transaction pool
 		final Vector<Transaction> pendingTransactionList = Util.MC().getTransactionListInPool();
