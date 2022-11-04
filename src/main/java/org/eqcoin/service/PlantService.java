@@ -2,7 +2,7 @@
  * EQcoin core
  *
  * http://www.eqcoin.org
- *
+ * 
  * @Copyright 2018-present Wandering Earth Corporation All Rights Reserved...
  * Copyright of all works released by Wandering Earth Corporation or jointly
  * released by Wandering Earth Corporation with cooperative partners are owned
@@ -12,6 +12,12 @@
  * Non Commercial — You may not use the material for commercial purposes.
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
+ * Wandering Earth Corporation retains all current and future right, title and interest
+ * in all of Wandering Earth Corporation’s intellectual property, including, without
+ * limitation, inventions, ideas, concepts, code, discoveries, processes, marks,
+ * methods, software, compositions, formulae, techniques, information and data,
+ * whether or not patentable, copyrightable or protectable in trademark, and
+ * any trademarks, copyright or patents based thereon.
  * For any use of above stated content of copyright beyond the scope of fair
  * use or without prior written permission, Wandering Earth Corporation reserves
  * all rights to take any legal action and pursue any right or remedy available
