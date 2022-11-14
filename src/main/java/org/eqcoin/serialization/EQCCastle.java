@@ -86,7 +86,7 @@ import org.eqcoin.util.Value;
  * EQCLight can store positive integers divisible by 1000, so that the lowest 3
  * bits of its lowest byte can be used as status bits. The lowest 3 bits of the
  * lowest byte of the current byte sequence are the status bits used to indicate
- * how many bytes it contains. The endian is big endian. EQC uses EQCLight
+ * how many bytes it contains. The endian is big endian. EQcoin uses EQCLight
  * to store the transfer value in TransferTxOut. For the most efficient use of
  * bytes, the transfer value in TransferTxOut must divisible by 1000.
  * <p>
@@ -145,7 +145,7 @@ import org.eqcoin.util.Value;
  * <p>
  * EQCHelix is a series of consecutive bytes which length is from 2 to 9 bytes.
  * EQCHelix can store positive integers divisible by 100000, so that the lowest
- * 5 bits of its lowest byte can be used as status bits. EQC uses EQCHelix to
+ * 5 bits of its lowest byte can be used as status bits. EQcoin uses EQCHelix to
  * store the transfer value and relevant Passport ID's bytes' length in TransferTxOut.
  * For the most efficient use of bytes, the transfer value in TransferTxOut must
  * divisible by 100000. The 3 bits from the 0th to the second bit of the lowest
@@ -316,7 +316,7 @@ public class EQCCastle {
 	 * EQCLight can store positive integers divisible by 1000, so that the lowest 3
 	 * bits of its lowest byte can be used as status bits. The lowest 3 bits of the
 	 * lowest byte of the current byte sequence are the status bits used to indicate
-	 * how many bytes it contains. The endian is big endian. EQC uses EQCLight
+	 * how many bytes it contains. The endian is big endian. EQcoin uses EQCLight
 	 * to store the transfer value in TransferTxOut. For the most efficient use of
 	 * bytes, the transfer value in TransferTxOut must divisible by 1000.
 	 * <p>
@@ -1094,7 +1094,7 @@ public class EQCCastle {
 	 * EQCLight can store positive integers divisible by 1000, so that the lowest 3
 	 * bits of its lowest byte can be used as status bits. The lowest 3 bits of the
 	 * lowest byte of the current byte sequence are the status bits used to indicate
-	 * how many bytes it contains. The endian is big endian. EQC uses EQCLight
+	 * how many bytes it contains. The endian is big endian. EQcoin uses EQCLight
 	 * to store the transfer value in TransferTxOut. For the most efficient use of
 	 * bytes, the transfer value in TransferTxOut must divisible by 1000.
 	 * <p>
