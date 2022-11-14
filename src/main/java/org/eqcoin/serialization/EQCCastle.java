@@ -146,7 +146,7 @@ import org.eqcoin.util.Value;
  * EQCHelix is a series of consecutive bytes which length is from 2 to 9 bytes.
  * EQCHelix can store positive integers divisible by 100000, so that the lowest
  * 5 bits of its lowest byte can be used as status bits. EQC uses EQCHelix to
- * store the transfer value and relevant Passport's bytes' length in TransferTxOut.
+ * store the transfer value and relevant Passport ID's bytes' length in TransferTxOut.
  * For the most efficient use of bytes, the transfer value in TransferTxOut must
  * divisible by 100000. The 3 bits from the 0th to the second bit of the lowest
  * byte of the current byte sequence are the status bits used to indicate how
