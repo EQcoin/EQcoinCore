@@ -12,12 +12,12 @@
  * Non Commercial — You may not use the material for commercial purposes.
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
- * Wandering Earth Corporation retains all current and future right, title and interest
- * in all of Wandering Earth Corporation’s intellectual property, including, without
- * limitation, inventions, ideas, concepts, code, discoveries, processes, marks,
- * methods, software, compositions, formulae, techniques, information and data,
- * whether or not patentable, copyrightable or protectable in trademark, and
- * any trademarks, copyright or patents based thereon.
+* Wandering Earth Corporation reserves any and all current and future rights,
+* titles and interests in any and all intellectual property rights of Wandering Earth
+* Corporation, including but not limited to discoveries, ideas, marks, concepts,
+* methods, formulas, processes, codes, software, inventions, compositions, techniques,
+* information and data, whether or not protectable in trademark, copyrightable
+* or patentable, and any trademarks, copyrights or patents based thereon.
  * For any use of above stated content of copyright beyond the scope of fair
  * use or without prior written permission, Wandering Earth Corporation reserves
  * all rights to take any legal action and pursue any right or remedy available
