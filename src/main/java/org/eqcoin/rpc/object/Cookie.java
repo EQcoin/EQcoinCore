@@ -3,9 +3,9 @@ package org.eqcoin.rpc.object;
  * EQcoin core
  *
  * http://www.eqcoin.org
- *
+ * 
  * @Copyright 2018-present Wandering Earth Corporation All Rights Reserved...
- * Copyright of all works released by Wandering Earth Corporation or jointly
+ * The copyright of all works released by Wandering Earth Corporation or jointly
  * released by Wandering Earth Corporation with cooperative partners are owned
  * by Wandering Earth Corporation and entitled to protection available from
  * copyright law by country as well as international conventions.
@@ -13,28 +13,15 @@ package org.eqcoin.rpc.object;
  * Non Commercial — You may not use the material for commercial purposes.
  * No Derivatives — If you remix, transform, or build upon the material, you may
  * not distribute the modified material.
-* Wandering Earth Corporation reserves any and all current and future rights,
-* titles and interests in any and all intellectual property rights of Wandering Earth
-* Corporation, including but not limited to discoveries, ideas, marks, concepts,
-* methods, formulas, processes, codes, software, inventions, compositions, techniques,
-* information and data, whether or not protectable in trademark, copyrightable
-* or patentable, and any trademarks, copyrights or patents based thereon.
- * For any use of above stated content of copyright beyond the scope of fair
- * use or without prior written permission, Wandering Earth Corporation reserves
- * all rights to take any legal action and pursue any right or remedy available
- * under applicable law.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Wandering Earth Corporation reserves any and all current and future rights, 
+ * titles and interests in any and all intellectual property rights of Wandering Earth 
+ * Corporation, including but not limited to discoveries, ideas, marks, concepts, 
+ * methods, formulas, processes, codes, software, inventions, compositions, techniques, 
+ * information and data, whether or not protectable in trademark, copyrightable 
+ * or patentable, and any trademarks, copyrights or patents based thereon.
+ * For the use of any and all intellectual property rights of Wandering Earth Corporation 
+ * without prior written permission, Wandering Earth Corporation reserves all 
+ * rights to take any legal action and pursue any rights or remedies under applicable law.
  */
 //package org.eqcoin.rpc;
 //

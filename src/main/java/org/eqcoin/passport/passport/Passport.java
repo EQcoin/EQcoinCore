@@ -4,7 +4,7 @@
  * http://www.eqcoin.org
  * 
  * @Copyright 2018-present Wandering Earth Corporation All Rights Reserved...
- * Copyright of all works released by Wandering Earth Corporation or jointly
+ * The copyright of all works released by Wandering Earth Corporation or jointly
  * released by Wandering Earth Corporation with cooperative partners are owned
  * by Wandering Earth Corporation and entitled to protection available from
  * copyright law by country as well as international conventions.
@@ -18,10 +18,9 @@
  * methods, formulas, processes, codes, software, inventions, compositions, techniques, 
  * information and data, whether or not protectable in trademark, copyrightable 
  * or patentable, and any trademarks, copyrights or patents based thereon.
- * For any use of above stated content of copyright beyond the scope of fair
- * use or without prior written permission, Wandering Earth Corporation reserves
- * all rights to take any legal action and pursue any right or remedy available
- * under applicable law.
+ * For the use of any and all intellectual property rights of Wandering Earth Corporation 
+ * without prior written permission, Wandering Earth Corporation reserves all 
+ * rights to take any legal action and pursue any rights or remedies under applicable law.
  */
 package org.eqcoin.passport.passport;
 
