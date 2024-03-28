@@ -39,29 +39,35 @@ import org.eqcoin.util.Util;
  * @date Sep 28, 2018
  * @email 10509759@qq.com
  */
-public class Publickey extends EQCObject {
+public class PublicKey extends EQCObject {
 	protected byte[] publickey;
 	protected Transaction transaction;
 	protected LockType lockType;
 	private boolean isNew;
 	
-	public Publickey() {
+	public PublicKey() {
 	}
 
-	public Publickey(ByteArrayInputStream is) throws Exception {
+	public PublicKey(ByteArrayInputStream is) throws Exception {
 		parse(is);
+	}
+
+	public PublicKey(byte[] bytes) throws Exception {
+		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+		parse(is);
+		is.close();
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
 	 */
 	@Override
-	public Publickey Parse(ByteArrayInputStream is) throws Exception {
-		Publickey publickey = null;
+	public PublicKey Parse(ByteArrayInputStream is) throws Exception {
+		PublicKey publickey = null;
 		if (lockType ==LockType.T1) {
-			publickey = new T1Publickey(is);
+			publickey = new T1PublicKey(is);
 		} else if (lockType == LockType.T2) {
-			publickey = new T2Publickey(is);
+			publickey = new T2PublicKey(is);
 		} else {
 			throw new IllegalStateException("Bad lock type: " + lockType);
 		}
@@ -72,12 +78,13 @@ public class Publickey extends EQCObject {
 	 * @see com.eqcoin.serialization.EQCSerializable#Parse(byte[])
 	 */
 	@Override
-	public Publickey Parse(byte[] bytes) throws Exception {
+	public PublicKey Parse(byte[] bytes) throws Exception {
 		EQCCastle.assertNotNull(bytes);
-		Publickey publickey = null;
+		PublicKey publickey = null;
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		publickey = Parse(is);
 		EQCCastle.assertNoRedundantData(is);
+		is.close();
 		return publickey;
 	}
 
@@ -115,7 +122,7 @@ public class Publickey extends EQCObject {
 		return "\"Publickey\":" + ((publickey == null) ? null : "\"" + Util.bytesTo512HexString(publickey) + "\"");
 	}
 
-	@Override
+//	@Override
 	public boolean isValid() throws Exception {
 //		if(!transaction.getTxInLockMate().getPublickey().isNULL()) {
 //			Log.Error("Publickey relevant LockMate's Publickey isn't null");
@@ -156,7 +163,7 @@ public class Publickey extends EQCObject {
 	/**
 	 * @param transaction the transaction to set
 	 */
-	public Publickey setTransaction(Transaction transaction) {
+	public PublicKey setTransaction(Transaction transaction) {
 		this.transaction = transaction;
 		lockType = transaction.getLockType();
 		return this;
@@ -172,7 +179,7 @@ public class Publickey extends EQCObject {
 	/**
 	 * @param lockType the lockType to set
 	 */
-	public Publickey setLockType(LockType lockType) {
+	public PublicKey setLockType(LockType lockType) {
 		this.lockType = lockType;
 		return this;
 	}

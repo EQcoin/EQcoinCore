@@ -35,18 +35,18 @@ import org.eqcoin.util.Util;
  * @date Apr 10, 2020
  * @email 10509759@qq.com
  */
-public class T2Publickey extends Publickey {
+public class T1PublicKey extends PublicKey {
 	
-	public T2Publickey() {
+	public T1PublicKey() {
 	}
 
-	public T2Publickey(ByteArrayInputStream is) throws Exception {
+	public T1PublicKey(ByteArrayInputStream is) throws Exception {
 		parse(is);
 	}
 	
 	public void parse(ByteArrayInputStream is) throws Exception {
 		// Parse publicKey
-		publickey = EQCCastle.parseNBytes(is, Util.P521_PUBLICKEY_LEN);
+		publickey = EQCCastle.parseNBytes(is, Util.P256_PUBLICKEY_LEN);
 	}
 
 	/* (non-Javadoc)
@@ -58,15 +58,15 @@ public class T2Publickey extends Publickey {
 			Log.Error("publickey == null");
 			return false;
 		}
-		if(publickey.length == Util.P521_PUBLICKEY_LEN) {
-			Log.Error("publickey.length == Util.P521_PUBLICKEY_LEN");
+		if(publickey.length == Util.P256_PUBLICKEY_LEN) {
+			Log.Error("publickey.length == Util.P256_PUBLICKEY_LEN");
 			return false;
 		}
 		return true;
 	}
 	
 	public String toInnerJson() {
-		return "\"T2Publickey\":" + "\"" + Util.bytesTo512HexString(publickey) + "\"";
+		return "\"T1Publickey\":" + "\"" + Util.bytesTo512HexString(publickey) + "\"";
 	}
 	
 }

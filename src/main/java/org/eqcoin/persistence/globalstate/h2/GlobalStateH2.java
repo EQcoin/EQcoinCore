@@ -47,7 +47,7 @@ import org.eqcoin.lock.LockMate;
 import org.eqcoin.lock.LockTool.LockType;
 import org.eqcoin.lock.T1Lock;
 import org.eqcoin.lock.T2Lock;
-import org.eqcoin.lock.publickey.Publickey;
+import org.eqcoin.lock.publickey.PublicKey;
 import org.eqcoin.persistence.globalstate.GlobalState;
 import org.eqcoin.persistence.globalstate.storage.GSStateVariable;
 import org.eqcoin.persistence.globalstate.storage.GSStateVariable.GSState;
@@ -122,7 +122,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 		return "CREATE TABLE IF NOT EXISTS " + tableName + "("
 				+ PassportTable.TYPE + " TINYINT NOT NULL CHECK " + PassportTable.TYPE + ">= 0,"
 				+ PassportTable.ID + " BIGINT PRIMARY KEY CHECK " + PassportTable.ID + ">=" + Util.MIN_ID.longValue() + " AND " + PassportTable.ID + "<" + Util.MAX_PASSPORT_ID.longValue() + ","
-				+ PassportTable.LOCK_ID + " BIGINT NOT NULL UNIQUE CHECK " + PassportTable.LOCK_ID + ">=" + Util.MIN_ID.longValue() + ","
+				+ PassportTable.LOCK_NONCE + " BIGINT NOT NULL UNIQUE CHECK " + PassportTable.LOCK_NONCE + ">=" + Util.MIN_ID.longValue() + ","
 				+ PassportTable.BALANCE + " BIGINT NOT NULL CHECK " + PassportTable.BALANCE + ">=" + Util.MIN_BALANCE.longValue() + " AND " + PassportTable.BALANCE + "<" + Util.MAX_BALANCE.longValue() + ","
 				+ PassportTable.NONCE  + " BIGINT NOT NULL CHECK " + PassportTable.NONCE + ">= 0,"
 				+ PassportTable.UPDATE_HEIGHT  + " BIGINT NOT NULL CHECK " + PassportTable.UPDATE_HEIGHT + ">= 0,"
@@ -155,8 +155,8 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 
 			// Create Passport snapshot table
 			result = statement.execute("CREATE TABLE IF NOT EXISTS " + PassportTable.PASSPORT_SNAPSHOT + "("
-					+ PassportTable.KEY + " BIGINT PRIMARY KEY AUTO_INCREMENT, " + PassportTable.ID
-					+ " BIGINT NOT NULL," + PassportTable.LOCK_ID + " BIGINT NOT NULL," + PassportTable.TYPE
+					+ PassportTable.LOCK + " BIGINT PRIMARY KEY AUTO_INCREMENT, " + PassportTable.ID
+					+ " BIGINT NOT NULL," + PassportTable.LOCK_NONCE + " BIGINT NOT NULL," + PassportTable.TYPE
 					+ " TINYINT NOT NULL," + PassportTable.BALANCE + " BIGINT NOT NULL," + PassportTable.NONCE
 					+ " BIGINT NOT NULL," + PassportTable.STORAGE + " BINARY," + PassportTable.SNAPSHOT_HEIGHT
 					+ " BIGINT NOT NULL" + ")");
@@ -469,9 +469,9 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				lockMate.getLock().setProof(resultSet.getBytes(LockMateTable.PROOF));
 				publickey = resultSet.getBytes(LockMateTable.PUBLICKEY);
 				if (publickey == null) {
-					lockMate.setPublickey(new Publickey());
+					lockMate.setPublickey(new PublicKey());
 				} else {
-					lockMate.setPublickey(new Publickey().setLockType(lockMate.getLock().getType()).Parse(publickey));
+					lockMate.setPublickey(new PublicKey().setLockType(lockMate.getLock().getType()).Parse(publickey));
 				}
 			}
 		}
@@ -501,9 +501,9 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				lockMate.getLock().setProof(resultSet.getBytes(LockMateTable.PROOF));
 				publickey = resultSet.getBytes(LockMateTable.PUBLICKEY);
 				if (publickey == null) {
-					lockMate.setPublickey(new Publickey());
+					lockMate.setPublickey(new PublicKey());
 				} else {
-					lockMate.setPublickey(new Publickey().setLockType(lockMate.getLock().getType()).Parse(publickey));
+					lockMate.setPublickey(new PublicKey().setLockType(lockMate.getLock().getType()).Parse(publickey));
 				}
 			}
 		}
@@ -536,9 +536,9 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				lockMate.getLock().setProof(resultSet.getBytes(LockMateTable.PROOF));
 				publickey = resultSet.getBytes(LockMateTable.PUBLICKEY);
 				if (publickey == null) {
-					lockMate.setPublickey(new Publickey());
+					lockMate.setPublickey(new PublicKey());
 				} else {
-					lockMate.setPublickey(new Publickey().setLockType(lockMate.getLock().getType()).Parse(publickey));
+					lockMate.setPublickey(new PublicKey().setLockType(lockMate.getLock().getType()).Parse(publickey));
 				}
 			}
 		}
@@ -574,7 +574,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 	public Passport getPassportFromLockMateId(final ID lockMateId) throws Exception {
 		Passport passport = null;
 		try(PreparedStatement preparedStatement = connection.prepareStatement(
-				"SELECT * FROM " + PASSPORT_TABLE + " WHERE " + PassportTable.LOCK_ID + "=?")){
+				"SELECT * FROM " + PASSPORT_TABLE + " WHERE " + PassportTable.LOCK_NONCE + "=?")){
 			preparedStatement.setLong(1, lockMateId.longValue());
 			final ResultSet resultSet = preparedStatement.executeQuery();
 			if (resultSet.next()) {
@@ -1154,7 +1154,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				sb.append(PassportTable.NONCE);
 				sb.append("=?");
 			}
-			if (passport.isUpdateHeightUpdate()) {
+			if (passport.isLockNonceUpdate()) {
 				sb.append(",");
 				sb.append(PassportTable.UPDATE_HEIGHT);
 				sb.append("=?");
@@ -1183,8 +1183,8 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				if (passport.isNonceUpdate()) {
 					preparedStatement.setLong(++index, passport.getNonce().longValue());
 				}
-				if (passport.isUpdateHeightUpdate()) {
-					preparedStatement.setLong(++index, passport.getUpdateHeight().longValue());
+				if (passport.isLockNonceUpdate()) {
+					preparedStatement.setLong(++index, passport.getLockNonce().longValue());
 				}
 				if (!(passport instanceof ExpendablePassport)) {
 					final ExpendablePassport expendablePassport = (ExpendablePassport) passport;
@@ -1208,7 +1208,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				+ " should be the last passport's ID: " + lastPassportId + "'s next ID");
 			}
 			try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO " + PASSPORT_TABLE
-					+ " (" + PassportTable.TYPE + "," + PassportTable.ID + "," + PassportTable.LOCK_ID + ","
+					+ " (" + PassportTable.TYPE + "," + PassportTable.ID + "," + PassportTable.LOCK_NONCE + ","
 					+ PassportTable.BALANCE + "," + PassportTable.NONCE + "," + PassportTable.UPDATE_HEIGHT + ","
 					+ PassportTable.STORAGE
 					+ ") VALUES (?, ?, ?, ?, ?, ?, ?)")) {
@@ -1217,7 +1217,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 				preparedStatement.setLong(3, passport.getLockID().longValue());
 				preparedStatement.setLong(4, passport.getBalance().longValue());
 				preparedStatement.setLong(5, passport.getNonce().longValue());
-				preparedStatement.setLong(6, passport.getUpdateHeight().longValue());
+				preparedStatement.setLong(6, passport.getLockNonce().longValue());
 				if (passport instanceof ExpendablePassport) {
 					final ExpendablePassport expendablePassport = (ExpendablePassport) passport;
 					preparedStatement.setBytes(7, expendablePassport.getStorage().getBytes());
@@ -1236,7 +1236,7 @@ public class GlobalStateH2 extends EQCH2 implements GlobalState {
 		int rowCounter = 0;
 		try(PreparedStatement preparedStatement = connection.prepareStatement(
 				"INSERT INTO " + PassportTable.PASSPORT_SNAPSHOT + "(" + PassportTable.TYPE + "," + PassportTable.ID
-				+ "," + PassportTable.LOCK_ID + "," + PassportTable.BALANCE + "," + PassportTable.NONCE + ","
+				+ "," + PassportTable.LOCK_NONCE + "," + PassportTable.BALANCE + "," + PassportTable.NONCE + ","
 				+ PassportTable.STORAGE + "," + PassportTable.SNAPSHOT_HEIGHT
 				+ ") VALUES (?, ?, ?, ?, ?, ?, ?)")) {
 			preparedStatement.setByte(1, (byte) passport.getType().ordinal());

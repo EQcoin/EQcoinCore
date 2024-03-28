@@ -183,7 +183,6 @@ public final class Util {
 
 	//	public final static long EQC_FEDERATION_COINBASE_REWARD = 19 * ABC * (BLOCK_INTERVAL / TARGET_INTERVAL);
 
-	public final static ID MAX_PASSPORT_ID = new ID(MAX_EQC.divide(MIN_BALANCE));
 
 	// Here exists one bug when change the block_interval the Max_coinbase_height
 	// also changed need change it to determine according to if max supply - total
@@ -738,52 +737,53 @@ public final class Util {
 		Log.info(new BigInteger(1, multipleExtendMix(merkleTree.getRoot(), HUNDREDPULS)).toString());
 	}
 
+	// Need refactor
 	public final static byte[] cypherTarget(final GlobalState globalState) throws Exception {
 		// Here need dore more job change Util.DB() to changelog
 		byte[] target = null;
-		BigInteger oldDifficulty;
-		BigInteger newDifficulty;
-		final ID currentHeight = globalState.getEQCHiveTailHeight().getNextID();
-		if (currentHeight.compareTo(TARGET_INTERVAL) < 0) {
-			return getDefaultTargetBytes();
-		}
-		final ID interval_end = currentHeight.subtract(BigInteger.ONE);
-		final ID interval_begin = currentHeight.subtract(TARGET_INTERVAL);
-		if (!currentHeight.mod(TARGET_INTERVAL).equals(ID.ZERO)) {
-			//			Log.info(serialNumber_end.toString());
-			target = globalState.getEQCHiveRoot(interval_end).getTarget();// EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
-			//			Log.info(Util.bigIntegerTo128String(Util.targetBytesToBigInteger(target)));
-		} else {
-			Log.info("Old target: "
-					+ Util.bigIntegerTo512HexString(
-							Util.targetBytesToBigInteger(globalState.getEQCHiveRoot(interval_end).getTarget()))
-					+ "\r\naverge time: " + (globalState.getEQCHiveRoot(interval_end).getTimestamp().longValue()
-							- globalState.getEQCHiveRoot(interval_begin).getTimestamp().longValue()) / TARGET_INTERVAL.longValue());
-			oldDifficulty = Util.targetBytesToBigInteger(globalState.getEQCHiveRoot(interval_end).getTarget());
-			final EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
-			final BigInteger current_block_interval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
-					.multiply(TARGET_EQCHIVE_INTERVAL);
-			newDifficulty = oldDifficulty
-					.multiply(BigInteger.valueOf((globalState.getEQCHiveRoot(interval_end).getTimestamp().longValue()
-							- globalState.getEQCHiveRoot(interval_begin).getTimestamp().longValue())))
-					.divide(TARGET_INTERVAL.multiply(current_block_interval));
-			// Compare if old difficulty divide new difficulty is bigger than
-			// MAX_DIFFICULTY_MULTIPLE
-			if (oldDifficulty.divide(newDifficulty).compareTo(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE)) > 0) {
-				Log.info("Due to old difficulty divide new difficulty(" + Util.bigIntegerTo512HexString(newDifficulty)
-				+ ") = " + oldDifficulty.divide(newDifficulty).toString()
-				+ " is bigger than MAX_DIFFICULTY_MULTIPLE so here just divide MAX_DIFFICULTY_MULTIPLE");
-				newDifficulty = oldDifficulty.divide(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE));
-			}
-			if (Util.targetBytesToBigInteger(Util.getDefaultTargetBytes()).compareTo(newDifficulty) >= 0) {
-				Log.info("New target: " + Util.bigIntegerTo512HexString(newDifficulty));
-				target = Util.bigIntegerToTargetBytes(newDifficulty);
-			} else {
-				Log.info("New target: " + Util.bigIntegerTo512HexString(newDifficulty)
-				+ " but due to it's less than the default target so still use default target.");
-				target = Util.getDefaultTargetBytes();
-			}
-		}
+//		BigInteger oldDifficulty;
+//		BigInteger newDifficulty;
+//		final ID currentHeight = globalState.getEQCHiveTailHeight().getNextID();
+//		if (currentHeight.compareTo(TARGET_INTERVAL) < 0) {
+//			return getDefaultTargetBytes();
+//		}
+//		final ID interval_end = currentHeight.subtract(BigInteger.ONE);
+//		final ID interval_begin = currentHeight.subtract(TARGET_INTERVAL);
+//		if (!currentHeight.mod(TARGET_INTERVAL).equals(ID.ZERO)) {
+//			//			Log.info(serialNumber_end.toString());
+//			target = globalState.getEQCHiveRoot(interval_end).getTarget();// EQCBlockChainH2.getInstance().getEQCHeader(serialNumber_end).getTarget();
+//			//			Log.info(Util.bigIntegerTo128String(Util.targetBytesToBigInteger(target)));
+//		} else {
+//			Log.info("Old target: "
+//					+ Util.bigIntegerTo512HexString(
+//							Util.targetBytesToBigInteger(globalState.getEQCHiveRoot(interval_end).getTarget()))
+//					+ "\r\naverge time: " + (globalState.getEQCHiveRoot(interval_end).getTimestamp().longValue()
+//							- globalState.getEQCHiveRoot(interval_begin).getTimestamp().longValue()) / TARGET_INTERVAL.longValue());
+//			oldDifficulty = Util.targetBytesToBigInteger(globalState.getEQCHiveRoot(interval_end).getTarget());
+//			final EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
+//			final BigInteger current_block_interval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
+//					.multiply(TARGET_EQCHIVE_INTERVAL);
+//			newDifficulty = oldDifficulty
+//					.multiply(BigInteger.valueOf((globalState.getEQCHiveRoot(interval_end).getTimestamp().longValue()
+//							- globalState.getEQCHiveRoot(interval_begin).getTimestamp().longValue())))
+//					.divide(TARGET_INTERVAL.multiply(current_block_interval));
+//			// Compare if old difficulty divide new difficulty is bigger than
+//			// MAX_DIFFICULTY_MULTIPLE
+//			if (oldDifficulty.divide(newDifficulty).compareTo(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE)) > 0) {
+//				Log.info("Due to old difficulty divide new difficulty(" + Util.bigIntegerTo512HexString(newDifficulty)
+//				+ ") = " + oldDifficulty.divide(newDifficulty).toString()
+//				+ " is bigger than MAX_DIFFICULTY_MULTIPLE so here just divide MAX_DIFFICULTY_MULTIPLE");
+//				newDifficulty = oldDifficulty.divide(BigInteger.valueOf(MAX_DIFFICULTY_MULTIPLE));
+//			}
+//			if (Util.targetBytesToBigInteger(Util.getDefaultTargetBytes()).compareTo(newDifficulty) >= 0) {
+//				Log.info("New target: " + Util.bigIntegerTo512HexString(newDifficulty));
+//				target = Util.bigIntegerToTargetBytes(newDifficulty);
+//			} else {
+//				Log.info("New target: " + Util.bigIntegerTo512HexString(newDifficulty)
+//				+ " but due to it's less than the default target so still use default target.");
+//				target = Util.getDefaultTargetBytes();
+//			}
+//		}
 		return target;
 	}
 
@@ -922,25 +922,26 @@ public final class Util {
 		return transaction;
 	}
 
+	// Need refactor
 	public final static Value getCurrentCoinbaseReward(final GlobalState globalState) throws Exception {
 		Value currentCoinbaseReward = null;
-		EQcoinRootPassport eQcoinRootPassport = null;
-		BigInteger currentBlockInterval = BASIC_EQCHIVE_INTERVAL;
-		eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
-		if (eQcoinRootPassport != null) {
-			currentBlockInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
-					.multiply(TARGET_EQCHIVE_INTERVAL);
-		}
-		currentCoinbaseReward = new Value(
-				BASIC_COINBASE_REWARD.multiply(currentBlockInterval).divide(BASIC_EQCHIVE_INTERVAL));
+//		EQcoinRootPassport eQcoinRootPassport = null;
+//		BigInteger currentBlockInterval = BASIC_EQCHIVE_INTERVAL;
+//		eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
+//		if (eQcoinRootPassport != null) {
+//			currentBlockInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
+//					.multiply(TARGET_EQCHIVE_INTERVAL);
+//		}
+//		currentCoinbaseReward = new Value(
+//				BASIC_COINBASE_REWARD.multiply(currentBlockInterval).divide(BASIC_EQCHIVE_INTERVAL));
 		return currentCoinbaseReward;
 	}
 
 	public final static BigInteger getCurrentEQCHiveInterval(final GlobalState globalState) throws Exception {
 		BigInteger currentEQCHiveInterval = BigInteger.ZERO;
-		final EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
-		currentEQCHiveInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
-				.multiply(TARGET_EQCHIVE_INTERVAL);
+//		final EQcoinRootPassport eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
+//		currentEQCHiveInterval = BigInteger.valueOf(eQcoinRootPassport.getBlockInterval())
+//				.multiply(TARGET_EQCHIVE_INTERVAL);
 		return currentEQCHiveInterval;
 	}
 
@@ -1383,39 +1384,40 @@ public final class Util {
 	//
 	//	}
 
+	// Need refactor
 	public final static void recoveryGlobalStateTo(final ID height, final GlobalState globalState) throws Exception {
-		ID checkPointHeight = null;
-		EQCHiveRoot eqcHiveRoot = null;
-		EQcoinRootPassport eQcoinRootPassport = null;
-		ID id = null;
-		eqcHiveRoot = globalState.getEQCHiveRoot(height);
-		eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
-		checkPointHeight = eQcoinRootPassport.getCheckPointHeight();
-		if ((height.compareTo(checkPointHeight) < 0) || (height.compareTo(globalState.getEQCHiveTailHeight()) > 0)) {
-			throw new IllegalStateException(
-					"Only support recovery global state from check point height: " + checkPointHeight
-					+ " to tail height: " + globalState.getEQCHiveTailHeight() + " but current height: " + height + " is invalid");
-		}
-		Log.info("Begin recovery lock global status to " + height);
-		LockMate lockMate = null;
-		for (long i = 0; i < eqcHiveRoot.getTotalLockMateNumbers().longValue(); ++i) {
-			id = new ID(i);
-			lockMate = globalState.getLockMateSnapshot(id, height);
-			if (lockMate != null) {
-				Log.info("Begin recovery No." + i + " lock");
-				globalState.saveLockMate(lockMate);
-			}
-		}
-		Log.info("Begin recovery passport global status to " + height);
-		Passport passport = null;
-		for (long i = 0; i < eqcHiveRoot.getTotalPassportNumbers().longValue(); ++i) {
-			id = new ID(i);
-			passport = globalState.getPassportSnapshot(id, height);
-			if (passport != null) {
-				Log.info("Begin recovery No." + i + " passport");
-				globalState.savePassport(passport);
-			}
-		}
+//		ID checkPointHeight = null;
+//		EQCHiveRoot eqcHiveRoot = null;
+////		EQcoinRootPassport eQcoinRootPassport = null;
+//		ID id = null;
+//		eqcHiveRoot = globalState.getEQCHiveRoot(height);
+////		eQcoinRootPassport = (EQcoinRootPassport) globalState.getPassport(ID.ZERO);
+//		checkPointHeight = eQcoinRootPassport.getCheckPointHeight();
+//		if ((height.compareTo(checkPointHeight) < 0) || (height.compareTo(globalState.getEQCHiveTailHeight()) > 0)) {
+//			throw new IllegalStateException(
+//					"Only support recovery global state from check point height: " + checkPointHeight
+//					+ " to tail height: " + globalState.getEQCHiveTailHeight() + " but current height: " + height + " is invalid");
+//		}
+//		Log.info("Begin recovery lock global status to " + height);
+//		LockMate lockMate = null;
+//		for (long i = 0; i < eqcHiveRoot.getTotalLockMateNumbers().longValue(); ++i) {
+//			id = new ID(i);
+//			lockMate = globalState.getLockMateSnapshot(id, height);
+//			if (lockMate != null) {
+//				Log.info("Begin recovery No." + i + " lock");
+//				globalState.saveLockMate(lockMate);
+//			}
+//		}
+//		Log.info("Begin recovery passport global status to " + height);
+//		Passport passport = null;
+//		for (long i = 0; i < eqcHiveRoot.getTotalPassportNumbers().longValue(); ++i) {
+//			id = new ID(i);
+//			passport = globalState.getPassportSnapshot(id, height);
+//			if (passport != null) {
+//				Log.info("Begin recovery No." + i + " passport");
+//				globalState.savePassport(passport);
+//			}
+//		}
 	}
 
 	public final static void recoverySingularityStatus() throws Exception {

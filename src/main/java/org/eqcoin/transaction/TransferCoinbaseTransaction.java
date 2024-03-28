@@ -42,6 +42,7 @@ import org.eqcoin.util.Value;
  * @date Mar 21, 2019
  * @email 10509759@qq.com
  */
+@Deprecated
 public class TransferCoinbaseTransaction extends Transaction {
 	private TransferTxOut eqCoinFederalTxOut;
 	private TransferTxOut eqCoinMinerTxOut;

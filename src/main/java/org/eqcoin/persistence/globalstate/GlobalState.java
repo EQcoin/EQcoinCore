@@ -77,11 +77,16 @@ public interface GlobalState {
 	}
 
 	public class PassportTable {
-		public final static String BALANCE = "balance";
+
+		public  final static String Status = "status";
+
 		public final static String ID = "id";
-		public final static String KEY = "key";
-		public final static String LOCK_ID = "lock_id";
+		public final static String BALANCE = "balance";
 		public final static String NONCE = "nonce";
+		public final static String LOCK_NONCE = "lock_nonce";
+		public final static String LOCK = "lock";
+
+		public final static String PUBLICKEY = "public_key";
 		public final static String PASSPORT_GLOBAL = "PASSPORT_GLOBAL";
 		public final static String PASSPORT_SNAPSHOT = "PASSPORT_SNAPSHOT";
 		public final static String PASSPORT_WALLET = "PASSPORT_WALLET";

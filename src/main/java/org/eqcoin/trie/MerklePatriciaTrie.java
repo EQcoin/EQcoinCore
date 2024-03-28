@@ -33,9 +33,7 @@ import org.eqcoin.serialization.EQCStateObject;
  * @email 10509759@qq.com
  */
 public interface MerklePatriciaTrie<O extends Node, K, V extends EQCStateObject> {
-	
-	public void create(K key, V value) throws Exception;
-	
+
 	public V get(K key) throws Exception;
 	
 	public void put(K key, V value) throws Exception;

@@ -48,7 +48,13 @@ public class Lock extends EQCObject {
 	public Lock(ByteArrayInputStream is) throws Exception {
 		super(is);
 	}
-	
+
+	public Lock(byte[] bytes) throws Exception {
+		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+		parse(is);
+		is.close();
+	}
+
 	/* (non-Javadoc)
 	 * @see com.eqcoin.serialization.EQCSerializable#Parse(java.io.ByteArrayInputStream)
 	 */
@@ -75,6 +81,7 @@ public class Lock extends EQCObject {
 		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		lock = Parse(is);
 		EQCCastle.assertNoRedundantData(is);
+		is.close();
 		return lock;
 	}
 

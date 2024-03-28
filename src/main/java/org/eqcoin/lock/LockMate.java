@@ -27,12 +27,8 @@ package org.eqcoin.lock;
 import java.io.ByteArrayOutputStream;
 
 import org.eqcoin.hive.EQCHive;
-import org.eqcoin.lock.publickey.Publickey;
-import org.eqcoin.persistence.globalstate.GlobalState;
-import org.eqcoin.serialization.EQCSerializable;
-import org.eqcoin.serialization.EQCCastle;
+import org.eqcoin.lock.publickey.PublicKey;
 import org.eqcoin.serialization.EQCObject;
-import org.eqcoin.transaction.Transaction.TRANSACTION_PRIORITY;
 import org.eqcoin.util.ID;
 import org.eqcoin.util.Log;
 import org.eqcoin.util.Util;
@@ -50,7 +46,7 @@ public class LockMate extends EQCObject {
 	private boolean isLockUpdated;
 	private byte status;
 	private boolean isStatusUpdated;
-	private Publickey publickey;
+	private PublicKey publickey;
 	private boolean isPublickeyUpdated;
 	private EQCHive eqcHive;
 	
@@ -172,14 +168,14 @@ public class LockMate extends EQCObject {
 	/**
 	 * @return the publickey
 	 */
-	public Publickey getPublickey() {
+	public PublicKey getPublickey() {
 		return publickey;
 	}
 
 	/**
 	 * @param publickey the publickey to set
 	 */
-	public void setPublickey(Publickey publickey) {
+	public void setPublickey(PublicKey publickey) {
 		this.publickey = publickey;
 		isPublickeyUpdated = true;
 	}

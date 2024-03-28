@@ -36,6 +36,7 @@ import org.eqcoin.util.Log;
  * @date Mar 21, 2020
  * @email 10509759@qq.com
  */
+@Deprecated
 public class ModerateOPTransaction extends Transaction {
 	private Operation operation;
 

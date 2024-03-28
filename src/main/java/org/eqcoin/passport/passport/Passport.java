@@ -36,6 +36,7 @@ import org.eqcoin.avro.O;
 import org.eqcoin.hive.EQCHive;
 import org.eqcoin.lock.Lock;
 import org.eqcoin.lock.LockTool.LockType;
+import org.eqcoin.lock.publickey.PublicKey;
 import org.eqcoin.serialization.EQCCastle;
 import org.eqcoin.serialization.EQCStateObject;
 import org.eqcoin.util.*;
@@ -51,53 +52,53 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 	public static Passport parsePassport(final byte[] bytes) throws Exception {
 		final ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 		Passport passport = null;
-		final PassportType passportType = parsepassportType(is);
-		try {
-			if (passportType == PassportType.ASSET) {
-				passport = new AssetPassport(bytes);
-			}
-		} catch (NoSuchFieldException | UnsupportedOperationException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Log.Error(e.getMessage());
-		}
+//		final PassportType passportType = parsepassportType(is);
+//		try {
+//			if (passportType == PassportType.ASSET) {
+//				passport = new AssetPassport(bytes);
+//			}
+//		} catch (NoSuchFieldException | UnsupportedOperationException | IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			Log.Error(e.getMessage());
+//		}
 		return passport;
 	}
 	public static Passport parsePassport(final ResultSet resultSet) throws Exception {
 		Passport passport = null;
-		final PassportType passportType = PassportType.get(resultSet.getByte("type"));
-
-		try {
-			if (passportType == PassportType.ASSET) {
-				passport = new AssetPassport(resultSet);
-			}
-			else if(passportType == PassportType.EXTENDABLEASSET) {
-				passport = new ExpendablePassport(resultSet);
-			}
-		} catch (NoSuchFieldException | UnsupportedOperationException | IOException e) {
-			Log.Error(e.getMessage());
-		}
+//		final PassportType passportType = PassportType.get(resultSet.getByte("type"));
+//
+//		try {
+//			if (passportType == PassportType.ASSET) {
+//				passport = new AssetPassport(resultSet);
+//			}
+//			else if(passportType == PassportType.EXTENDABLEASSET) {
+//				passport = new ExpendablePassport(resultSet);
+//			}
+//		} catch (NoSuchFieldException | UnsupportedOperationException | IOException e) {
+//			Log.Error(e.getMessage());
+//		}
 		return passport;
 	}
-	public static PassportType parsepassportType(final ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
-		PassportType passportType = null;
-		passportType = PassportType.get(EQCCastle.eqcBitsToInt(EQCCastle.parseEQCBits(is)));
-		return passportType;
-	}
-	public static PassportType parsePassportType(final Lock lock) {
-		PassportType passportType = null;
-		if(lock.getType() == LockType.T1 || lock.getType() == LockType.T2) {
-			passportType = PassportType.ASSET;
-		}
-		return passportType;
-	}
-	private boolean isTypeUpdate;
+//	public static PassportType parsepassportType(final ByteArrayInputStream is) throws NoSuchFieldException, IllegalStateException, IOException {
+//		PassportType passportType = null;
+//		passportType = PassportType.get(EQCCastle.eqcBitsToInt(EQCCastle.parseEQCBits(is)));
+//		return passportType;
+//	}
+//	public static PassportType parsePassportType(final Lock lock) {
+//		PassportType passportType = null;
+//		if(lock.getType() == LockType.T1 || lock.getType() == LockType.T2) {
+//			passportType = PassportType.ASSET;
+//		}
+//		return passportType;
+//	}
 
 	/**
-	 * A Passport has a Status, an ID, a Balance, a Nonce, a Lock, a Key, and a SmartContract.
+	 * The Passport has a Status, an ID, a Balance, a Nonce, a LockNonce, a Lock, a PublicKey, and a SmartContract.
 	 */
 	private Status status;
 	private ID id;
+	private boolean isIDUpdate;
 	private Value balance;
 
 	private boolean isBalanceUpdate;
@@ -106,9 +107,13 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 
 	private boolean isNonceUpdate;
 
-	private ID updateHeight;
+	private ID lockNonce;
 
-	private boolean isUpdateHeightUpdate;
+	private boolean isLockNonceUpdate;
+
+	private Lock lock;
+
+	private PublicKey publicKey;
 
 	protected EQCHive eqcHive;
 
@@ -122,17 +127,20 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 
 	public Passport(final ResultSet resultSet) throws Exception {
 		super();
-		type = PassportType.get(resultSet.getByte("type"));
-		// Parse PassportID
+		// Parse Status
+		status = new Status(resultSet.getLong("status"));
+		// Parse ID
 		id = new ID(resultSet.getLong("id"));
-		// Parse LockID
-		lockID = new ID(resultSet.getLong("lock_id"));
 		// Parse Balance
 		balance = new Value(resultSet.getLong("balance"));
 		// Parse Nonce
 		nonce = new ID(resultSet.getLong("nonce"));
-		// Parse UpdateHeight
-		updateHeight = EQCCastle.parseID(resultSet.getLong("update_height"));
+		// Parse LockNonce
+		lockNonce = new ID(resultSet.getLong("lock_nonce"));
+		// Parse Lock
+		lock = new Lock(resultSet.getBytes("lock"));
+		// Parse PublicKey
+		publicKey = new PublicKey(resultSet.getBytes("public_key"));
 	}
 
 	public void deposit(final Value value) {
@@ -156,11 +164,13 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 
 	@Override
 	public ByteArrayOutputStream getBodyBytes(final ByteArrayOutputStream os) throws Exception {
+		os.write(status.getEQCBits());
 		os.write(id.getEQCBits());
-		os.write(lockID.getEQCBits());
 		os.write(balance.getEQCBits());
 		os.write(nonce.getEQCBits());
-		os.write(updateHeight.getEQCBits());
+		os.write(lockNonce.getEQCBits());
+		os.write(lock.getBytes());
+		os.write(publicKey.getBytes());
 		return os;
 	}
 
@@ -170,7 +180,6 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 
 	@Override
 	public ByteArrayOutputStream getHeaderBytes(final ByteArrayOutputStream os) throws Exception {
-		os.write(id.getEQCBits());
 		return os;
 	}
 
@@ -183,14 +192,7 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 
 	@Override
 	public byte[] getKey() throws Exception {
-		return getHeaderBytes();
-	}
-
-	/**
-	 * @return the lockID
-	 */
-	public ID getLockID() {
-		return lockID;
+		return id.getEQCBits();
 	}
 
 	/**
@@ -211,23 +213,16 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 		return null;
 	}
 
-	/**
-	 * @return the type
-	 */
-	public PassportType getType() {
-		return type;
-	}
 
 	/**
-	 * @return the updateHeight
+	 * @return the lockNonce
 	 */
-	public ID getUpdateHeight() {
-		return updateHeight;
+	public ID getLockNonce() {
+		return lockNonce;
 	}
 
 	@Override
 	public <V> V getValue() throws Exception {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -253,20 +248,6 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 		return isBalanceUpdate;
 	}
 
-	/**
-	 * @return the isIDUpdate
-	 */
-	public boolean isIDUpdate() {
-		return isIDUpdate;
-	}
-
-	/**
-	 * @return the isLockIDUpdate
-	 */
-	public boolean isLockIDUpdate() {
-		return isLockIDUpdate;
-	}
-
 	//	/**
 	//	 * @param nonce the nonce to set
 	//	 */
@@ -281,15 +262,10 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 		return isNonceUpdate;
 	}
 
-	/**
-	 * Body field include ID, LockID, totalIncome, totalCost, balance, nonce
-	 * @throws Exception
-	 */
-
 	@Override
 	public boolean isSanity() throws Exception {
-		if(type == null) {
-			Log.Error("passportType == null");
+		if(status == null) {
+			Log.Error("status == null");
 			return false;
 		}
 		if(id == null) {
@@ -298,14 +274,6 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 		}
 		if(!id.isSanity()) {
 			Log.Error("!id.isSanity()");
-			return false;
-		}
-		if(lockID == null) {
-			Log.Error("lockID == null");
-			return false;
-		}
-		if(!lockID.isSanity()) {
-			Log.Error("!lockID.isSanity()");
 			return false;
 		}
 		if(balance == null) {
@@ -332,48 +300,60 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 			Log.Error("!nonce.isSanity()");
 			return false;
 		}
-		if(updateHeight == null) {
+		if(lockNonce == null) {
 			Log.Error("updateHeight == null");
 			return false;
 		}
-		if(!updateHeight.isSanity()) {
+		if(!lockNonce.isSanity()) {
 			Log.Error("!updateHeight.isSanity()");
+			return false;
+		}
+		if(lock == null) {
+			Log.Error("lock == null");
+			return false;
+		}
+		if(!lock.isSanity()) {
+			Log.Error("!lock.isSanity()");
+			return false;
+		}
+		if(publicKey == null) {
+			Log.Error("publicKey == null");
+			return false;
+		}
+		if(!publicKey.isSanity()) {
+			Log.Error("!publicKey.isSanity()");
 			return false;
 		}
 		return true;
 	}
 
 	/**
-	 * @return the isTypeUpdate
-	 */
-	public boolean isTypeUpdate() {
-		return isTypeUpdate;
-	}
-
-	/**
 	 * @return the isUpdateHeightUpdate
 	 */
-	public boolean isUpdateHeightUpdate() {
-		return isUpdateHeightUpdate;
+	public boolean isLockNonceUpdate() {
+		return isLockNonceUpdate;
 	}
 
 	@Override
 	public void parseBody(final ByteArrayInputStream is) throws NoSuchFieldException, IOException, Exception {
-		// Parse PassportID
+		// Parse Status
+		status = new Status(EQCCastle.parseID(is));
+		// Parse ID
 		id = EQCCastle.parseID(is);
-		// Parse LockID
-		lockID = EQCCastle.parseID(is);
 		// Parse Balance
 		balance = EQCCastle.parseValue(is);
 		// Parse Nonce
 		nonce = EQCCastle.parseID(is);
-		// Parse UpdateHeight
-		updateHeight = EQCCastle.parseID(is);
+		// Parse lockNonce
+		lockNonce = EQCCastle.parseID(is);
+		// Parse lock
+		lock = new Lock(is);
+		// Parse publicKey
+		publicKey = new PublicKey(is);
 	}
 
 	@Override
 	public void parseHeader(final ByteArrayInputStream is) throws NoSuchFieldException, IOException {
-		type = PassportType.get(EQCCastle.parseID(is).intValue());
 	}
 
 	public void planting() throws Exception {
@@ -406,46 +386,31 @@ public class Passport extends EQCStateObject {// implements Externalizable {
 	}
 
 	/**
-	 * @param lockID the lockID to set
+	 * @param lockNonce the lockNonce to set
 	 */
-	public void setLockID(final ID lockID) {
-		this.lockID = lockID;
-		isLockIDUpdate = true;
+	public void setLockNonce(final ID lockNonce) {
+		this.lockNonce = lockNonce;
 	}
 
-	/**
-	 * @param type the type to set
-	 */
-	public void setType(final PassportType type) {
-		this.type = type;
-		isTypeUpdate = true;
-	}
-
-	/**
-	 * @param updateHeight the updateHeight to set
-	 */
-	public void setUpdateHeight(final ID updateHeight) {
-		this.updateHeight = updateHeight;
-	}
-
+	//	a Status, an ID, a Balance, a Nonce, a LockNonce, a Lock, a PublicKey,
+	// Hibernate? Need do more job here
 	public void sync() {
-		isTypeUpdate = true;
-		isLockIDUpdate = true;
 		isBalanceUpdate = true;
 		isNonceUpdate = true;
-		isUpdateHeightUpdate = true;
+		isLockNonceUpdate = true;
 	}
 
+	//	a Status, an ID, a Balance, a Nonce, a LockNonce, a Lock, a PublicKey,
 	@Override
 	public String toInnerJson() {
 		return
-				"\"Type\":" + "\"" + type + "\"" + ",\n" +
+				"\"Status\":" + "\"" + status + "\"" + ",\n" +
 				"\"ID\":" + "\"" + id + "\"" + ",\n" +
-				"\"LockID\":" + "\"" + lockID + "\"" + ",\n" +
 				"\"Balance\":" + "\"" + balance + "\"" + ",\n" +
 				"\"Nonce\":" + "\"" + nonce + "\"" + ",\n" +
-				"\"UpdateHeight\":" + "\"" + updateHeight + "\"" +
-				"\n}";
+						"\"LockNonce\":" + "\"" + lockNonce + "\"" + ",\n" +
+						"\"Lock\":" + "\"" + lock + "\"" + ",\n" +
+				"\"PublicKey\":" + "\"" + publicKey + "\"" + "\n";
 	}
 
 	/* (non-Javadoc)
